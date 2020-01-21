@@ -1,0 +1,18 @@
+%!PS
+% Extract PDF info in a minimal way.
+% Inspired by 'toolbin/pdf_info.ps'.
+
+/QUIET true def
+File dup (r) file runpdfbegin
+Trailer /Info knownoget {
+dup /Title knownoget { (__knowninfoTitle: ) print = flush } if
+dup /Author knownoget { (__knowninfoAuthor: ) print = flush } if
+dup /Subject knownoget { (__knowninfoSubject: ) print = flush } if
+dup /Keywords knownoget { (__knowninfoKeywords: ) print = flush } if
+dup /Creator knownoget { (__knowninfoCreator: ) print = flush } if
+dup /Producer knownoget { (__knowninfoProducer: ) print = flush } if
+dup /CreationDate knownoget { (__knowninfoCreationDate: ) print = flush } if
+dup /ModDate knownoget { (__knowninfoModDate: ) print = flush } if
+dup /Trapped knownoget { (__knowninfoTrapped: ) print = flush } if
+} if
+quit
