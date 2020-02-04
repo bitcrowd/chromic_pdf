@@ -29,7 +29,8 @@ defmodule ChromicPdf.MixProject do
       {:poolboy, "~> 1.5"},
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.21.3", only: [:test, :dev], runtime: false}
+      {:ex_doc, "~> 0.21.3", only: [:test, :dev], runtime: false},
+      {:junit_formatter, "~> 3.0", only: [:test]}
     ]
   end
 
