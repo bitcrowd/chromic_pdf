@@ -20,7 +20,7 @@ defmodule ChromicPdf.MixProject do
     ]
   end
 
-  # defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_env), do: ["lib"]
 
   defp deps do
@@ -30,7 +30,8 @@ defmodule ChromicPdf.MixProject do
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.21.3", only: [:test, :dev], runtime: false},
-      {:junit_formatter, "~> 3.0", only: [:test]}
+      {:junit_formatter, "~> 3.0", only: [:test]},
+      {:mox, "~> 0.5.1", only: [:test]}
     ]
   end
 

@@ -1,24 +1,9 @@
 defmodule ChromicPDF.Connection do
   @moduledoc false
 
-  # A running Chrome instance.
-  #
-  # ## Setup
-  #
-  # Chrome is started with the "--remote-debugging-pipe" switch
-  # and its FD 3 & 4 are redirected to and from stdin and stdout.
-  # stderr is silently discarded.
-  #
-  # ### Receiving messages.
-  #
-  # Parent process will receive `{:chrome_msg_in, data}` tuples.
-  #
-  # ### Sending messages
-  #
-  # See `send_msg/2`.
-
   use GenServer, shutdown: 10_000
-  require Logger
+
+  @chrome Application.get_env(:chromic_pdf, :chrome, ChromicPDF.ChromeImpl)
 
   # ------------- API ----------------
 
@@ -34,17 +19,13 @@ defmodule ChromicPDF.Connection do
 
   # ------------ Server --------------
 
-  @chrome_bin "\"/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome\""
-  @chrome_cmd "#{@chrome_bin} --headless --disable-gpu --remote-debugging-pipe 2>/dev/null 3<&0 4>&1"
-
   @impl true
   def init(parent_pid) do
-    {:ok, port, os_pid} = spawn_chrome()
+    {:ok, port} = @chrome.spawn()
 
     state = %{
       parent_pid: parent_pid,
       port: port,
-      os_pid: os_pid,
       data: []
     }
 
@@ -53,8 +34,7 @@ defmodule ChromicPDF.Connection do
 
   @impl true
   def handle_cast({:send_msg, msg}, state) do
-    send(state.port, {self(), {:command, msg <> "\0"}})
-
+    @chrome.send_msg(state.port, msg)
     {:noreply, state}
   end
 
@@ -71,14 +51,13 @@ defmodule ChromicPDF.Connection do
 
   # Message triggered by Port.monitor/1.
   def handle_info({:DOWN, _ref, :port, _port, _exit_state}, state) do
-    Logger.warn("chrome (pid: #{state.os_pid}) stopped unexpectedly")
     {:stop, :chrome_has_crashed, state}
   end
 
   @impl true
   # Called on process termination.
   def terminate(_reason, %{port: port}) do
-    if Port.info(port), do: Port.close(port)
+    @chrome.stop(port)
   end
 
   defp handle_chunks([blob], state), do: %{state | data: [blob | state.data]}
@@ -96,15 +75,5 @@ defmodule ChromicPDF.Connection do
     send(state.parent_pid, {:chrome_msg_in, msg})
 
     %{state | data: []}
-  end
-
-  defp spawn_chrome do
-    port = Port.open({:spawn, @chrome_cmd}, [:binary])
-    Port.monitor(port)
-
-    os_pid = port |> Port.info() |> Keyword.get(:os_pid)
-    Logger.info("chrome started (pid: #{os_pid})")
-
-    {:ok, port, os_pid}
   end
 end
