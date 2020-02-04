@@ -1,0 +1,99 @@
+version: 2
+references:
+  base: &base
+    docker:
+      - image: circleci/elixir:1.9.4
+    environment:
+      MIX_ENV: test
+    working_directory: ~/chromic_pdf
+jobs:
+  setup:
+    <<: *base
+    steps:
+      - checkout
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - restore_cache:
+          keys:
+            - mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+            - mix-cache-{{ .Branch }}
+            - mix-cache
+      - restore_cache:
+          keys:
+            - build-cache-{{ .Branch }}
+            - build-cache
+      - restore_cache:
+          keys:
+            - plt-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+            - plt-cache-{{ .Branch }}
+            - plt-cache
+      - run: mix deps.get
+      - run: mix compile
+      - run: mix dialyzer --plt
+      - save_cache:
+          key: mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+          paths: deps
+      - save_cache:
+          key: mix-cache-{{ .Branch }}
+          paths: deps
+      - save_cache:
+          key: mix-cache
+          paths: deps
+      - save_cache:
+          key: build-cache-{{ .Branch }}
+          paths: _build
+      - save_cache:
+          key: build-cache
+          paths: _build
+      - save_cache:
+          key: plt-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+          paths:
+            - _build
+            - .plts
+      - save_cache:
+          key: plt-cache-{{ .Branch }}
+          paths:
+            - _build
+            - .plts
+      - save_cache:
+          key: plt-cache
+          paths:
+            - _build
+            - .plts
+      - save_cache:
+          key: repo-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/.mix
+            - ~/chromic_pdf
+
+  lint:
+    <<: *base
+    steps:
+      - restore_cache:
+          key: repo-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Run Linter
+          command: mix lint
+
+  test:
+    <<: *base
+    steps:
+      - restore_cache:
+          key: repo-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Run Tests
+          command: mix test
+      - store_test_results:
+          path: _build/test/lib/chromic_pdf
+
+workflows:
+  version: 2
+  checks:
+    jobs:
+      - setup
+      - lint:
+          requires:
+            - setup
+      - test:
+          requires:
+            - setup
