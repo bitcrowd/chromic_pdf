@@ -2,8 +2,7 @@ defmodule ChromicPDF.Session do
   @moduledoc false
 
   use GenServer
-  require Logger
-  alias ChromicPDF.{Browser, SessionProtocol}
+  alias ChromicPDF.{Browser, JsonRPCChannel, SessionProtocol}
 
   # ------------- API ----------------
 
@@ -30,12 +29,12 @@ defmodule ChromicPDF.Session do
   @spec init(browser :: atom()) :: {:ok, map(), {:continue, :enable_page}}
   def init(browser) do
     {:ok, session_id} = Browser.spawn_session(browser)
-    {:ok, protocol_state_pid} = SessionProtocol.start_link()
+    {:ok, channel_pid} = JsonRPCChannel.start_link()
 
     state = %{
       browser: browser,
       session_id: session_id,
-      protocol_state: protocol_state_pid,
+      channel: channel_pid,
       request: nil
     }
 
@@ -44,28 +43,30 @@ defmodule ChromicPDF.Session do
 
   @impl true
   def handle_continue(:enable_page, state) do
-    Logger.debug("session #{state.session_id} is live")
-
-    SessionProtocol.enable_page_notifications(state.protocol_state)
+    SessionProtocol.enable_page_notifications()
     {:noreply, state}
   end
 
   @impl true
   def handle_call({:print_to_pdf, url, params, output}, from, state) do
     request = %{from: from, params: params, output: output}
-
-    SessionProtocol.start_navigation(state.protocol_state, url)
+    SessionProtocol.start_navigation(url)
     {:noreply, %{state | request: request}}
   end
 
   @impl true
   def handle_info({:chrome_msg_in, msg}, state) do
-    SessionProtocol.handle_chrome_msg_in(state.protocol_state, msg)
+    SessionProtocol.handle_chrome_msg_in(JsonRPCChannel.decode(state.channel, msg))
     {:noreply, state}
   end
 
   def handle_info({:chrome_msg_out, msg}, state) do
-    Browser.send_session_msg(state.browser, state.session_id, msg)
+    Browser.send_session_msg(
+      state.browser,
+      state.session_id,
+      JsonRPCChannel.encode(state.channel, msg)
+    )
+
     {:noreply, state}
   end
 
@@ -78,7 +79,7 @@ defmodule ChromicPDF.Session do
 
   def handle_info({:navigation_finished, frame_id}, state) do
     if state.request && state.request.frame_id == frame_id do
-      SessionProtocol.start_printing(state.protocol_state, state.request.params)
+      SessionProtocol.start_printing(state.request.params)
     end
 
     {:noreply, state}

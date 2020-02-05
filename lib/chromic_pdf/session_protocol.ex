@@ -1,43 +1,24 @@
 defmodule ChromicPDF.SessionProtocol do
   @moduledoc false
 
-  import ChromicPDF.JsonRPC
-  alias ChromicPDF.JsonRPCState
-
-  @type state :: pid()
-
-  defdelegate start_link, to: JsonRPCState
-
-  @spec start_navigation(state(), url :: binary()) :: :ok
-  def start_navigation(state, url) do
-    respond_with_chrome_msg(
-      state,
-      "Page.navigate",
-      %{"url" => url}
-    )
+  @spec start_navigation(url :: binary()) :: :ok
+  def start_navigation(url) do
+    respond_with_chrome_msg("Page.navigate", %{"url" => url})
   end
 
-  @spec start_printing(state(), opts :: map()) :: :ok
-  def start_printing(state, opts) do
-    respond_with_chrome_msg(
-      state,
-      "Page.printToPDF",
-      opts
-    )
+  @spec start_printing(opts :: map()) :: :ok
+  def start_printing(opts) do
+    respond_with_chrome_msg("Page.printToPDF", opts)
   end
 
-  @spec enable_page_notifications(state()) :: :ok
-  def enable_page_notifications(state) do
-    respond_with_chrome_msg(
-      state,
-      "Page.enable",
-      %{}
-    )
+  @spec enable_page_notifications() :: :ok
+  def enable_page_notifications do
+    respond_with_chrome_msg("Page.enable", %{})
   end
 
-  @spec handle_chrome_msg_in(state(), msg :: binary()) :: :ok
-  def handle_chrome_msg_in(state, msg) do
-    case decode_and_classify(state, msg) do
+  @spec handle_chrome_msg_in(msg :: ChromicPDF.JsonRPCChannel.decoded_message()) :: :ok
+  def handle_chrome_msg_in(msg) do
+    case msg do
       {:response, "Page.navigate", %{"frameId" => frame_id}} ->
         respond({:navigation_started, frame_id})
 
@@ -52,9 +33,8 @@ defmodule ChromicPDF.SessionProtocol do
     end
   end
 
-  defp respond_with_chrome_msg(state, method, params) do
-    msg = encode(state, method, params)
-    respond({:chrome_msg_out, msg})
+  defp respond_with_chrome_msg(method, params) do
+    respond({:chrome_msg_out, {:call, method, params}})
   end
 
   defp respond(msg) do
