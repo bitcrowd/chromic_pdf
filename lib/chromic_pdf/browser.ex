@@ -3,7 +3,7 @@ defmodule ChromicPDF.Browser do
 
   use GenServer
   require Logger
-  alias ChromicPDF.{BrowserProtocol, Connection}
+  alias ChromicPDF.{BrowserProtocol, Connection, JsonRPCChannel}
 
   @type browser :: pid() | atom()
   @type session_id :: binary()
@@ -44,13 +44,13 @@ defmodule ChromicPDF.Browser do
   @impl true
   def init(_) do
     {:ok, conn_pid} = Connection.start_link(self())
-    {:ok, protocol_state_pid} = BrowserProtocol.start_link()
+    {:ok, channel_pid} = JsonRPCChannel.start_link()
 
     state = %{
       connection: conn_pid,
+      channel: channel_pid,
       sessions: %{},
-      pending_sessions: [],
-      protocol_state: protocol_state_pid
+      pending_sessions: []
     }
 
     {:ok, state}
@@ -58,24 +58,31 @@ defmodule ChromicPDF.Browser do
 
   @impl true
   def handle_call(:spawn_session, from, state) do
-    BrowserProtocol.spawn_session(state.protocol_state)
+    BrowserProtocol.spawn_session()
     {:noreply, %{state | pending_sessions: [from | state.pending_sessions]}}
   end
 
   @impl true
   def handle_cast({:send_session_msg, session_id, msg}, state) do
-    BrowserProtocol.send_session_msg(state.protocol_state, session_id, msg)
+    BrowserProtocol.send_session_msg(session_id, msg)
     {:noreply, state}
   end
 
   @impl true
   def handle_info({:chrome_msg_in, msg}, state) do
-    BrowserProtocol.handle_chrome_msg_in(state.protocol_state, msg)
+    state.channel
+    |> JsonRPCChannel.decode(msg)
+    |> BrowserProtocol.handle_chrome_msg_in()
+
     {:noreply, state}
   end
 
   def handle_info({:chrome_msg_out, msg}, state) do
-    Connection.send_msg(state.connection, msg)
+    Connection.send_msg(
+      state.connection,
+      JsonRPCChannel.encode(state.channel, msg)
+    )
+
     {:noreply, state}
   end
 

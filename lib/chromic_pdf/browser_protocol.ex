@@ -1,37 +1,27 @@
 defmodule ChromicPDF.BrowserProtocol do
   @moduledoc false
 
-  import ChromicPDF.JsonRPC
-  alias ChromicPDF.JsonRPCState
-
-  @type state :: pid()
-
-  defdelegate start_link, to: JsonRPCState
-
-  @spec spawn_session(state()) :: :ok
-  def spawn_session(state) do
+  @spec spawn_session() :: :ok
+  def spawn_session do
     respond_with_chrome_msg(
-      state,
       "Target.createTarget",
       %{"url" => "about:blank"}
     )
   end
 
-  @spec send_session_msg(state(), session_id :: binary(), msg :: binary()) :: :ok
-  def send_session_msg(state, session_id, msg) do
+  @spec send_session_msg(session_id :: binary(), msg :: binary()) :: :ok
+  def send_session_msg(session_id, msg) do
     respond_with_chrome_msg(
-      state,
       "Target.sendMessageToTarget",
       %{"sessionId" => session_id, "message" => msg}
     )
   end
 
-  @spec handle_chrome_msg_in(state(), msg :: binary()) :: :ok
-  def handle_chrome_msg_in(state, msg) do
-    case decode_and_classify(state, msg) do
+  @spec handle_chrome_msg_in(msg :: ChromicPDF.JsonRPCChannel.decoded_message()) :: :ok
+  def handle_chrome_msg_in(msg) do
+    case msg do
       {:response, "Target.createTarget", result} ->
         respond_with_chrome_msg(
-          state,
           "Target.attachToTarget",
           result
         )
@@ -48,9 +38,8 @@ defmodule ChromicPDF.BrowserProtocol do
     end
   end
 
-  defp respond_with_chrome_msg(state, method, params) do
-    msg = encode(state, method, params)
-    respond({:chrome_msg_out, msg})
+  defp respond_with_chrome_msg(method, params) do
+    respond({:chrome_msg_out, {:call, method, params}})
   end
 
   defp respond(msg) do
