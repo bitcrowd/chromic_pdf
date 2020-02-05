@@ -26,7 +26,7 @@ defmodule ChromicPDF.ChromeImpl do
   # and its FD 3 & 4 are redirected to and from stdin and stdout.
   # stderr is silently discarded.
   defp chrome_command do
-    ~s("#{chrome_executable()}" --headless --disable-gpu --remote-debugging-pipe 2>/dev/null 3<&0 4>&1)
+    ~s("#{chrome_executable()}" --no-sandbox --headless --disable-gpu --remote-debugging-pipe 2>/dev/null 3<&0 4>&1)
   end
 
   @chrome_paths [

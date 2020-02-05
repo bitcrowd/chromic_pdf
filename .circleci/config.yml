@@ -3,8 +3,8 @@ version: 2
 references:
   base: &base
     docker:
-      - image: circleci/elixir:1.9.4
-    working_directory: ~/chromic_pdf
+      - image: maltoe/chromic-pdf-primary:0.0.4
+    working_directory: ~/repo
 
 jobs:
   setup:
@@ -32,7 +32,7 @@ jobs:
           key: v1-repo-cache-setup-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - ~/.mix
-            - ~/chromic_pdf
+            - ~/repo
 
   test_env:
     <<: *base
@@ -74,7 +74,7 @@ jobs:
           key: v1-repo-cache-test-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - ~/.mix
-            - ~/chromic_pdf
+            - ~/repo
 
   integration_env:
     <<: *base
@@ -99,7 +99,7 @@ jobs:
           key: v1-repo-cache-integration-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - ~/.mix
-            - ~/chromic_pdf
+            - ~/repo
 
   lint:
     <<: *base
