@@ -1,11 +1,11 @@
 version: 2
+
 references:
   base: &base
     docker:
       - image: circleci/elixir:1.9.4
-    environment:
-      MIX_ENV: test
     working_directory: ~/chromic_pdf
+
 jobs:
   setup:
     <<: *base
@@ -15,85 +15,146 @@ jobs:
       - run: mix local.rebar --force
       - restore_cache:
           keys:
-            - mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
-            - mix-cache-{{ .Branch }}
-            - mix-cache
-      - restore_cache:
-          keys:
-            - build-cache-{{ .Branch }}
-            - build-cache
-      - restore_cache:
-          keys:
-            - plt-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
-            - plt-cache-{{ .Branch }}
-            - plt-cache
+            - v1-deps-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+            - v1-deps-cache-{{ .Branch }}
+            - v1-deps-cache
       - run: mix deps.get
+      - save_cache:
+          key: v1-deps-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+          paths: deps
+      - save_cache:
+          key: v1-deps-cache-{{ .Branch }}
+          paths: deps
+      - save_cache:
+          key: v1-deps-cache
+          paths: deps
+      - save_cache:
+          key: v1-repo-cache-setup-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/.mix
+            - ~/chromic_pdf
+
+  test_env:
+    <<: *base
+    environment:
+      MIX_ENV: test
+    steps:
+      - restore_cache:
+          key: v1-repo-cache-setup-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - v1-build-cache-test-{{ .Branch }}
+            - v1-build-cache-test
+      - restore_cache:
+          keys:
+            - v1-plt-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+            - v1-plt-cache-{{ .Branch }}
+            - v1-plt-cache
       - run: mix compile
       - run: mix dialyzer --plt
       - save_cache:
-          key: mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
-          paths: deps
+          key: v1-build-cache-test-{{ .Branch }}
+          paths: _build/test
       - save_cache:
-          key: mix-cache-{{ .Branch }}
-          paths: deps
+          key: v1-build-cache-test
+          paths: _build/test
       - save_cache:
-          key: mix-cache
-          paths: deps
-      - save_cache:
-          key: build-cache-{{ .Branch }}
-          paths: _build
-      - save_cache:
-          key: build-cache
-          paths: _build
-      - save_cache:
-          key: plt-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+          key: v1-plt-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
           paths:
-            - _build
             - .plts
       - save_cache:
-          key: plt-cache-{{ .Branch }}
+          key: v1-plt-cache-{{ .Branch }}
           paths:
-            - _build
             - .plts
       - save_cache:
-          key: plt-cache
+          key: v1-plt-cache
           paths:
-            - _build
             - .plts
       - save_cache:
-          key: repo-{{ .Environment.CIRCLE_SHA1 }}
+          key: v1-repo-cache-test-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/.mix
+            - ~/chromic_pdf
+
+  integration_env:
+    <<: *base
+    environment:
+      MIX_ENV: integration
+    steps:
+      - restore_cache:
+          keys:
+            - v1-repo-cache-setup-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - v1-build-cache-integration-{{ .Branch }}
+            - v1-build-cache-integration
+      - run: mix compile
+      - save_cache:
+          key: v1-build-cache-integration-{{ .Branch }}
+          paths: _build/integration
+      - save_cache:
+          key: v1-build-cache-integration
+          paths: _build/integration
+      - save_cache:
+          key: v1-repo-cache-integration-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - ~/.mix
             - ~/chromic_pdf
 
   lint:
     <<: *base
+    environment:
+      MIX_ENV: test
     steps:
       - restore_cache:
-          key: repo-{{ .Environment.CIRCLE_SHA1 }}
+          key: v1-repo-cache-test-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Run Linter
           command: mix lint
 
   test:
     <<: *base
+    environment:
+      MIX_ENV: test
     steps:
       - restore_cache:
-          key: repo-{{ .Environment.CIRCLE_SHA1 }}
+          key: v1-repo-cache-test-{{ .Environment.CIRCLE_SHA1 }}
       - run:
-          name: Run Tests
+          name: Run Unit Tests
           command: mix test
       - store_test_results:
           path: _build/test/lib/chromic_pdf
+
+  integration:
+    <<: *base
+    environment:
+      MIX_ENV: integration
+    steps:
+      - restore_cache:
+          key: v1-repo-cache-integration-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Run Integration Tests
+          command: mix test
+      - store_test_results:
+          path: _build/integration/lib/chromic_pdf
 
 workflows:
   version: 2
   checks:
     jobs:
       - setup
+      - test_env:
+          requires:
+            - setup
+      - integration_env:
+          requires:
+            - setup
       - lint:
           requires:
-            - setup
+            - test_env
       - test:
           requires:
-            - setup
+            - test_env
+      - integration:
+          requires:
+            - integration_env
