@@ -3,8 +3,6 @@ defmodule ChromicPDF.Ghostscript do
 
   require EEx
 
-  @ghostscript_bin "gs"
-
   @pdfinfo_ps Path.expand("../../assets/pdfinfo.ps", __ENV__.file)
   @adobe_icc Path.expand("../../assets/AdobeRGB1998.icc", __ENV__.file)
   @psdef_ps Path.expand("../../assets/psdef.ps.eex", __ENV__.file)
@@ -53,7 +51,7 @@ defmodule ChromicPDF.Ghostscript do
     output_path = Path.expand("../#{Path.basename(pdf_path)}-fonts-embedded.pdf", pdf_path)
 
     system_cmd!(
-      @ghostscript_bin,
+      ghostscript_executable(),
       [
         "-dQUIET",
         "-sstdout=/dev/null",
@@ -82,7 +80,7 @@ defmodule ChromicPDF.Ghostscript do
 
   defp convert_to_pdfa2(pdf_path, psdef_path, output_path) do
     system_cmd!(
-      @ghostscript_bin,
+      ghostscript_executable(),
       [
         "-dQUIET",
         "-sstdout=/dev/null",
@@ -116,7 +114,7 @@ defmodule ChromicPDF.Ghostscript do
   defp extract_info_from_file(pdf_path) do
     {output, 0} =
       System.cmd(
-        @ghostscript_bin,
+        ghostscript_executable(),
         ["-dNODISPLAY", "-q", ~s(-sFile="#{pdf_path}"), @pdfinfo_ps]
       )
 
@@ -149,5 +147,11 @@ defmodule ChromicPDF.Ghostscript do
 
   defp system_cmd!(bin, args) do
     {_output, 0} = System.cmd(bin, args, stderr_to_stdout: true)
+  end
+
+  @ghostscript_bin "gs"
+
+  defp ghostscript_executable do
+    System.find_executable(@ghostscript_bin) || raise("could not find ghostscript")
   end
 end
