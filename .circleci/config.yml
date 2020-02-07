@@ -3,7 +3,7 @@ version: 2
 references:
   base: &base
     docker:
-      - image: maltoe/chromic-pdf-primary:0.0.4
+      - image: maltoe/chromic-pdf-primary:0.0.5
     working_directory: ~/repo
 
 jobs:
