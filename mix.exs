@@ -1,10 +1,12 @@
 defmodule ChromicPdf.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+
   def project do
     [
       app: :chromic_pdf,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       dialyzer: [plt_file: {:no_warn, ".plts/dialyzer.plt"}],
@@ -13,13 +15,33 @@ defmodule ChromicPdf.MixProject do
       aliases: aliases(),
 
       # ExUnit
-      test_paths: test_paths(Mix.env())
+      test_paths: test_paths(Mix.env()),
+
+      # hex.pm
+      package: package(),
+      description: "Fast HTML2PDF conversion with PDF/A support",
+
+      # hexdocs.pm
+      name: "ChromicPDF",
+      source_url: "https://github.com/bitcrowd/chromic_pdf",
+      docs: [
+        main: "ChromicPDF",
+        extras: ["README.md"]
+      ]
     ]
   end
 
   def application do
     [
       extra_applications: [:logger]
+    ]
+  end
+
+  defp package do
+    [
+      maintainers: ["@bitcrowd"],
+      licenses: ["MIT"],
+      links: %{github: "https://github.com/bitcrowd/chromic_pdf"}
     ]
   end
 

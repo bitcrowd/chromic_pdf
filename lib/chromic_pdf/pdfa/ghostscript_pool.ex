@@ -5,6 +5,7 @@ defmodule ChromicPDF.GhostscriptPool do
 
   @default_timeout 5000
 
+  @spec convert(atom(), binary(), binary(), keyword()) :: :ok
   # Converts a PDF to PDF-A/2 using Ghostscript.
   def convert(chromic, pdf_path, output_path, opts \\ []) do
     timeout = Keyword.get(opts, :timeout, @default_timeout)
@@ -16,6 +17,7 @@ defmodule ChromicPDF.GhostscriptPool do
     )
   end
 
+  @spec child_spec(keyword()) :: :supervisor.child_spec()
   def child_spec(args) do
     pool_name =
       args
