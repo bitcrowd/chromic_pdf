@@ -1,9 +1,5 @@
 # ChromicPDF
 
-<strong>
-Fast PDF printing & PDF/A-2 conversion
-</strong>
-
 ChromicPDF is a small wrapper around Chrome's `printToPDF` API that allows to print a URL to PDF.
 
 ## Features

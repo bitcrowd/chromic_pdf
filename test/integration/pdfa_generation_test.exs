@@ -17,7 +17,6 @@ defmodule ChromicPDF.PDFAGenerationTest do
 
       {output, 0} = System.cmd("verapdf", ["-f", "2b", @output])
       assert String.contains?(output, ~S(validationReports compliant="1"))
-
     after
       File.rm_rf!(@output)
     end
