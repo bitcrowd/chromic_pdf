@@ -4,7 +4,7 @@ defmodule ChromicPDF.Supervisor do
 
   ## When is this useful?
 
-  * You want to completely separate two PDF "queues"
+  * You want to completely separate two or more PDF "queues"
   * You want to give your PDF module a custom API
 
   ## Usage
@@ -50,7 +50,7 @@ defmodule ChromicPDF.Supervisor do
       @doc """
       Prints a PDF.
 
-      This call blocks until the PDF has been received.
+      This call blocks until the PDF has been created.
 
       ## Example 1: Print to file
 
@@ -63,6 +63,13 @@ defmodule ChromicPDF.Supervisor do
           end)
 
       The temporary file passed to the callback will be deleted when the callback returns.
+
+      ## Options
+
+      For a full list of options to the `printToPDF` function, please see the Chrome
+      documentation at:
+
+      https://chromedevtools.github.io/devtools-protocol/tot/Page#method-printToPDF
       """
       @spec print_to_pdf(
               url :: binary(),
@@ -74,7 +81,7 @@ defmodule ChromicPDF.Supervisor do
       end
 
       @doc """
-      Prints a PDF/A-2b.
+      Prints a PDF and converts it to PDF/A-2b.
       """
       @spec print_to_pdfa(
               url :: binary(),

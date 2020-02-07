@@ -19,11 +19,12 @@ defmodule ChromicPdf.MixProject do
 
       # hex.pm
       package: package(),
-      description: "Fast HTML2PDF conversion with PDF/A support",
+      description: "Fast HTML-2-PDF/A renderer based on Chrome & Ghostscript",
 
       # hexdocs.pm
       name: "ChromicPDF",
       source_url: "https://github.com/bitcrowd/chromic_pdf",
+      homepage_url: "https://github.com/bitcrowd/chromic_pdf",
       docs: [
         main: "ChromicPDF",
         extras: ["README.md"]

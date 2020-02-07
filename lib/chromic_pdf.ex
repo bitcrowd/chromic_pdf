@@ -1,6 +1,6 @@
 defmodule ChromicPDF do
   @moduledoc """
-  ChromicPDF is a fast HTML2PDF renderer based on Chrome.
+  ChromicPDF is a fast HTML-2-PDF/A renderer based on Chrome & Ghostscript.
 
   ## Usage
 
@@ -64,34 +64,4 @@ defmodule ChromicPDF do
   """
 
   use ChromicPDF.Supervisor
-
-  def test do
-    ChromicPDF.print_to_pdfa(
-      "file:///Users/malte/work/maltoe/chromic_pdf/test.html",
-      %{
-        marginTop: 0.393701,
-        marginLeft: 0.787402,
-        marginRight: 0.787402,
-        marginBottom: 1.1811,
-        displayHeaderFooter: true,
-        headerTemplate: "<span></span>",
-        footerTemplate: """
-        <style>
-          p {
-            color: #333;
-            font-size: 10pt;
-            text-align: right;
-            margin-left: 0.787402in;
-            margin-right: 0.787402in;
-            width: 100%;
-          }
-        </style>
-        <p>
-        Page <span class="pageNumber"></span> of <span class="totalPages"></span>
-        </p>
-        """
-      },
-      "test.pdf"
-    )
-  end
 end
