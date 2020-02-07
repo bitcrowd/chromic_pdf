@@ -72,7 +72,7 @@ defmodule ChromicPDF.Connection do
       |> Enum.reverse()
       |> Enum.join()
 
-    send(state.parent_pid, {:chrome_msg_in, msg})
+    send(state.parent_pid, {:msg_in, msg})
 
     %{state | data: []}
   end
