@@ -18,19 +18,14 @@ defmodule ChromicPdf.MixProject do
       test_paths: test_paths(Mix.env()),
 
       # hex.pm
-      package: [
-        maintainers: ["@bitcrowd"],
-        licenses: ["MIT"],
-        links: %{github: "https://github.com/bitcrowd/chromic_pdf"}
-      ],
+      package: package(),
       description: "Fast HTML2PDF conversion with PDF/A support",
 
       # hexdocs.pm
       name: "ChromicPDF",
+      source_url: "https://github.com/bitcrowd/chromic_pdf",
       docs: [
         main: "ChromicPDF",
-        source_ref: "v#{@version}",
-        source_url: "https://github.com/bitcrowd/chromic_pdf",
         extras: ["README.md"]
       ]
     ]
@@ -39,6 +34,14 @@ defmodule ChromicPdf.MixProject do
   def application do
     [
       extra_applications: [:logger]
+    ]
+  end
+
+  defp package do
+    [
+      maintainers: ["@bitcrowd"],
+      licenses: ["MIT"],
+      links: %{github: "https://github.com/bitcrowd/chromic_pdf"}
     ]
   end
 
