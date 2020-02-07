@@ -3,7 +3,7 @@ defmodule ChromicPDF.CallCount do
 
   use Agent
 
-  def start_link do
+  def start_link(_opts \\ nil) do
     Agent.start_link(fn -> 1 end)
   end
 

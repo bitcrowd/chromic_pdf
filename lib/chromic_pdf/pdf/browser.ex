@@ -44,7 +44,7 @@ defmodule ChromicPDF.Browser do
   # ----------- Callbacks ------------
 
   @impl ChromicPDF.Channel
-  def init_upstream(nil) do
+  def init_upstream(_args) do
     {:ok, conn_pid} = Connection.start_link(self())
 
     fn msg ->
