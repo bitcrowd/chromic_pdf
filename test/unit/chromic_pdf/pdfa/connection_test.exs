@@ -62,7 +62,7 @@ defmodule ChromicPDF.ConnectionTest do
     end
 
     defp assert_msg_in(msg) do
-      assert_receive({:chrome_msg_in, ^msg})
+      assert_receive({:msg_in, ^msg})
     end
 
     test "it passes received messages to its parent", %{state: state} do
