@@ -4,10 +4,12 @@ defmodule ChromicPDF.Processor do
   alias ChromicPDF.{GhostscriptPool, SessionPool}
 
   @type url :: binary()
-  @type print_to_pdf_params :: map()
-  @type output :: binary() | (binary() -> any())
+  @type path :: binary()
+  @type pdf_params :: map()
+  @type pdfa_params :: keyword()
+  @type output :: path() | (path() -> any())
 
-  @spec print_to_pdf(atom(), url(), print_to_pdf_params(), output()) :: :ok
+  @spec print_to_pdf(atom(), url(), pdf_params(), output()) :: :ok
   def print_to_pdf(chromic, url, params, output)
       when is_atom(chromic) and is_binary(url) and is_map(params) and is_binary(output) do
     print_to_pdf(chromic, url, params, fn pdf_file ->
@@ -23,19 +25,37 @@ defmodule ChromicPDF.Processor do
     end)
   end
 
-  @spec print_to_pdfa(atom(), url(), print_to_pdf_params(), output()) :: :ok
-  def print_to_pdfa(chromic, url, params, output)
-      when is_atom(chromic) and is_binary(url) and is_map(params) and is_binary(output) do
-    print_to_pdfa(chromic, url, params, fn pdfa_file ->
+  @spec convert_to_pdfa(atom(), path(), pdfa_params(), output()) :: :ok
+  def convert_to_pdfa(chromic, pdf_file, params, output)
+      when is_atom(chromic) and is_binary(pdf_file) and is_list(params) and is_binary(output) do
+    convert_to_pdfa(chromic, pdf_file, params, fn pdfa_file ->
       File.cp!(pdfa_file, output)
     end)
   end
 
-  def print_to_pdfa(chromic, url, params, output)
-      when is_atom(chromic) and is_binary(url) and is_map(params) and is_function(output, 1) do
+  def convert_to_pdfa(chromic, pdf_file, params, output)
+      when is_atom(chromic) and is_binary(pdf_file) and is_list(params) and is_function(output, 1) do
+    with_tmp_files(".pdf", 1, fn [pdfa_file, pdfa_file] ->
+      GhostscriptPool.convert(chromic, pdf_file, params, pdfa_file)
+      output.(pdfa_file)
+    end)
+  end
+
+  @spec print_to_pdfa(atom(), url(), pdf_params(), pdfa_params(), output()) :: :ok
+  def print_to_pdfa(chromic, url, pdf_params, pdfa_params, output)
+      when is_atom(chromic) and is_binary(url) and is_map(pdf_params) and is_list(pdfa_params) and
+             is_binary(output) do
+    print_to_pdfa(chromic, url, pdf_params, pdfa_params, fn pdfa_file ->
+      File.cp!(pdfa_file, output)
+    end)
+  end
+
+  def print_to_pdfa(chromic, url, pdf_params, pdfa_params, output)
+      when is_atom(chromic) and is_binary(url) and is_map(pdf_params) and is_list(pdfa_params) and
+             is_function(output, 1) do
     with_tmp_files(".pdf", 2, fn [pdf_file, pdfa_file] ->
-      SessionPool.print_to_pdf(chromic, url, params, pdf_file)
-      GhostscriptPool.convert(chromic, pdf_file, pdfa_file)
+      SessionPool.print_to_pdf(chromic, url, pdf_params, pdf_file)
+      GhostscriptPool.convert(chromic, pdf_file, pdfa_params, pdfa_file)
       output.(pdfa_file)
     end)
   end

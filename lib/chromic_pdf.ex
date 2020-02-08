@@ -44,6 +44,9 @@ defmodule ChromicPDF do
         ]
       end
 
+  Please note, that these are only worker pools, if you intend to max them out,
+  you will need a job queue as well.
+
   ### Print a PDF / PDF/A
 
   Please see `ChromicPDF.print_to_pdf/3` and `ChromicPDF.print_to_pdfa/3`.
