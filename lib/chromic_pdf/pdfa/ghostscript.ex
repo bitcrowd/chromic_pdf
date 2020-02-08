@@ -154,14 +154,21 @@ defmodule ChromicPDF.Ghostscript do
     {:trapped, cast}
   end
 
-  defp cast_info_value({key, %DateTime{} = v}) do
-    utc_offset = v.utc_offset |> to_string |> String.pad_leading(2, "0")
-    date = "D:#{v.year}#{v.month}#{v.day}#{v.hour}#{v.minute}#{v.second}+#{utc_offset}'00'"
+  defp cast_info_value({key, %DateTime{} = value}) do
+    date =
+      [:year, :month, :day, :hour, :minute, :second]
+      |> Enum.map(&Map.fetch!(value, &1))
+      |> Enum.map(&pad_two_digits/1)
+      |> Enum.join()
 
-    {key, date}
+    {key, "D:#{date}+#{pad_two_digits(value.utc_offset)}'00'"}
   end
 
   defp cast_info_value(other), do: other
+
+  defp pad_two_digits(i) do
+    String.pad_leading(to_string(i), 2, "0")
+  end
 
   defp system_cmd!(bin, args) do
     {_output, 0} = System.cmd(bin, args, stderr_to_stdout: true)

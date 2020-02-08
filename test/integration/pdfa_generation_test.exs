@@ -44,8 +44,8 @@ defmodule ChromicPDF.PDFAGenerationTest do
         assert String.contains?(output, "Subject:        TestSubject")
         assert String.contains?(output, "Keywords:       TestKeywords")
         assert String.contains?(output, "Creator:        TestCreator")
-        assert String.contains?(output, "CreationDate:   Sat Mar 14 00:00:00 2009")
-        assert String.contains?(output, "ModDate:        Sat May 23 09:20:00 2037")
+        assert String.contains?(output, "CreationDate:   Sun Sep  9 01:46:40 2001")
+        assert String.contains?(output, "ModDate:        Wed May 18 03:33:20 2033")
       end)
     end
   end
