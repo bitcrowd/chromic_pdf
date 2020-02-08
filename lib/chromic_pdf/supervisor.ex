@@ -77,6 +77,16 @@ defmodule ChromicPDF.Supervisor do
             "output.pdf"
           )
 
+      ## Example 4: Print from in-memory HTML
+
+      For convenience, it is also possible to pass a HTML blob to
+      `print_to_pdf/3` which is automatically stored in a temporary file and
+      cleaned up afterwards. It is served over the `file://` scheme.
+
+          ChromicPDF.print_to_pdf(
+            {:html, "<html><body><h1>Hello World!</h1></body></html>"},
+            "output.pdf"
+          )
 
       ## Options
 

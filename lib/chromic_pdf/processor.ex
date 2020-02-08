@@ -5,7 +5,7 @@ defmodule ChromicPDF.Processor do
 
   @type url :: binary()
   @type path :: binary()
-  @type pdf_input :: {:url, url()}
+  @type pdf_input :: {:url, url()} | {:html, binary()}
   @type pdf_params :: map()
   @type pdfa_input :: {:path, path()}
   @type pdfa_params :: keyword()
@@ -59,6 +59,7 @@ defmodule ChromicPDF.Processor do
     with_tmp_dir(fn tmp_dir ->
       Enum.reduce(
         [
+          &step_persist_html/3,
           &step_print_to_pdf/3,
           &step_convert_to_pdfa/3,
           &step_output/3
@@ -96,6 +97,17 @@ defmodule ChromicPDF.Processor do
     |> Enum.take(12)
     |> Enum.join()
     |> Kernel.<>(ext)
+  end
+
+  defp step_persist_html(%{current: {:html, html}} = request, _chromic, tmp_dir) do
+    html_file = Path.join(tmp_dir, random_file_name(".html"))
+    File.write!(html_file, html)
+
+    %{request | current: {:url, "file://#{html_file}"}}
+  end
+
+  defp step_persist_html(request, _chromic, _tmp_dir) do
+    request
   end
 
   defp step_print_to_pdf(
