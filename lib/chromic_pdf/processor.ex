@@ -1,6 +1,7 @@
 defmodule ChromicPDF.Processor do
   @moduledoc false
 
+  import ChromicPDF.Utils
   alias ChromicPDF.{GhostscriptPool, SessionPool}
 
   @type url :: binary()
@@ -72,31 +73,6 @@ defmodule ChromicPDF.Processor do
     end)
 
     :ok
-  end
-
-  defp with_tmp_dir(cb) do
-    path =
-      Path.join(
-        System.tmp_dir!(),
-        random_file_name()
-      )
-
-    File.mkdir!(path)
-
-    try do
-      cb.(path)
-    after
-      File.rm_rf!(path)
-    end
-  end
-
-  @chars String.codepoints("abcdefghijklmnopqrstuvwxyz0123456789")
-  defp random_file_name(ext \\ "") do
-    @chars
-    |> Enum.shuffle()
-    |> Enum.take(12)
-    |> Enum.join()
-    |> Kernel.<>(ext)
   end
 
   defp step_persist_html(%{current: {:html, html}} = request, _chromic, tmp_dir) do
