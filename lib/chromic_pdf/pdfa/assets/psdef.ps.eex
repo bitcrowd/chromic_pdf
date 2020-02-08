@@ -1,23 +1,12 @@
 %!
-% This prefix file for creating a PDF/A document is derived from
-% the sample included with Ghostscript 9.07, released under the
-% GNU Affero General Public License.
-% Modified 4/15/2013 by MCB Systems.
-
-% This assumes an ICC profile to reside in the file (AdobeRGB1998.icc),
-% unless the user modifies the corresponding line below.
-
-% The color space described by the ICC profile must correspond to the
-% ProcessColorModel specified when using this prefix file (GRAY with
-% DeviceGray, RGB with DeviceRGB, and CMYK with DeviceCMYK).
-
-% Define entries in the document Info dictionary :
-
-/ICCProfile (<%= @adobe_icc %>)
-def
+% This is a sample prefix file for creating a PDF/A document.
+%
+% Ripped from Ghostscript 9.22's documentation.
+% https://www.ghostscript.com/doc/lib/PDFA_def.ps
+%
+% Stripped and customized.
 
 [
-
 <%= if @title do %>
   /Title (<%= @title %>)
 <% end %>
@@ -42,21 +31,22 @@ def
 <%= if @trapped do %>
   /Trapped <%= @trapped %>
 <% end %>
+
   /DOCINFO pdfmark
 
-% Define an ICC profile :
+/ICCProfile (<%= @adobe_icc %>)
 
+def
 [/_objdef {icc_PDFA} /type /stream /OBJ pdfmark
-[{icc_PDFA} <</N systemdict /ProcessColorModel get /DeviceGray eq {1} {systemdict /ProcessColorModel get /DeviceRGB eq {3} {4} ifelse} ifelse >> /PUT pdfmark
-[{icc_PDFA} ICCProfile (r) file /PUT pdfmark
 
-% Define the output intent dictionary :
+[{icc_PDFA} << /N 3 >> /PUT pdfmark
+[{icc_PDFA} ICCProfile (r) file /PUT pdfmark
 
 [/_objdef {OutputIntent_PDFA} /type /dict /OBJ pdfmark
 [{OutputIntent_PDFA} <<
-  /Type /OutputIntent             % Must be so (the standard requires).
-  /S /GTS_PDFA1                   % Must be so (the standard requires).
-  /DestOutputProfile {icc_PDFA}            % Must be so (see above).
-  /OutputConditionIdentifier (AdobeRGB1998)
+  /Type /OutputIntent               % Must be so (the standard requires).
+  /S /GTS_PDFA1                     % Must be so (the standard requires).
+  /DestOutputProfile {icc_PDFA}     % Must be so (see above).
+  /OutputConditionIdentifier (sRGB) % Customize
 >> /PUT pdfmark
 [{Catalog} <</OutputIntents [ {OutputIntent_PDFA} ]>> /PUT pdfmark
