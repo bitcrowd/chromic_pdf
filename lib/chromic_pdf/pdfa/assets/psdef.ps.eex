@@ -16,15 +16,30 @@
 /ICCProfile (<%= @adobe_icc %>)
 def
 
-[ /Title (<%= @title %>)
+[
+
+<%= if @title do %>
+  /Title (<%= @title %>)
+<% end %>
+<%= if @author do %>
   /Author (<%= @author %>)
+<% end %>
+<%= if @subject do %>
   /Subject (<%= @subject %>)
+<% end %>
+<%= if @keywords do %>
   /Keywords (<%= @keywords %>)
+<% end %>
+<%= if @creator do %>
   /Creator (<%= @creator %>)
-%  /Producer                          % Reserved to GS
-%  /CreationDate                      % Reserved to GS
-%  /ModDate                           % Reserved to GS
-<%= if @trapped != "" do %>
+<% end %>
+<%= if @creation_date do %>
+  /CreationDate (<%= @creation_date %>)
+<% end %>
+<%= if @mod_date do %>
+  /ModDate (<%= @mod_date %>)
+<% end %>
+<%= if @trapped do %>
   /Trapped <%= @trapped %>
 <% end %>
   /DOCINFO pdfmark

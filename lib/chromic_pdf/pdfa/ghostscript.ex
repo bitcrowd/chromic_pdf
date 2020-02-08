@@ -15,7 +15,6 @@ defmodule ChromicPDF.Ghostscript do
     "__knowninfoSubject" => :subject,
     "__knowninfoKeywords" => :keywords,
     "__knowninfoCreator" => :creator,
-    "__knowninfoProducer" => :producer,
     "__knowninfoCreationDate" => :creation_date,
     "__knowninfoModDate" => :mod_date,
     "__knowninfoTrapped" => :trapped
@@ -23,22 +22,28 @@ defmodule ChromicPDF.Ghostscript do
 
   EEx.function_from_file(:def, :render_psdef_ps, @psdef_ps, [:assigns])
 
-  def convert(pdf_path, output_path) do
+  @spec convert(binary(), params :: keyword(), binary()) :: :ok
+  def convert(pdf_path, params, output_path) do
     pdf_path = Path.expand(pdf_path)
+    info = Keyword.get(params, :info, %{})
 
-    psdef_path = create_psdef_ps(pdf_path)
+    psdef_path = create_psdef_ps(pdf_path, info)
 
     pdf_path
     |> embed_fonts()
     |> convert_to_pdfa2(psdef_path, output_path)
+
+    :ok
   end
 
-  defp create_psdef_ps(pdf_path) do
+  defp create_psdef_ps(pdf_path, supplied_info) do
     output_path = Path.expand("../#{Path.basename(pdf_path)}-psdef.ps", pdf_path)
 
     rendered =
       pdf_path
       |> pdfinfo()
+      |> Map.merge(supplied_info)
+      |> Enum.into(%{}, &cast_info_value/1)
       |> Map.put(:adobe_icc, @adobe_icc)
       |> render_psdef_ps()
 
@@ -106,9 +111,11 @@ defmodule ChromicPDF.Ghostscript do
   defp pdfinfo(pdf_path) do
     infos_from_file = extract_info_from_file(pdf_path)
 
-    @pdfinfo_keys
-    |> Enum.map(fn {ext, int} -> {int, Map.get(infos_from_file, ext, "")} end)
-    |> Enum.into(%{})
+    Enum.into(
+      @pdfinfo_keys,
+      %{},
+      fn {ext, int} -> {int, Map.get(infos_from_file, ext, "")} end
+    )
   end
 
   defp extract_info_from_file(pdf_path) do
@@ -124,7 +131,6 @@ defmodule ChromicPDF.Ghostscript do
     |> Enum.map(&parse_info_line/1)
     |> Enum.reject(&is_nil/1)
     |> Enum.into(%{})
-    |> Map.update("__knowninfoTrapped", "", &fix_info_trapped/1)
   end
 
   defp parse_info_line(line) do
@@ -137,13 +143,25 @@ defmodule ChromicPDF.Ghostscript do
     end
   end
 
-  defp fix_info_trapped(value) do
-    case String.downcase(value) do
-      "/true" -> "/True"
-      "/false" -> "/False"
-      _ -> ""
-    end
+  defp cast_info_value({:trapped, value}) do
+    cast =
+      case String.downcase(value) do
+        "/true" -> "/True"
+        "/false" -> "/False"
+        _ -> nil
+      end
+
+    {:trapped, cast}
   end
+
+  defp cast_info_value({key, %DateTime{} = v}) do
+    utc_offset = v.utc_offset |> to_string |> String.pad_leading(2, "0")
+    date = "D:#{v.year}#{v.month}#{v.day}#{v.hour}#{v.minute}#{v.second}+#{utc_offset}'00'"
+
+    {key, date}
+  end
+
+  defp cast_info_value(other), do: other
 
   defp system_cmd!(bin, args) do
     {_output, 0} = System.cmd(bin, args, stderr_to_stdout: true)

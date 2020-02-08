@@ -6,6 +6,7 @@ RUN apt-get update \
     chromium \
     ghostscript \
     openjdk-11-jre \
+    poppler-utils \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /opt/verapdf

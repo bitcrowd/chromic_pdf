@@ -94,3 +94,9 @@ ChromicPDF.print_to_pdfa(
   "test.pdf"
 )
 ```
+
+## Development
+
+For running the integration tests, please install and have in your `$PATH`
+* [`verapdf`](https://verapdf.org/)
+* For `pdfinfo` and `pdftotext`, you need `poppler-utils` (most Linux distributions) or [Xpdf](https://www.xpdfreader.com/) (OSX)

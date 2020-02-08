@@ -9,16 +9,44 @@ defmodule ChromicPDF.PDFAGenerationTest do
     :ok
   end
 
-  test "PDF/A-2b generation" do
-    try do
-      assert ChromicPDF.print_to_pdfa("file://#{@test_html}", %{}, @output) == :ok
-
+  describe "PDF/A-2b conversion" do
+    defp print_to_pdfa(pdfa_opts \\ [], cb) do
+      assert ChromicPDF.print_to_pdfa("file://#{@test_html}", %{}, pdfa_opts, @output) == :ok
       assert File.exists?(@output)
-
-      {output, 0} = System.cmd("verapdf", ["-f", "2b", @output])
-      assert String.contains?(output, ~S(validationReports compliant="1"))
+      cb.(@output)
     after
       File.rm_rf!(@output)
+    end
+
+    test "it generates PDF files in compliance with the PDF/A-2b standard" do
+      print_to_pdfa(fn file ->
+        {output, 0} = System.cmd("verapdf", ["-f", "2b", file])
+        assert String.contains?(output, ~S(validationReports compliant="1"))
+      end)
+    end
+
+    @info_opts %{
+      author: "TestAuthor",
+      title: "TestTitle",
+      subject: "TestSubject",
+      keywords: "TestKeywords",
+      creator: "TestCreator",
+      creation_date: DateTime.from_unix!(1_000_000_000),
+      mod_date: DateTime.from_unix!(2_000_000_000)
+    }
+
+    test "it stores given Info metadata in the generated PDF file" do
+      print_to_pdfa([info: @info_opts], fn file ->
+        {output, 0} = System.cmd("pdfinfo", [file])
+
+        assert String.contains?(output, "Author:         TestAuthor")
+        assert String.contains?(output, "Title:          TestTitle")
+        assert String.contains?(output, "Subject:        TestSubject")
+        assert String.contains?(output, "Keywords:       TestKeywords")
+        assert String.contains?(output, "Creator:        TestCreator")
+        assert String.contains?(output, "CreationDate:   Sat Mar 14 00:00:00 2009")
+        assert String.contains?(output, "ModDate:        Sat May 23 09:20:00 2037")
+      end)
     end
   end
 end
