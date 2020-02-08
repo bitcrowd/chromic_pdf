@@ -86,12 +86,15 @@ defmodule ChromicPDF.Supervisor do
       https://chromedevtools.github.io/devtools-protocol/tot/Page#method-printToPDF
       """
       @spec print_to_pdf(
-              url :: binary(),
-              params :: map(),
-              output :: binary() | (binary() -> any())
+              url :: Processor.url(),
+              pdf_params :: Processor.pdf_params(),
+              output :: Processor.output()
             ) :: :ok
-      def print_to_pdf(url, params \\ %{}, output) do
-        Processor.print_to_pdf(__MODULE__, url, params, output)
+      def print_to_pdf(url, pdf_params \\ %{}, output) do
+        url
+        |> Processor.from_url()
+        |> Processor.print_to_pdf(pdf_params, output)
+        |> Processor.run(__MODULE__)
       end
 
       @doc """
@@ -131,12 +134,15 @@ defmodule ChromicPDF.Supervisor do
       Ghostscript), if the original file did not contain any.
       """
       @spec convert_to_pdfa(
-              pdf_file :: binary(),
-              pdfa_params :: keyword(),
-              output :: binary() | (binary() -> any())
+              pdf_file :: Processor.path(),
+              pdfa_params :: Processor.pdfa_params(),
+              output :: Processor.output()
             ) :: :ok
       def convert_to_pdfa(pdf_file, pdfa_params, output) do
-        Processor.convert_to_pdfa(__MODULE__, pdf_file, pdfa_params, output)
+        pdf_file
+        |> Processor.from_path()
+        |> Processor.convert_to_pdfa(pdfa_params, output)
+        |> Processor.run(__MODULE__)
       end
 
       @doc """
@@ -145,13 +151,16 @@ defmodule ChromicPDF.Supervisor do
       See `print_to_pdf/3` and `convert_to_pdfa/3` for options.
       """
       @spec print_to_pdfa(
-              url :: binary(),
-              pdf_params :: map(),
-              pdfa_params :: keyword(),
-              output :: binary() | (binary() -> any())
+              url :: Processor.url(),
+              pdf_params :: Processor.pdf_params(),
+              pdfa_params :: Processor.pdfa_params(),
+              output :: Processor.output()
             ) :: :ok
       def print_to_pdfa(url, pdf_params, pdfa_params, output) do
-        Processor.print_to_pdfa(__MODULE__, url, pdf_params, pdfa_params, output)
+        url
+        |> Processor.from_url()
+        |> Processor.print_to_pdfa(pdf_params, pdfa_params, output)
+        |> Processor.run(__MODULE__)
       end
     end
   end
