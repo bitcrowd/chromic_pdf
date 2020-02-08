@@ -23,7 +23,7 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     defp print_to_pdf(url, pdf_params, cb) do
-      assert ChromicPDF.print_to_pdf(url, pdf_params, @output) == :ok
+      assert ChromicPDF.print_to_pdf({:url, url}, pdf_params, @output) == :ok
       assert File.exists?(@output)
 
       {text, 0} = System.cmd("pdftotext", [@output, "-"])

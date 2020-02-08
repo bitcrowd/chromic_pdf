@@ -18,17 +18,10 @@ defmodule ChromicPDF.Processor do
           required(:output) => output()
         }
 
-  defguardp is_url(url) when is_binary(url)
   defguardp is_path(path) when is_binary(path)
   defguardp is_pdf_params(params) when is_map(params)
   defguardp is_pdfa_params(params) when is_list(params)
   defguardp is_output(output) when is_binary(output) or is_function(output, 1)
-
-  @spec from_url(url()) :: {:url, url()}
-  def from_url(url) when is_url(url), do: {:url, url}
-
-  @spec from_path(path()) :: {:path, path()}
-  def from_path(path) when is_path(path), do: {:path, path}
 
   @spec print_to_pdf(pdf_input(), pdf_params(), output()) :: request()
   def print_to_pdf(pdf_input, pdf_params, output)
