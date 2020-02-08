@@ -4,8 +4,8 @@ defmodule ChromicPDF.Ghostscript do
   require EEx
 
   @pdfinfo_ps Path.expand("../assets/pdfinfo.ps", __ENV__.file)
-  @adobe_icc Path.expand("../assets/AdobeRGB1998.icc", __ENV__.file)
-  @psdef_ps Path.expand("../assets/psdef.ps.eex", __ENV__.file)
+  @adobe_icc Path.expand("../assets/eciRGB_v2.icc", __ENV__.file)
+  @psdef_ps Path.expand("../assets/PDFA_def.ps.eex", __ENV__.file)
 
   @external_resource @psdef_ps
 
