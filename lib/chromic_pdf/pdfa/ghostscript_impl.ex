@@ -1,6 +1,8 @@
 defmodule ChromicPDF.GhostscriptImpl do
   @moduledoc false
 
+  import ChromicPDF.Utils, only: [system_cmd!: 3]
+
   @behaviour ChromicPDF.Ghostscript
 
   @impl ChromicPDF.Ghostscript
@@ -31,6 +33,8 @@ defmodule ChromicPDF.GhostscriptImpl do
       ~s(-sOutputFile="#{output_path}"),
       ~s("#{pdf_path}")
     ])
+
+    :ok
   end
 
   @impl ChromicPDF.Ghostscript
@@ -48,6 +52,8 @@ defmodule ChromicPDF.GhostscriptImpl do
       ~s("#{pdf_path}"),
       ~s("#{pdfa_def_ps_path}")
     ])
+
+    :ok
   end
 
   @default_args [
@@ -60,17 +66,7 @@ defmodule ChromicPDF.GhostscriptImpl do
   ]
 
   defp ghostscript_cmd!(args) do
-    case System.cmd(ghostscript_executable(), @default_args ++ args, stderr_to_stdout: true) do
-      {_output, 0} ->
-        :ok
-
-      {output, exit_status} ->
-        raise("""
-        Ghostscript exited with status #{exit_status}!
-
-        #{output}
-        """)
-    end
+    system_cmd!(ghostscript_executable(), @default_args ++ args, stderr_to_stdout: true)
   end
 
   @ghostscript_bin "gs"

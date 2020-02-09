@@ -1,0 +1,165 @@
+% This file originated from https://bugs.ghostscript.com/show_bug.cgi?id=696472
+%
+% I heavily edited it, replaced Windows line feeds, fixed the encoding to UTF-8,
+% replaced tabs with chars, and more.
+%
+% It's absolutely incredible to see what illegible gibberish a PostScript program
+% can be, and how obscure this language is (granted, it's not really designed
+% to be a human-computer interface).  Unfortunately, a lot of developers need to
+% fulfill requirements like "ZUGFeRD-compliant PDF invoices", but do not have a
+% clue about PostScript (and should not have, for that matter).
+% Consequentially, snippets like this one (2015 by Reinhard Nißl) spread on the
+% internet almost like a disease, with small mutations here and there, but essentially
+% handed down from generation to generation as some sort of arcane knowledge.
+% Possibly this comment will also survive for a while.
+
+/XmlFileName (zugferd-invoice.xml) def
+/XmlFileDesc (ZUGFeRD invoice) def
+/XmlFileDate (<%= @zugferd_xml_file_date %>) def
+/XmlFileData (<%= @zugferd_xml %>) (r) file def
+
+% istring SimpleUTF16BE ostring
+/SimpleUTF16BE
+{
+  dup length
+  1 add
+  2 mul
+  string
+
+  % istring ostring
+  dup 0 16#FE put
+  dup 1 16#FF put
+  2
+  3 -1 roll
+
+  % ostring index istring
+  {
+    % ostring index ichar
+    3 1 roll
+    % ichar ostring index
+    2 copy 16#00 put
+    1 add
+    2 copy
+    5 -1 roll
+    % ostring index ostring index ichar
+    put
+    1 add
+    % ostring index
+  }
+  forall
+
+  % ostring index
+  pop
+}
+bind def
+
+% Create and fill object {ContentStream}
+
+[/_objdef {ContentStream} /type /stream /OBJ pdfmark
+
+[
+  {ContentStream}  <<
+      /Type    /EmbeddedFile
+      /Subtype  (text/xml) cvn
+      /Params    <<
+          /ModDate  XmlFileDate
+          >>
+      >>
+/PUT pdfmark
+
+[{ContentStream} XmlFileData /PUT pdfmark
+[{ContentStream} /CLOSE pdfmark
+
+
+
+% Object {FSDict} fr File Specification anlegen und befllen
+[
+  /_objdef  {FSDict}
+  /type    /dict
+/OBJ pdfmark
+
+[
+  {FSDict}  <<
+      /Type     /Filespec
+      /F     XmlFileName
+      /UF     XmlFileName SimpleUTF16BE
+      /Desc    XmlFileDesc
+      /AFRelationship  /Alternative
+      /EF     <<
+          /F    {ContentStream}
+          /UF    {ContentStream}
+          >>
+      >>
+/PUT pdfmark
+
+
+% Add file to associated files
+
+[/_objdef {AFArray} /type /array /OBJ pdfmark
+[{AFArray} {FSDict} /APPEND pdfmark
+[{Catalog} << /AF  {AFArray} >> /PUT pdfmark
+[/Name XmlFileName /FS {FSDict} /EMBED pdfmark
+
+
+
+% Add ZUGFeRD schema and document description to metadata catalog
+
+[
+  /XML    (
+    <rdf:Description xmlns:pdfaExtension="http://www.aiim.org/pdfa/ns/extension/" xmlns:pdfaProperty="http://www.aiim.org/pdfa/ns/property#" xmlns:pdfaSchema="http://www.aiim.org/pdfa/ns/schema#" rdf:about="">
+      <!-- Container for all embedded extension schema descriptions -->
+      <pdfaExtension:schemas>
+         <rdf:Bag>
+            <rdf:li rdf:parseType="Resource">
+               <!-- Optional description of schema -->
+               <pdfaSchema:schema>ZUGFeRD PDFA Extension Schema</pdfaSchema:schema>
+               <!-- Schema namespace URI -->
+               <pdfaSchema:namespaceURI>urn:ferd:pdfa:invoice:rc#</pdfaSchema:namespaceURI>
+               <!-- Preferred schema namespace prefix -->
+               <pdfaSchema:prefix>zf</pdfaSchema:prefix>
+               <!-- Description of schema properties -->
+               <pdfaSchema:property>
+                  <rdf:Seq>
+                     <rdf:li rdf:parseType="Resource">
+                        <!-- DocumentFileName: Name of the embedded file; must be equal with the value of the /F tag in the /EF structure -->
+                        <pdfaProperty:name>DocumentFileName</pdfaProperty:name>
+                        <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+                        <pdfaProperty:category>external</pdfaProperty:category>
+                        <pdfaProperty:description>name of the embedded xml invoice file</pdfaProperty:description>
+                     </rdf:li>
+                     <rdf:li rdf:parseType="Resource">
+                        <!-- DocumentType: INVOICE -->
+                        <pdfaProperty:name>DocumentType</pdfaProperty:name>
+                        <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+                        <pdfaProperty:category>external</pdfaProperty:category>
+                        <pdfaProperty:description>INVOICE</pdfaProperty:description>
+                     </rdf:li>
+                     <rdf:li rdf:parseType="Resource">
+                        <!-- Version: The actual version of the ZUGFeRD standard -->
+                        <pdfaProperty:name>Version</pdfaProperty:name>
+                        <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+                        <pdfaProperty:category>external</pdfaProperty:category>
+                        <pdfaProperty:description>The actual version of the ZUGFeRD data</pdfaProperty:description>
+                     </rdf:li>
+                     <rdf:li rdf:parseType="Resource">
+                        <!-- ConformanceLevel: The actual conformance level of the ZUGFeRD standard, e.g. BASIC, COMFORT, EXTENDED -->
+                        <pdfaProperty:name>ConformanceLevel</pdfaProperty:name>
+                        <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+                        <pdfaProperty:category>external</pdfaProperty:category>
+                        <pdfaProperty:description>The conformance level of the ZUGFeRD data</pdfaProperty:description>
+                     </rdf:li>
+                  </rdf:Seq>
+               </pdfaSchema:property>
+            </rdf:li>
+         </rdf:Bag>
+      </pdfaExtension:schemas>
+    </rdf:Description>
+
+    <rdf:Description rdf:about="" xmlns:zf="urn:ferd:pdfa:invoice:rc#">
+      <zf:DocumentType>INVOICE</zf:DocumentType>
+      <zf:DocumentFileName>zugferd-invoice.xml</zf:DocumentFileName>
+      <zf:Version>1.0</zf:Version>
+      <zf:ConformanceLevel>EN 16931</zf:ConformanceLevel>
+    </rdf:Description>
+      )
+/Ext_Metadata pdfmark

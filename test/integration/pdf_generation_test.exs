@@ -1,5 +1,6 @@
 defmodule ChromicPDF.PDFGenerationTest do
   use ExUnit.Case, async: false
+  import ChromicPDF.Utils, only: [system_cmd!: 2]
 
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)
   @output Path.expand("../test.pdf", __ENV__.file)
@@ -26,30 +27,34 @@ defmodule ChromicPDF.PDFGenerationTest do
       assert ChromicPDF.print_to_pdf(input, pdf_params, @output) == :ok
       assert File.exists?(@output)
 
-      {text, 0} = System.cmd("pdftotext", [@output, "-"])
+      text = system_cmd!("pdftotext", [@output, "-"])
       cb.(text)
     after
       File.rm_rf!(@output)
     end
 
+    @tag :pdftotext
     test "it prints PDF from file:/// URLs" do
       print_to_pdf(fn text ->
         assert String.contains?(text, "Hello ChromicPDF!")
       end)
     end
 
+    @tag :pdftotext
     test "it prints PDF from https:// URLs" do
       print_to_pdf({:url, "https://example.net"}, fn text ->
         assert String.contains?(text, "Example Domain")
       end)
     end
 
+    @tag :pdftotext
     test "it prints PDF from HTML content" do
       print_to_pdf({:html, File.read!(@test_html)}, fn text ->
         assert String.contains?(text, "Hello ChromicPDF!")
       end)
     end
 
+    @tag :pdftotext
     test "it allows to pass thru options to printToPDF" do
       pdf_params = %{
         displayHeaderFooter: true,

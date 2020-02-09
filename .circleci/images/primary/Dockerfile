@@ -17,3 +17,7 @@ RUN wget http://downloads.verapdf.org/rel/verapdf-installer.zip \
   && chmod +x verapdf-greenfield/verapdf-install
 COPY auto-install.xml /opt/verapdf/verapdf-greenfield
 RUN ./verapdf-greenfield/verapdf-install auto-install.xml
+
+WORKDIR /opt/zuv
+RUN wget https://github.com/ZUGFeRD/ZUV/releases/download/v0.8.3/ZUV-0.8.3.jar
+ENV ZUV_JAR /opt/zuv/ZUV-0.8.3.jar

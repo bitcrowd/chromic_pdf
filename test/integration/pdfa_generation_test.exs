@@ -1,5 +1,6 @@
 defmodule ChromicPDF.PDFAGenerationTest do
   use ExUnit.Case, async: false
+  import ChromicPDF.Utils, only: [system_cmd!: 2]
   require EEx
 
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)
@@ -21,16 +22,18 @@ defmodule ChromicPDF.PDFAGenerationTest do
       File.rm_rf!(@output)
     end
 
+    @tag :verapdf
     test "it generates PDF files in compliance with the PDF/A-2b standard" do
       print_to_pdfa([pdfa_version: "2"], fn file ->
-        {output, 0} = System.cmd("verapdf", ["-f", "2b", file])
+        output = system_cmd!("verapdf", ["-f", "2b", file])
         assert String.contains?(output, ~S(validationReports compliant="1"))
       end)
     end
 
+    @tag :verapdf
     test "it generates PDF files in compliance with the PDF/A-3b standard (by default)" do
       print_to_pdfa(fn file ->
-        {output, 0} = System.cmd("verapdf", ["-f", "3b", file])
+        output = system_cmd!("verapdf", ["-f", "3b", file])
         assert String.contains?(output, ~S(validationReports compliant="1"))
       end)
     end
@@ -45,9 +48,10 @@ defmodule ChromicPDF.PDFAGenerationTest do
       mod_date: DateTime.from_unix!(2_000_000_000)
     }
 
+    @tag :pdfinfo
     test "it stores given Info metadata in the generated PDF file" do
       print_to_pdfa([info: @info_opts], fn file ->
-        {output, 0} = System.cmd("pdfinfo", [file])
+        output = system_cmd!("pdfinfo", [file])
 
         assert String.contains?(output, "Author:         TestAuthor")
         assert String.contains?(output, "Title:          TestTitle")
@@ -59,17 +63,45 @@ defmodule ChromicPDF.PDFAGenerationTest do
       end)
     end
 
+    @tag :pdfinfo
     test "it allows to pass additional PostScript code to the converter" do
       pdfa_opts = [
         pdfa_def_ext: "[/Title (OverriddenTitle) /DOCINFO pdfmark"
       ]
 
       print_to_pdfa(pdfa_opts, fn file ->
-        {output, 0} = System.cmd("verapdf", ["-f", "3b", file])
-        assert String.contains?(output, ~S(validationReports compliant="1"))
-
-        {output, 0} = System.cmd("pdfinfo", [file])
+        output = system_cmd!("pdfinfo", [file])
         assert String.contains?(output, "Title:          OverriddenTitle")
+      end)
+    end
+
+    @zugferd_invoice_xml Path.expand("../fixtures/zugferd-invoice.xml", __ENV__.file)
+    @embed_xml_ps_eex Path.expand("../fixtures/embed_xml.ps.eex", __ENV__.file)
+
+    @external_resource @embed_xml_ps_eex
+
+    EEx.function_from_file(:defp, :render_embed_xml_ps, @embed_xml_ps_eex, [:assigns])
+
+    @tag :zuv
+    test "it can generate ZUGFeRD-compliant invoices" do
+      embed_xml_ps =
+        render_embed_xml_ps(
+          zugferd_xml: @zugferd_invoice_xml,
+          zugferd_xml_file_date: ChromicPDF.Utils.to_postscript_date(DateTime.utc_now())
+        )
+
+      pdfa_opts = [
+        pdfa_def_ext: embed_xml_ps
+      ]
+
+      print_to_pdfa(pdfa_opts, fn file ->
+        output =
+          system_cmd!(
+            "java",
+            ["-jar", System.fetch_env!("ZUV_JAR"), "--action", "validate", "-f", file]
+          )
+
+        assert String.contains?(output, ~S(validationReports compliant="1"))
       end)
     end
   end
