@@ -113,7 +113,7 @@ defmodule ChromicPDF.Supervisor do
       ## Example
 
           ChromicPDF.convert_to_pdfa(
-            {:path, "some_pdf_file.pdf"},
+            "some_pdf_file.pdf",
             [info: %{creator: "ChromicPDF"}],
             "output.pdf"
           )
@@ -123,7 +123,7 @@ defmodule ChromicPDF.Supervisor do
       Ghostscript supports both PDF/A-2 and PDF/A-3 versions, both in their `b` (basic) level. By default, ChromicPDF generates version PDF/A-2b files. Set the `pdfa_version` option for version 3.
 
           ChromicPDF.convert_to_pdfa(
-            {:path, "some_pdf_file.pdf"},
+            "some_pdf_file.pdf",
             [pdfa_version: "3"],
             "output.pdf"
           )
@@ -154,12 +154,12 @@ defmodule ChromicPDF.Supervisor do
       Ghostscript), if the original file did not contain any.
       """
       @spec convert_to_pdfa(
-              pdf_file :: Processor.pdfa_input(),
+              pdf_path :: Processor.path(),
               pdfa_params :: Processor.pdfa_params(),
               output :: Processor.output()
             ) :: :ok
-      def convert_to_pdfa(input, pdfa_params, output) do
-        input
+      def convert_to_pdfa(pdf_path, pdfa_params, output) do
+        {:path, pdf_path}
         |> Processor.convert_to_pdfa(pdfa_params, output)
         |> Processor.run(__MODULE__)
       end
