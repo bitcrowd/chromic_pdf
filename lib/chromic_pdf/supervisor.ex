@@ -120,11 +120,11 @@ defmodule ChromicPDF.Supervisor do
 
       ## PDF/A versions & levels
 
-      Ghostscript supports both PDF/A-2 and PDF/A-3 versions, both in their `b` (basic) level. By default, ChromicPDF generates version PDF/A-2b files. Set the `pdfa_version` option for version 3.
+      Ghostscript supports both PDF/A-2 and PDF/A-3 versions, both in their `b` (basic) level. By default, ChromicPDF generates version PDF/A-3b files. Set the `pdfa_version` option for version 2.
 
           ChromicPDF.convert_to_pdfa(
             "some_pdf_file.pdf",
-            [pdfa_version: "3"],
+            [pdfa_version: "2"],
             "output.pdf"
           )
 

@@ -21,14 +21,14 @@ defmodule ChromicPDF.PDFAGenerationTest do
     end
 
     test "it generates PDF files in compliance with the PDF/A-2b standard" do
-      print_to_pdfa(fn file ->
+      print_to_pdfa([pdfa_version: "2"], fn file ->
         {output, 0} = System.cmd("verapdf", ["-f", "2b", file])
         assert String.contains?(output, ~S(validationReports compliant="1"))
       end)
     end
 
-    test "it generates PDF files in compliance with the PDF/A-3b standard" do
-      print_to_pdfa([pdfa_version: "3"], fn file ->
+    test "it generates PDF files in compliance with the PDF/A-3b standard (by default)" do
+      print_to_pdfa(fn file ->
         {output, 0} = System.cmd("verapdf", ["-f", "3b", file])
         assert String.contains?(output, ~S(validationReports compliant="1"))
       end)
