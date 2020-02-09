@@ -9,7 +9,7 @@ defmodule ChromicPDF.PDFAGenerationTest do
     :ok
   end
 
-  describe "PDF/A-2b conversion" do
+  describe "PDF/A conversion" do
     defp print_to_pdfa(pdfa_opts \\ [], cb) do
       assert ChromicPDF.print_to_pdfa({:url, "file://#{@test_html}"}, %{}, pdfa_opts, @output) ==
                :ok
@@ -23,6 +23,13 @@ defmodule ChromicPDF.PDFAGenerationTest do
     test "it generates PDF files in compliance with the PDF/A-2b standard" do
       print_to_pdfa(fn file ->
         {output, 0} = System.cmd("verapdf", ["-f", "2b", file])
+        assert String.contains?(output, ~S(validationReports compliant="1"))
+      end)
+    end
+
+    test "it generates PDF files in compliance with the PDF/A-3b standard" do
+      print_to_pdfa([pdfa_version: "3"], fn file ->
+        {output, 0} = System.cmd("verapdf", ["-f", "3b", file])
         assert String.contains?(output, ~S(validationReports compliant="1"))
       end)
     end

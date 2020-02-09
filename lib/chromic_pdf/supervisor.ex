@@ -26,6 +26,7 @@ defmodule ChromicPDF.Supervisor do
 
   @doc false
   defmacro __using__(_opts) do
+    # credo:disable-for-next-line Credo.Check.Refactor.LongQuoteBlocks
     quote do
       use Supervisor
       alias ChromicPDF.{Browser, GhostscriptPool, Processor, SessionPool}
@@ -107,13 +108,23 @@ defmodule ChromicPDF.Supervisor do
       end
 
       @doc """
-      Converts a PDF to PDF/A-2b.
+      Converts a PDF to PDF/A (either PDF/A-2b or PDF/A-3b).
 
       ## Example
 
           ChromicPDF.convert_to_pdfa(
             {:path, "some_pdf_file.pdf"},
             [info: %{creator: "ChromicPDF"}],
+            "output.pdf"
+          )
+
+      ## PDF/A versions & levels
+
+      Ghostscript supports both PDF/A-2 and PDF/A-3 versions, both in their `b` (basic) level. By default, ChromicPDF generates version PDF/A-2b files. Set the `pdfa_version` option for version 3.
+
+          ChromicPDF.convert_to_pdfa(
+            {:path, "some_pdf_file.pdf"},
+            [pdfa_version: "3"],
             "output.pdf"
           )
 
@@ -154,7 +165,7 @@ defmodule ChromicPDF.Supervisor do
       end
 
       @doc """
-      Prints a PDF and converts it to PDF/A-2b in a single call.
+      Prints a PDF and converts it to PDF/A in a single call.
 
       See `print_to_pdf/3` and `convert_to_pdfa/3` for options.
 

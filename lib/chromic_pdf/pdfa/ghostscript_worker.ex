@@ -51,7 +51,7 @@ defmodule ChromicPDF.GhostscriptWorker do
 
     create_pdfa_def_ps!(pdf_path, params, pdfa_def_ps_path)
     create_pdf_with_fonts!(pdf_path, pdf_with_fonts)
-    convert_to_pdfa2!(pdf_with_fonts, pdfa_def_ps_path, output_path)
+    convert_to_pdfa!(pdf_with_fonts, params, pdfa_def_ps_path, output_path)
 
     {:reply, :ok, state}
   end
@@ -74,8 +74,20 @@ defmodule ChromicPDF.GhostscriptWorker do
     :ok = @ghostscript.embed_fonts(pdf_path, pdf_with_fonts)
   end
 
-  defp convert_to_pdfa2!(pdf_with_fonts, pdfa_def_ps_path, output_path) do
-    :ok = @ghostscript.convert_to_pdfa2(pdf_with_fonts, @eci_icc, pdfa_def_ps_path, output_path)
+  defp convert_to_pdfa!(pdf_with_fonts, params, pdfa_def_ps_path, output_path) do
+    pdfa_version =
+      params
+      |> Keyword.get(:pdfa_version, 2)
+      |> to_string()
+
+    :ok =
+      @ghostscript.convert_to_pdfa(
+        pdf_with_fonts,
+        pdfa_version,
+        @eci_icc,
+        pdfa_def_ps_path,
+        output_path
+      )
   end
 
   defp pdfinfo(pdf_path) do

@@ -6,12 +6,12 @@ ChromicPDF is a small wrapper around Chrome's `printToPDF` API that allows to pr
 
 * **Node-free**: In contrast to [many other](https://hex.pm/packages?search=pdf&sort=recent_downloads) packages, it does not use [puppeteer](https://github.com/puppeteer/puppeteer), and hence does not require Node.js. It communicates directly with Chrome's [DevTools API](https://chromedevtools.github.io/devtools-protocol/) over pipes, offering the same performance as puppeteer, if not better.
 * **Header/Footer**: Using the DevTools API allows to apply the full set of options of the [`printToPDF`](https://chromedevtools.github.io/devtools-protocol/tot/Page#method-printToPDF) function. Most notably, it supports header and footer HTML templates.
-* **PDF/A-2b**: It has PDF/A-2b support using Ghostscript, inspired by the `pdf2archive` script originally created by [@matteosecli](https://github.com/matteosecli/pdf2archive) and later enhanced by [@JaimeChavarriaga](https://github.com/JaimeChavarriaga/pdf2archive/tree/feature/support_pdf2b). Created PDF/A-2b files pass the [verapdf](https://verapdf.org/) compliance check.
+* **PDF/A-2b & PDF/A-3b**: It has PDF/A (basic) support using Ghostscript, inspired by the `pdf2archive` script originally created by [@matteosecli](https://github.com/matteosecli/pdf2archive) and later enhanced by [@JaimeChavarriaga](https://github.com/JaimeChavarriaga/pdf2archive/tree/feature/support_pdf2b). Created PDF/A files pass the [verapdf](https://verapdf.org/) compliance checks.
 
 ## Requirements
 
 * Chromium or Chrome
-* Ghostscript (for PDF/A-2 support)
+* Ghostscript (for PDF/A support)
 
 ## Installation
 
@@ -96,7 +96,8 @@ ChromicPDF.print_to_pdfa(
       title: "Example",
       author: "Jane Doe",
       creator: "ChromicPDF"
-    }
+    },
+    pdfa_version: "3"
   ],
 
   # Output path.

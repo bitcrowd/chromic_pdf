@@ -42,11 +42,12 @@ defmodule ChromicPDF.GhostscriptImpl do
   end
 
   @impl ChromicPDF.Ghostscript
-  def convert_to_pdfa2(pdf_path, icc_path, pdfa_def_ps_path, output_path) do
+  def convert_to_pdfa(pdf_path, pdfa_version, icc_path, pdfa_def_ps_path, output_path)
+      when pdfa_version in ["2", "3"] do
     ghostscript_cmd!([
       "-dQUIET",
       "-sstdout=/dev/null",
-      "-dPDFA=2",
+      "-dPDFA=#{pdfa_version}",
       "-dBATCH",
       "-dNOPAUSE",
       "-dNOOUTERSAVE",
