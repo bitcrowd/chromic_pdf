@@ -43,4 +43,18 @@ defmodule ChromicPDF.Utils do
   defp pad_two_digits(i) do
     String.pad_leading(to_string(i), 2, "0")
   end
+
+  def system_cmd!(cmd, args, opts \\ []) do
+    case System.cmd(cmd, args, opts) do
+      {output, 0} ->
+        output
+
+      {output, exit_status} ->
+        raise("""
+          #{cmd} exited with status #{exit_status}!
+
+        #{output}
+        """)
+    end
+  end
 end
