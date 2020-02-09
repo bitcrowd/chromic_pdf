@@ -3,7 +3,7 @@ defmodule ChromicPDF.GhostscriptWorker do
 
   use GenServer
   require EEx
-  import ChromicPDF.Utils, only: [random_file_name: 1]
+  import ChromicPDF.Utils
 
   @ghostscript Application.get_env(:chromic_pdf, :ghostscript, ChromicPDF.GhostscriptImpl)
 
@@ -58,6 +58,7 @@ defmodule ChromicPDF.GhostscriptWorker do
 
   defp create_pdfa_def_ps!(pdf_path, params, pdfa_def_ps_path) do
     info = Keyword.get(params, :info, %{})
+    pdfa_def_ext = Keyword.get(params, :pdfa_def_ext)
 
     rendered =
       pdf_path
@@ -65,6 +66,7 @@ defmodule ChromicPDF.GhostscriptWorker do
       |> Map.merge(info)
       |> Enum.into(%{}, &cast_info_value/1)
       |> Map.put(:adobe_icc, @eci_icc)
+      |> Map.put(:pdfa_def_ext, pdfa_def_ext)
       |> render_pdfa_def_ps()
 
     File.write!(pdfa_def_ps_path, rendered)
@@ -129,18 +131,8 @@ defmodule ChromicPDF.GhostscriptWorker do
   end
 
   defp cast_info_value({key, %DateTime{} = value}) do
-    date =
-      [:year, :month, :day, :hour, :minute, :second]
-      |> Enum.map(&Map.fetch!(value, &1))
-      |> Enum.map(&pad_two_digits/1)
-      |> Enum.join()
-
-    {key, "D:#{date}+#{pad_two_digits(value.utc_offset)}'00'"}
+    {key, to_postscript_date(value)}
   end
 
   defp cast_info_value(other), do: other
-
-  defp pad_two_digits(i) do
-    String.pad_leading(to_string(i), 2, "0")
-  end
 end

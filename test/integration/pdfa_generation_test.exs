@@ -1,5 +1,6 @@
 defmodule ChromicPDF.PDFAGenerationTest do
   use ExUnit.Case, async: false
+  require EEx
 
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)
   @output Path.expand("../test.pdf", __ENV__.file)
@@ -55,6 +56,20 @@ defmodule ChromicPDF.PDFAGenerationTest do
         assert String.contains?(output, "Creator:        TestCreator")
         assert String.contains?(output, "CreationDate:   Sun Sep  9 01:46:40 2001")
         assert String.contains?(output, "ModDate:        Wed May 18 03:33:20 2033")
+      end)
+    end
+
+    test "it allows to pass additional PostScript code to the converter" do
+      pdfa_opts = [
+        pdfa_def_ext: "[/Title (OverriddenTitle) /DOCINFO pdfmark"
+      ]
+
+      print_to_pdfa(pdfa_opts, fn file ->
+        {output, 0} = System.cmd("verapdf", ["-f", "3b", file])
+        assert String.contains?(output, ~S(validationReports compliant="1"))
+
+        {output, 0} = System.cmd("pdfinfo", [file])
+        assert String.contains?(output, "Title:          OverriddenTitle")
       end)
     end
   end

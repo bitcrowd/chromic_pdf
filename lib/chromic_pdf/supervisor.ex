@@ -152,6 +152,16 @@ defmodule ChromicPDF.Supervisor do
 
       Both `:creation_date` and `:mod_date` are filled with the current date automatically (by
       Ghostscript), if the original file did not contain any.
+
+      ## Adding more PostScript to the conversion
+
+      The `pdfa_def_ext` option can be used to feed more PostScript code into the final conversion step. This can be useful to add additional features to the generated PDF-A file, for instance a ZUGFeRD invoice.
+
+          ChromicPDF.convert_to_pdfa(
+            "some_pdf_file.pdf",
+            [pdfa_def_ext: "[/Title (OverriddenTitle) /DOCINFO pdfmark"],
+            "output.pdf"
+          )
       """
       @spec convert_to_pdfa(
               pdf_path :: Processor.path(),
