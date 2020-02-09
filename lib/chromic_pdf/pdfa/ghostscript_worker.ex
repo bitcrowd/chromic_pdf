@@ -77,7 +77,7 @@ defmodule ChromicPDF.GhostscriptWorker do
   defp convert_to_pdfa!(pdf_with_fonts, params, pdfa_def_ps_path, output_path) do
     pdfa_version =
       params
-      |> Keyword.get(:pdfa_version, 2)
+      |> Keyword.get(:pdfa_version, 3)
       |> to_string()
 
     :ok =
