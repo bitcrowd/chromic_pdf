@@ -50,3 +50,5 @@ def
   /OutputConditionIdentifier (sRGB) % Customize
 >> /PUT pdfmark
 [{Catalog} <</OutputIntents [ {OutputIntent_PDFA} ]>> /PUT pdfmark
+
+<%= @pdfa_def_ext %>

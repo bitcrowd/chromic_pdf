@@ -28,4 +28,19 @@ defmodule ChromicPDF.Utils do
       File.rm_rf!(path)
     end
   end
+
+  @spec to_postscript_date(DateTime.t()) :: binary()
+  def to_postscript_date(%DateTime{} = value) do
+    date =
+      [:year, :month, :day, :hour, :minute, :second]
+      |> Enum.map(&Map.fetch!(value, &1))
+      |> Enum.map(&pad_two_digits/1)
+      |> Enum.join()
+
+    "D:#{date}+#{pad_two_digits(value.utc_offset)}'00'"
+  end
+
+  defp pad_two_digits(i) do
+    String.pad_leading(to_string(i), 2, "0")
+  end
 end
