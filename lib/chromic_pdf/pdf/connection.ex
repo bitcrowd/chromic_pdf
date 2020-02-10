@@ -30,6 +30,8 @@ defmodule ChromicPDF.Connection do
       data: []
     }
 
+    Process.flag(:trap_exit, true)
+
     {:ok, state}
   end
 

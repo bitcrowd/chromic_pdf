@@ -1,6 +1,8 @@
 defmodule ChromicPDF.ChromeImpl do
   @moduledoc false
 
+  import ChromicPDF.Utils, only: [system_cmd!: 2]
+
   @behaviour ChromicPDF.Chrome
 
   def spawn(opts) do
@@ -11,7 +13,10 @@ defmodule ChromicPDF.ChromeImpl do
   end
 
   def stop(port) do
-    if Port.info(port), do: Port.close(port)
+    with {:os_pid, os_pid} <- Port.info(port, :os_pid) do
+      system_cmd!("kill", [to_string(os_pid)])
+      Port.close(port)
+    end
 
     :ok
   end

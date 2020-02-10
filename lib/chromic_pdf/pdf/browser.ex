@@ -4,7 +4,7 @@ defmodule ChromicPDF.Browser do
   use ChromicPDF.Channel
 
   # credo:disable-for-next-line Credo.Check.Readability.AliasOrder
-  alias ChromicPDF.{Connection, SpawnSession, SendMessageToTarget}
+  alias ChromicPDF.{Connection, SpawnSession}
 
   @type browser :: pid() | atom()
   @type session_id :: binary()
@@ -38,7 +38,10 @@ defmodule ChromicPDF.Browser do
   # Sends a message in a `sendMessageToTarget` envelope to Chrome.
   # Does not wait for response.
   def send_session_msg(pid, session_id, msg) do
-    Channel.start_protocol(pid, SendMessageToTarget, {session_id, msg})
+    Channel.send_call(pid, {
+      "Target.sendMessageToTarget",
+      %{"message" => msg, "sessionId" => session_id}
+    })
   end
 
   # ----------- Callbacks ------------
@@ -47,8 +50,15 @@ defmodule ChromicPDF.Browser do
   def init_upstream(args) do
     {:ok, conn_pid} = Connection.start_link(self(), args)
 
+    Process.flag(:trap_exit, true)
+
     fn msg ->
       Connection.send_msg(conn_pid, msg)
     end
+  end
+
+  @impl GenServer
+  def terminate(_reason, _state) do
+    Channel.send_call(self(), {"Browser.close", %{}})
   end
 end

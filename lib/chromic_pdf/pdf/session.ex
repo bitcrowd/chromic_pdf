@@ -2,7 +2,7 @@ defmodule ChromicPDF.Session do
   @moduledoc false
 
   use ChromicPDF.Channel
-  alias ChromicPDF.{Browser, EnablePage, PrintToPDF}
+  alias ChromicPDF.{Browser, PrintToPDF}
 
   # ------------- API ----------------
 
@@ -10,7 +10,7 @@ defmodule ChromicPDF.Session do
   # Called by :poolboy to instantiate the worker process.
   def start_link(args) do
     {:ok, pid} = GenServer.start_link(__MODULE__, args)
-    Channel.start_protocol(pid, EnablePage)
+    Channel.send_call(pid, {"Page.enable", %{}})
     {:ok, pid}
   end
 
