@@ -69,12 +69,12 @@ defmodule ChromicPDF.Supervisor do
 
           ChromicPDF.print_to_pdf(
             {:url, "https://example.net"},
-            %{
+            [print_to_pdf: %{
               marginTop: 0.787402,
               marginLeft: 0.787402,
               marginRight: 0.787402,
               marginBottom: 0.787402,
-            }
+            }],
             "output.pdf"
           )
 
@@ -101,7 +101,7 @@ defmodule ChromicPDF.Supervisor do
               pdf_params :: Processor.pdf_params(),
               output :: Processor.output()
             ) :: :ok
-      def print_to_pdf(input, pdf_params \\ %{}, output) do
+      def print_to_pdf(input, pdf_params \\ [], output) do
         input
         |> Processor.print_to_pdf(pdf_params, output)
         |> Processor.run(__MODULE__)
@@ -181,7 +181,7 @@ defmodule ChromicPDF.Supervisor do
 
       ## Example
 
-          ChromicPDF.print_to_pdfa({:url, "https://example.net"}, %{}, [], "output.pdf")
+          ChromicPDF.print_to_pdfa({:url, "https://example.net"}, [], [], "output.pdf")
       """
       @spec print_to_pdfa(
               url :: Processor.pdf_input(),

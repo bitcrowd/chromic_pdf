@@ -52,7 +52,7 @@ ChromicPDF.print_to_pdfa(
 
   # Parameters to Chromium's printToPDF function,
   # see https://chromedevtools.github.io/devtools-protocol/tot/Page#method-printToPDF
-  %{
+  [print_to_pdf: %{
     # Margins are in given inches
     marginTop: 0.393701,
     marginLeft: 0.787402,
@@ -88,7 +88,7 @@ ChromicPDF.print_to_pdfa(
     Page <span class="pageNumber"></span> of <span class="totalPages"></span>
     </p>
     """
-  },
+  }],
 
   # PDF metadata
   [

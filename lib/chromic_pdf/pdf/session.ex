@@ -14,10 +14,11 @@ defmodule ChromicPDF.Session do
     {:ok, pid}
   end
 
-  @spec print_to_pdf(pid(), url :: binary(), params :: map(), output :: binary()) :: :ok
+  @spec print_to_pdf(pid(), url :: binary(), params :: keyword(), output :: binary()) :: :ok
   # Prints a PDF by navigating the session target to a URL.
   def print_to_pdf(pid, url, params, output) do
-    Channel.start_protocol(pid, PrintToPDF, {url, params, output})
+    print_to_pdf_opts = Keyword.get(params, :print_to_pdf, %{})
+    Channel.start_protocol(pid, PrintToPDF, {url, print_to_pdf_opts, output})
   end
 
   # ----------- Callbacks ------------

@@ -6,10 +6,14 @@ defmodule ChromicPDF.Processor do
 
   @type url :: binary()
   @type path :: binary()
+
   @type pdf_input :: {:url, url()} | {:html, binary()}
-  @type pdf_params :: map()
+  @type pdf_param :: {:print_to_pdf, map()}
+  @type pdf_params :: [pdf_param()]
+
   @type pdfa_input :: {:path, path()}
-  @type pdfa_params :: keyword()
+  @type pdfa_param :: {:pdfa_version, binary()} | {:pdfa_def_ext, binary()} | {:info, map()}
+  @type pdfa_params :: [pdfa_param()]
   @type output :: path() | (path() -> any())
 
   @type request :: %{
@@ -20,7 +24,7 @@ defmodule ChromicPDF.Processor do
         }
 
   defguardp is_path(path) when is_binary(path)
-  defguardp is_pdf_params(params) when is_map(params)
+  defguardp is_pdf_params(params) when is_list(params)
   defguardp is_pdfa_params(params) when is_list(params)
   defguardp is_output(output) when is_binary(output) or is_function(output, 1)
 
