@@ -12,15 +12,15 @@ defmodule ChromicPDF.PDFGenerationTest do
 
   describe "PDF printing" do
     defp print_to_pdf(cb) do
-      print_to_pdf({:url, "file://#{@test_html}"}, %{}, cb)
+      print_to_pdf({:url, "file://#{@test_html}"}, [], cb)
     end
 
-    defp print_to_pdf(params, cb) when is_map(params) do
+    defp print_to_pdf(params, cb) when is_list(params) do
       print_to_pdf({:url, "file://#{@test_html}"}, params, cb)
     end
 
     defp print_to_pdf(input, cb) do
-      print_to_pdf(input, %{}, cb)
+      print_to_pdf(input, [], cb)
     end
 
     defp print_to_pdf(input, pdf_params, cb) do
@@ -64,7 +64,7 @@ defmodule ChromicPDF.PDFGenerationTest do
         footerTemplate: ~S(<span style="font-size: 40px">Footer</span>)
       }
 
-      print_to_pdf(pdf_params, fn text ->
+      print_to_pdf([print_to_pdf: pdf_params], fn text ->
         assert String.contains?(text, "Header")
         assert String.contains?(text, "Footer")
       end)

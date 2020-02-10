@@ -13,7 +13,7 @@ defmodule ChromicPDF.PDFAGenerationTest do
 
   describe "PDF/A conversion" do
     defp print_to_pdfa(pdfa_opts \\ [], cb) do
-      assert ChromicPDF.print_to_pdfa({:url, "file://#{@test_html}"}, %{}, pdfa_opts, @output) ==
+      assert ChromicPDF.print_to_pdfa({:url, "file://#{@test_html}"}, [], pdfa_opts, @output) ==
                :ok
 
       assert File.exists?(@output)
