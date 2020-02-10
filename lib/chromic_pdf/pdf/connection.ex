@@ -7,9 +7,9 @@ defmodule ChromicPDF.Connection do
 
   # ------------- API ----------------
 
-  @spec start_link(pid()) :: GenServer.on_start()
-  def start_link(parent_pid) do
-    GenServer.start_link(__MODULE__, parent_pid)
+  @spec start_link(pid(), keyword()) :: GenServer.on_start()
+  def start_link(parent_pid, opts) do
+    GenServer.start_link(__MODULE__, {parent_pid, opts})
   end
 
   @spec send_msg(pid(), binary()) :: :ok
@@ -20,8 +20,9 @@ defmodule ChromicPDF.Connection do
   # ------------ Server --------------
 
   @impl true
-  def init(parent_pid) do
-    {:ok, port} = @chrome.spawn()
+  def init({parent_pid, opts}) do
+    chrome_opts = Keyword.take(opts, [:no_sandbox])
+    {:ok, port} = @chrome.spawn(chrome_opts)
 
     state = %{
       parent_pid: parent_pid,

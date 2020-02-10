@@ -21,3 +21,6 @@ RUN ./verapdf-greenfield/verapdf-install auto-install.xml
 WORKDIR /opt/zuv
 RUN wget https://github.com/ZUGFeRD/ZUV/releases/download/v0.8.3/ZUV-0.8.3.jar
 ENV ZUV_JAR /opt/zuv/ZUV-0.8.3.jar
+
+USER circleci
+WORKDIR /home/circleci

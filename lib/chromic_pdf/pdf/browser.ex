@@ -18,7 +18,7 @@ defmodule ChromicPDF.Browser do
       |> Keyword.fetch!(:chromic)
       |> server_name()
 
-    GenServer.start_link(__MODULE__, nil, name: name)
+    GenServer.start_link(__MODULE__, args, name: name)
   end
 
   @spec server_name(atom()) :: atom()
@@ -44,8 +44,8 @@ defmodule ChromicPDF.Browser do
   # ----------- Callbacks ------------
 
   @impl ChromicPDF.Channel
-  def init_upstream(_args) do
-    {:ok, conn_pid} = Connection.start_link(self())
+  def init_upstream(args) do
+    {:ok, conn_pid} = Connection.start_link(self(), args)
 
     fn msg ->
       Connection.send_msg(conn_pid, msg)

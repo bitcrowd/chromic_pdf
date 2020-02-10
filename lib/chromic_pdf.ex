@@ -47,6 +47,15 @@ defmodule ChromicPDF do
   Please note, that these are only worker pools, if you intend to max them out,
   you will need a job queue as well.
 
+  ### Disable Chrome sandbox
+
+  If you absolutely must run Chrome as root, you can turn of its sandbox by passing
+  the `no_sandbox` option.
+
+      defp chromic_pdf_opts do
+        [no_sandbox: true]
+      end
+
   ### Print a PDF / PDF/A
 
   Please see `ChromicPDF.print_to_pdf/3` and `ChromicPDF.print_to_pdfa/3`.
