@@ -50,7 +50,7 @@ ChromicPDF.print_to_pdfa(
   # URL to print, you can also use the file:// scheme
   {:url, "https:///example.net/"},
 
-  # Parameters to Chromium's printToPDF function,
+  # Parameters to the PDF renderer, specifically for Chromium's printToPDF function,
   # see https://chromedevtools.github.io/devtools-protocol/tot/Page#method-printToPDF
   [print_to_pdf: %{
     # Margins are in given inches
@@ -90,7 +90,7 @@ ChromicPDF.print_to_pdfa(
     """
   }],
 
-  # PDF metadata
+  # Parameters for the PDF/A converter
   [
     info: %{
       title: "Example",
