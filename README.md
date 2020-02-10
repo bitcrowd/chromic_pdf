@@ -107,6 +107,8 @@ ChromicPDF.print_to_pdfa(
 
 ## Development
 
-For running the integration tests, please install and have in your `$PATH`
+For running the full suite of integration tests, please install and have in your `$PATH`:
+
 * [`verapdf`](https://verapdf.org/)
 * For `pdfinfo` and `pdftotext`, you need `poppler-utils` (most Linux distributions) or [Xpdf](https://www.xpdfreader.com/) (OSX)
+* For the odd ZUGFeRD test in [`pdfa_generation_test.exs`](test/integeration/pdfa_generation_test.exs), you need to download [ZUV](https://github.com/ZUGFeRD/ZUV) and set the `$ZUV_JAR` environment variable.
