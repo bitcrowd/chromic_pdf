@@ -28,8 +28,8 @@ defmodule ChromicPDF.ConnectionTest do
 
   describe "initialization" do
     test "it spawns Chrome and initializes its state" do
-      expect(ChromeMock, :spawn, fn -> {:ok, @port} end)
-      assert init(self()) == {:ok, new_state()}
+      expect(ChromeMock, :spawn, fn [no_sandbox: true] -> {:ok, @port} end)
+      assert init({self(), [no_sandbox: true]}) == {:ok, new_state()}
     end
   end
 

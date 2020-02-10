@@ -3,8 +3,8 @@ defmodule ChromicPDF.ChromeImpl do
 
   @behaviour ChromicPDF.Chrome
 
-  def spawn do
-    port = Port.open({:spawn, chrome_command()}, [:binary])
+  def spawn(opts) do
+    port = Port.open({:spawn, chrome_command(opts)}, [:binary])
     Port.monitor(port)
 
     {:ok, port}
@@ -25,8 +25,10 @@ defmodule ChromicPDF.ChromeImpl do
   # Chrome is started with the "--remote-debugging-pipe" switch
   # and its FD 3 & 4 are redirected to and from stdin and stdout.
   # stderr is silently discarded.
-  defp chrome_command do
-    ~s("#{chrome_executable()}" --no-sandbox --headless --disable-gpu --remote-debugging-pipe 2>/dev/null 3<&0 4>&1)
+  defp chrome_command(opts) do
+    no_sandbox = if Keyword.get(opts, :no_sandbox), do: "--no-sandbox"
+
+    ~s("#{chrome_executable()}" #{no_sandbox} --headless --disable-gpu --remote-debugging-pipe 2>/dev/null 3<&0 4>&1)
   end
 
   @chrome_paths [
