@@ -23,6 +23,11 @@ defmodule ChromicPDF.Channel do
     GenServer.call(pid, {:start_protocol, mod, params})
   end
 
+  @spec send_call(atom() | pid(), Protocol.call()) :: :ok
+  def send_call(pid, call) do
+    GenServer.cast(pid, {:dispatch, call})
+  end
+
   # ----------- Template -------------
 
   defmacro __using__(_opts) do
@@ -54,6 +59,12 @@ defmodule ChromicPDF.Channel do
           {state, response} -> {:reply, response, state}
           state -> {:noreply, state}
         end
+      end
+
+      @impl GenServer
+      def handle_cast({:dispatch, call}, state) do
+        Channel.dispatch(call, state)
+        {:noreply, state}
       end
     end
   end
@@ -93,6 +104,11 @@ defmodule ChromicPDF.Channel do
   end
 
   # Inspect here if you want to see unhandled messages.
+  #  defp run_protocols_until_handled(msg, [], protocols, _dispatcher) do
+  #    IO.inspect(msg, label: "unhandled message")
+  #    protocols
+  #  end
+
   defp run_protocols_until_handled(_msg, [], protocols, _dispatcher), do: protocols
 
   defp run_protocols_until_handled(msg, [protocol | protocols], prev, dispatcher) do
@@ -109,7 +125,7 @@ defmodule ChromicPDF.Channel do
   end
 
   @spec dispatch(Protocol.call(), state()) :: Protocol.call_id()
-  defp dispatch(call, state) do
+  def dispatch(call, state) do
     call_id = CallCount.bump(state.call_count)
 
     call_id
