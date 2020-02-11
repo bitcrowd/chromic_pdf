@@ -5,12 +5,12 @@ defmodule ChromicPDF.PDFGenerationTest do
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)
   @output Path.expand("../test.pdf", __ENV__.file)
 
-  setup do
-    {:ok, _pid} = start_supervised(ChromicPDF)
-    :ok
-  end
-
   describe "PDF printing" do
+    setup do
+      start_supervised!(ChromicPDF)
+      :ok
+    end
+
     defp print_to_pdf(cb) do
       print_to_pdf({:url, "file://#{@test_html}"}, [], cb)
     end
@@ -41,16 +41,16 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     @tag :pdftotext
-    test "it prints PDF from https:// URLs" do
-      print_to_pdf({:url, "https://example.net"}, fn text ->
-        assert String.contains?(text, "Example Domain")
+    test "it prints PDF from HTML content" do
+      print_to_pdf({:html, File.read!(@test_html)}, fn text ->
+        assert String.contains?(text, "Hello ChromicPDF!")
       end)
     end
 
     @tag :pdftotext
-    test "it prints PDF from HTML content" do
-      print_to_pdf({:html, File.read!(@test_html)}, fn text ->
-        assert String.contains?(text, "Hello ChromicPDF!")
+    test "it does not print PDF from https:// URLs by default" do
+      print_to_pdf({:url, "https://example.net"}, fn text ->
+        assert String.trim(text) == ""
       end)
     end
 
@@ -67,6 +67,20 @@ defmodule ChromicPDF.PDFGenerationTest do
       print_to_pdf([print_to_pdf: pdf_params], fn text ->
         assert String.contains?(text, "Header")
         assert String.contains?(text, "Footer")
+      end)
+    end
+  end
+
+  describe "online mode" do
+    setup do
+      start_supervised!({ChromicPDF, offline: false})
+      :ok
+    end
+
+    @tag :pdftotext
+    test "it prints PDF from https:// URLs" do
+      print_to_pdf({:url, "https://example.net"}, fn text ->
+        assert String.contains?(text, "Example Domain")
       end)
     end
   end

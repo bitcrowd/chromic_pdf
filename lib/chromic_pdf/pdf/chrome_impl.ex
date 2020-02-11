@@ -31,10 +31,11 @@ defmodule ChromicPDF.ChromeImpl do
   # and its FD 3 & 4 are redirected to and from stdin and stdout.
   # stderr is silently discarded.
   defp chrome_command(opts) do
-    no_sandbox = if Keyword.get(opts, :no_sandbox), do: "--no-sandbox"
-
-    ~s("#{chrome_executable()}" #{no_sandbox} --headless --disable-gpu --remote-debugging-pipe 2>/dev/null 3<&0 4>&1)
+    ~s("#{chrome_executable()}" #{no_sandbox(opts)} --headless --disable-gpu --remote-debugging-pipe 2>/dev/null 3<&0 4>&1)
   end
+
+  defp no_sandbox(no_sandbox: true), do: "--no-sandbox"
+  defp no_sandbox(_), do: nil
 
   @chrome_paths [
     "chromium-browser",

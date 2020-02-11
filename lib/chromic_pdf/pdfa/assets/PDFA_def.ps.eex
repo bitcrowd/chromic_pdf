@@ -34,7 +34,7 @@
 
   /DOCINFO pdfmark
 
-/ICCProfile (<%= @adobe_icc %>)
+/ICCProfile (<%= @eci_icc %>)
 
 def
 [/_objdef {icc_PDFA} /type /stream /OBJ pdfmark

@@ -30,7 +30,7 @@ defmodule ChromicPDF.Processor do
 
   @spec print_to_pdf(pdf_input(), pdf_params(), output()) :: request()
   def print_to_pdf(pdf_input, pdf_params, output)
-      when is_pdf_params(pdf_params) and is_output(output) do
+      when tuple_size(pdf_input) == 2 and is_pdf_params(pdf_params) and is_output(output) do
     %{
       current: pdf_input,
       pdf_params: pdf_params,
@@ -40,7 +40,7 @@ defmodule ChromicPDF.Processor do
 
   @spec convert_to_pdfa(pdfa_input(), pdfa_params(), output()) :: request()
   def convert_to_pdfa(pdfa_input, pdfa_params, output)
-      when is_pdfa_params(pdfa_params) and is_output(output) do
+      when tuple_size(pdfa_input) == 2 and is_pdfa_params(pdfa_params) and is_output(output) do
     %{
       current: pdfa_input,
       pdfa_params: pdfa_params,
@@ -50,7 +50,8 @@ defmodule ChromicPDF.Processor do
 
   @spec print_to_pdfa(pdf_input(), pdf_params(), pdfa_params(), output()) :: request()
   def print_to_pdfa(pdf_input, pdf_params, pdfa_params, output)
-      when is_pdf_params(pdf_params) and is_pdfa_params(pdfa_params) and is_output(output) do
+      when tuple_size(pdf_input) == 2 and is_pdf_params(pdf_params) and
+             is_pdfa_params(pdfa_params) and is_output(output) do
     %{
       current: pdf_input,
       pdf_params: pdf_params,

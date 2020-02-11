@@ -65,7 +65,7 @@ defmodule ChromicPDF.GhostscriptWorker do
       |> pdfinfo()
       |> Map.merge(info)
       |> Enum.into(%{}, &cast_info_value/1)
-      |> Map.put(:adobe_icc, @eci_icc)
+      |> Map.put(:eci_icc, @eci_icc)
       |> Map.put(:pdfa_def_ext, pdfa_def_ext)
       |> render_pdfa_def_ps()
 
