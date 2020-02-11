@@ -23,6 +23,10 @@ defmodule ChromicPDF do
         end
       end
 
+  ### Print a PDF / PDF/A
+
+  Please see `ChromicPDF.print_to_pdf/3` and `ChromicPDF.print_to_pdfa/3`.
+
   ### Options
 
   ChromicPDF spawns two worker pools, the session pool and the ghostscript pool.  By default, it
@@ -44,21 +48,33 @@ defmodule ChromicPDF do
         ]
       end
 
-  Please note, that these are only worker pools, if you intend to max them out,
-  you will need a job queue as well.
+  Please note, that these are only worker pools. If you intend to max them out, you will need a
+  job queue as well.
 
-  ### Disable Chrome sandbox
+  ## Security
 
-  If you absolutely must run Chrome as root, you can turn of its sandbox by passing
-  the `no_sandbox` option.
+  ### Chrome Sandbox
+
+  By default, ChromicPDF will run Chrome in sandbox mode. If you absolutelt must run Chrome as
+  root, you can turn of its sandbox by passing the `no_sandbox: true` option.
 
       defp chromic_pdf_opts do
         [no_sandbox: true]
       end
 
-  ### Print a PDF / PDF/A
+  ### Running in online mode
 
-  Please see `ChromicPDF.print_to_pdf/3` and `ChromicPDF.print_to_pdfa/3`.
+  Browser targets spawned by ChromicPDF will be set to "offline" mode using the DevTools'
+  `emulateNetworkConditions` command. This is intentional. Users are required to take an extra
+  step (basically reading this paragraph) to re-consider whether basing their application's PDF
+  printing on remote URL requests. Both because it can lead to unexpected performance
+  fluctuation, as well as because it might increase the attack surface of their app.
+
+  To switch on "online" mode, pass the `offline: false` parameter.
+
+      defp chromic_pdf_opts do
+        [offline: true]
+      end
 
   ## How it works
 
@@ -68,7 +84,8 @@ defmodule ChromicPDF do
     "DevTools" channel via file descriptors.
   * The Chrome process is supervised and the connected processes will automatically recover if it
     crashes.
-  * A number of "targets" in Chrome are spawned, 1 per worker process in the `SessionPool`.
+  * A number of "targets" in Chrome are spawned, 1 per worker process in the `SessionPool`. By
+    default, ChromicPDF will spawn each session in a new browser context (i.e., a profile).
   * When a PDF print is requested, a session will instruct its assigned "target" to navigate to
     the given URL, then wait until it receives a "frameStoppedLoading" event, and proceed to call
     the `printToPDF` function.

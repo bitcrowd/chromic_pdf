@@ -57,6 +57,10 @@ defmodule ChromicPDF.Connection do
     {:stop, :chrome_has_crashed, state}
   end
 
+  def handle_info({:EXIT, _port, :normal}, state) do
+    {:stop, :chrome_has_crashed, state}
+  end
+
   @impl true
   # Called on process termination.
   def terminate(_reason, %{port: port}) do

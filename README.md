@@ -47,8 +47,8 @@ end
 
 ```elixir
 ChromicPDF.print_to_pdfa(
-  # URL to print, you can also use the file:// scheme
-  {:url, "https:///example.net/"},
+  # URL to of local file to print
+  {:url, "file:///example.html"},
 
   # Parameters to the PDF renderer, specifically for Chromium's printToPDF function,
   # see https://chromedevtools.github.io/devtools-protocol/tot/Page#method-printToPDF

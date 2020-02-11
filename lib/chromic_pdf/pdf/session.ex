@@ -10,7 +10,7 @@ defmodule ChromicPDF.Session do
   # Called by :poolboy to instantiate the worker process.
   def start_link(args) do
     {:ok, pid} = GenServer.start_link(__MODULE__, args)
-    Channel.send_call(pid, {"Page.enable", %{}})
+
     {:ok, pid}
   end
 
@@ -31,9 +31,27 @@ defmodule ChromicPDF.Session do
       |> Browser.server_name()
 
     {:ok, session_id} = Browser.spawn_session(browser)
+    init_session(args)
 
     fn msg ->
       Browser.send_session_msg(browser, session_id, msg)
     end
+  end
+
+  defp init_session(args) do
+    if Keyword.get(args, :offline, true) do
+      Channel.send_call(
+        self(),
+        {"Network.emulateNetworkConditions",
+         %{
+           offline: true,
+           latency: 0,
+           downloadThroughput: 0,
+           uploadThroughput: 0
+         }}
+      )
+    end
+
+    Channel.send_call(self(), {"Page.enable", %{}})
   end
 end

@@ -8,12 +8,12 @@ defmodule ChromicPDF.SpawnSession do
 
   @impl ChromicPDF.Protocol
   def init(from, _params, dispatcher) do
-    call_id = dispatcher.({"Target.createTarget", %{"url" => "about:blank"}})
+    call_id = dispatcher.({"Target.createBrowserContext", %{"disposeOnDetach" => true}})
 
     {:ok,
      %{
        from: from,
-       step: :create,
+       step: :context,
        call_id: call_id,
        target_id: nil,
        session_id: nil
@@ -21,6 +21,19 @@ defmodule ChromicPDF.SpawnSession do
   end
 
   @impl ChromicPDF.Protocol
+  def handle_msg(msg, %{step: :context, call_id: call_id} = state, dispatcher) do
+    case msg do
+      {:response, ^call_id, result} ->
+        call_id =
+          dispatcher.({"Target.createTarget", Map.merge(result, %{"url" => "about:blank"})})
+
+        {:ok, %{state | step: :create, call_id: call_id}}
+
+      _ ->
+        :ignore
+    end
+  end
+
   def handle_msg(msg, %{step: :create, call_id: call_id} = state, dispatcher) do
     case msg do
       {:response, ^call_id, result} ->

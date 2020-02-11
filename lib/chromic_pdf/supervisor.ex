@@ -55,11 +55,11 @@ defmodule ChromicPDF.Supervisor do
 
       ## Example 1: Print to file
 
-          ChromicPDF.print_to_pdf({:url, "https://example.net"}, "output.pdf")
+          ChromicPDF.print_to_pdf({:url, "file:///example.html"}, "output.pdf")
 
       ## Example 2: Print to temporary file
 
-          ChromicPDF.print_to_pdf({:url, "https://example.net"}, fn output_pdf ->
+          ChromicPDF.print_to_pdf({:url, "file:///example.html"}, fn output_pdf ->
             send_download(...)
           end)
 
@@ -68,7 +68,7 @@ defmodule ChromicPDF.Supervisor do
       ## Example 3: Print with 2cm margin on each side
 
           ChromicPDF.print_to_pdf(
-            {:url, "https://example.net"},
+            {:url, "file:///example.html"},
             [print_to_pdf: %{
               marginTop: 0.787402,
               marginLeft: 0.787402,
@@ -80,9 +80,9 @@ defmodule ChromicPDF.Supervisor do
 
       ## Example 4: Print from in-memory HTML
 
-      For convenience, it is also possible to pass a HTML blob to
-      `print_to_pdf/3` which is automatically stored in a temporary file and
-      cleaned up afterwards. It is served over the `file://` scheme.
+      For convenience, it is also possible to pass a HTML blob to `print_to_pdf/3` which is
+      automatically stored in a temporary file and cleaned up afterwards. It is served over
+      the `file://` scheme.
 
           ChromicPDF.print_to_pdf(
             {:html, "<html><body><h1>Hello World!</h1></body></html>"},
@@ -120,7 +120,9 @@ defmodule ChromicPDF.Supervisor do
 
       ## PDF/A versions & levels
 
-      Ghostscript supports both PDF/A-2 and PDF/A-3 versions, both in their `b` (basic) level. By default, ChromicPDF generates version PDF/A-3b files. Set the `pdfa_version` option for version 2.
+      Ghostscript supports both PDF/A-2 and PDF/A-3 versions, both in their `b` (basic) level. By
+      default, ChromicPDF generates version PDF/A-3b files.  Set the `pdfa_version` option for
+      version 2.
 
           ChromicPDF.convert_to_pdfa(
             "some_pdf_file.pdf",
@@ -130,12 +132,13 @@ defmodule ChromicPDF.Supervisor do
 
       ## Specifying PDF metadata
 
-      The converter is able to transfer PDF metadata (the `Info` dictionary) from the original PDF
-      file to the output file. However, files printed by Chrome do not contain any metadata
+      The converter is able to transfer PDF metadata (the `Info` dictionary) from the original
+      PDF file to the output file. However, files printed by Chrome do not contain any metadata
       information (except "Creator" being "Chrome").
 
       The `:info` option of the PDF/A converter allows to specify metatadata for the output file
-      directly. The converter understands the following keys, all of which accept only String values.
+      directly. The converter understands the following keys, all of which accept only String
+      values.
 
       * `:title`
       * `:author`
@@ -155,7 +158,9 @@ defmodule ChromicPDF.Supervisor do
 
       ## Adding more PostScript to the conversion
 
-      The `pdfa_def_ext` option can be used to feed more PostScript code into the final conversion step. This can be useful to add additional features to the generated PDF-A file, for instance a ZUGFeRD invoice.
+      The `pdfa_def_ext` option can be used to feed more PostScript code into the final conversion
+      step. This can be useful to add additional features to the generated PDF-A file, for
+      instance a ZUGFeRD invoice.
 
           ChromicPDF.convert_to_pdfa(
             "some_pdf_file.pdf",
@@ -168,7 +173,7 @@ defmodule ChromicPDF.Supervisor do
               pdfa_params :: Processor.pdfa_params(),
               output :: Processor.output()
             ) :: :ok
-      def convert_to_pdfa(pdf_path, pdfa_params, output) do
+      def convert_to_pdfa(pdf_path, pdfa_params \\ [], output) do
         {:path, pdf_path}
         |> Processor.convert_to_pdfa(pdfa_params, output)
         |> Processor.run(__MODULE__)
@@ -189,7 +194,7 @@ defmodule ChromicPDF.Supervisor do
               pdfa_params :: Processor.pdfa_params(),
               output :: Processor.output()
             ) :: :ok
-      def print_to_pdfa(input, pdf_params, pdfa_params, output) do
+      def print_to_pdfa(input, pdf_params \\ [], pdfa_params \\ [], output) do
         input
         |> Processor.print_to_pdfa(pdf_params, pdfa_params, output)
         |> Processor.run(__MODULE__)
