@@ -55,7 +55,7 @@ defmodule ChromicPDF do
 
   ### Chrome Sandbox
 
-  By default, ChromicPDF will run Chrome in sandbox mode. If you absolutelt must run Chrome as
+  By default, ChromicPDF will run Chrome in sandbox mode. If you absolutely must run Chrome as
   root, you can turn of its sandbox by passing the `no_sandbox: true` option.
 
       defp chromic_pdf_opts do
