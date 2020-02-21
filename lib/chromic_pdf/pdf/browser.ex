@@ -1,13 +1,11 @@
 defmodule ChromicPDF.Browser do
   @moduledoc false
 
-  use ChromicPDF.Channel
-
-  # credo:disable-for-next-line Credo.Check.Readability.AliasOrder
-  alias ChromicPDF.{Connection, SpawnSession}
+  use GenServer
+  alias ChromicPDF.{CallCount, Connection, JsonRPC, Protocol}
 
   @type browser :: pid() | atom()
-  @type session_id :: binary()
+  @type state :: %{dispatch: Protocol.dispatch(), protocols: [Protocol.t()]}
 
   # ------------- API ----------------
 
@@ -26,39 +24,49 @@ defmodule ChromicPDF.Browser do
     Module.concat(chromic, :Browser)
   end
 
-  @spec spawn_session(browser()) :: {:ok, session_id()}
-  # This call will trigger the creation of a new target in the running
-  # chrome instance. Will block until the target has been attached to.
-  # Returns the session_id.
-  def spawn_session(pid) do
-    Channel.start_protocol(pid, SpawnSession)
-  end
-
-  @spec send_session_msg(browser(), session_id(), msg :: binary()) :: :ok
-  # Sends a message in a `sendMessageToTarget` envelope to Chrome.
-  # Does not wait for response.
-  def send_session_msg(pid, session_id, msg) do
-    Channel.send_call(pid, {
-      "Target.sendMessageToTarget",
-      %{"message" => msg, "sessionId" => session_id}
-    })
+  @spec run(browser(), Protocol.t()) :: {:ok, any()}
+  def run(browser, protocol) do
+    GenServer.call(browser, {:run, protocol})
   end
 
   # ----------- Callbacks ------------
 
-  @impl ChromicPDF.Channel
-  def init_upstream(args) do
+  @impl GenServer
+  def init(args) do
     {:ok, conn_pid} = Connection.start_link(self(), args)
+    {:ok, call_count_pid} = CallCount.start_link()
 
     Process.flag(:trap_exit, true)
 
-    fn msg ->
-      Connection.send_msg(conn_pid, msg)
+    dispatch = fn call ->
+      call_id = CallCount.bump(call_count_pid)
+      Connection.send_msg(conn_pid, JsonRPC.encode(call, call_id))
+      call_id
     end
+
+    {:ok, %{dispatch: dispatch, protocols: []}}
   end
 
   @impl GenServer
-  def terminate(_reason, _state) do
-    Channel.send_call(self(), {"Browser.close", %{}})
+  def terminate(_reason, %{dispatch: dispatch}) do
+    dispatch.({"Browser.close", %{}})
+  end
+
+  @impl GenServer
+  def handle_call({:run, protocol}, from, %{dispatch: dispatch, protocols: protocols} = state) do
+    protocols = [Protocol.init(protocol, from, dispatch) | protocols]
+    {:noreply, update_protocols(state, protocols)}
+  end
+
+  # Data packets coming in from connection.
+  @impl GenServer
+  def handle_info({:msg_in, data}, %{dispatch: dispatch, protocols: protocols} = state) do
+    msg = JsonRPC.decode(data)
+    protocols = Enum.map(protocols, &Protocol.run(&1, msg, dispatch))
+    {:noreply, update_protocols(state, protocols)}
+  end
+
+  defp update_protocols(state, protocols) do
+    %{state | protocols: Enum.reject(protocols, &Protocol.finished?(&1))}
   end
 end
