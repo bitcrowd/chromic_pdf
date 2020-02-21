@@ -1,58 +1,33 @@
 defmodule ChromicPDF.PrintToPDF do
   @moduledoc false
 
-  use ChromicPDF.Protocol
+  import ChromicPDF.ProtocolMacros
+  alias ChromicPDF.Protocol
 
-  # Protocol instructs target to navigate to URL, then waits until
-  # primary frame has stopped loading, then issues the printToPDF
-  # command and collects the result.
+  steps do
+    call(:navigate, "Page.navigate", [:url], %{})
+    await_response(:navigated, ["frameId"])
+    await_notification(:frame_stopped_loading, "Page.frameStoppedLoading", ["frameId"], [])
+    call(:print_to_pdf, "Page.printToPDF", & &1[:print_to_pdf_opts], %{})
+    await_response(:printed, ["data"])
 
-  @impl ChromicPDF.Protocol
-  def init(from, {url, params, output}, dispatcher) do
-    call_id = dispatcher.({"Page.navigate", %{"url" => url}})
-
-    {:ok,
-     %{
-       from: from,
-       step: :navigate,
-       call_id: call_id,
-       params: params,
-       output: output,
-       frame_id: nil
-     }}
-  end
-
-  @impl ChromicPDF.Protocol
-  def handle_msg(msg, %{step: :navigate, call_id: call_id} = state, _dispatcher) do
-    case msg do
-      {:response, ^call_id, %{"frameId" => frame_id}} ->
-        {:ok, %{state | step: :frame, frame_id: frame_id}}
-
-      _ ->
-        :ignore
+    @steps {:reply, :persist_and_reply, 1}
+    def persist_and_reply(%{"data" => data, :output => output}) do
+      File.write!(output, Base.decode64!(data))
+      :ok
     end
   end
 
-  def handle_msg(msg, %{step: :frame, frame_id: frame_id} = state, dispatcher) do
-    case msg do
-      {:notification, {"Page.frameStoppedLoading", %{"frameId" => ^frame_id}}} ->
-        call_id = dispatcher.({"Page.printToPDF", state.params})
-        {:ok, %{state | step: :pdf, call_id: call_id}}
-
-      _ ->
-        :ignore
-    end
-  end
-
-  def handle_msg(msg, %{step: :pdf, call_id: call_id} = state, _dispatcher) do
-    case msg do
-      {:response, ^call_id, %{"data" => data}} ->
-        File.write!(state.output, Base.decode64!(data))
-        GenServer.reply(state.from, :ok)
-        :done
-
-      _ ->
-        :ignore
-    end
+  @spec new(
+          session_id :: binary(),
+          params :: %{
+            print_to_pdf_opts: map(),
+            url: binary(),
+            output: binary()
+          }
+        ) :: Protocol.t()
+  def new(session_id, params) do
+    build_steps()
+    |> Protocol.new(Map.put(params, "sessionId", session_id))
   end
 end

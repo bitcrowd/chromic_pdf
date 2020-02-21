@@ -1,57 +1,51 @@
 defmodule ChromicPDF.Session do
   @moduledoc false
 
-  use ChromicPDF.Channel
-  alias ChromicPDF.{Browser, PrintToPDF}
+  use GenServer
+  alias ChromicPDF.{Browser, PrintToPDF, SpawnSession}
 
   # ------------- API ----------------
 
   @spec start_link(Keyword.t()) :: GenServer.on_start()
   # Called by :poolboy to instantiate the worker process.
   def start_link(args) do
-    {:ok, pid} = GenServer.start_link(__MODULE__, args)
-
-    {:ok, pid}
+    GenServer.start_link(__MODULE__, args)
   end
 
   @spec print_to_pdf(pid(), url :: binary(), params :: keyword(), output :: binary()) :: :ok
   # Prints a PDF by navigating the session target to a URL.
   def print_to_pdf(pid, url, params, output) do
-    print_to_pdf_opts = Keyword.get(params, :print_to_pdf, %{})
-    Channel.start_protocol(pid, PrintToPDF, {url, print_to_pdf_opts, output})
+    params = %{
+      print_to_pdf_opts: Keyword.get(params, :print_to_pdf, %{}),
+      url: url,
+      output: output
+    }
+
+    GenServer.call(pid, {:print_to_pdf, params})
   end
 
   # ----------- Callbacks ------------
 
-  @impl ChromicPDF.Channel
-  def init_upstream(args) do
+  @impl GenServer
+  def init(args) do
     browser =
       args
       |> Keyword.fetch!(:chromic)
       |> Browser.server_name()
 
-    {:ok, session_id} = Browser.spawn_session(browser)
-    init_session(args)
+    protocol = SpawnSession.new(args)
+    session_id = Browser.run(browser, protocol)
 
-    fn msg ->
-      Browser.send_session_msg(browser, session_id, msg)
-    end
+    {:ok, %{session_id: session_id, browser: browser}}
   end
 
-  defp init_session(args) do
-    if Keyword.get(args, :offline, true) do
-      Channel.send_call(
-        self(),
-        {"Network.emulateNetworkConditions",
-         %{
-           offline: true,
-           latency: 0,
-           downloadThroughput: 0,
-           uploadThroughput: 0
-         }}
-      )
-    end
+  @impl GenServer
+  def handle_call({:print_to_pdf, params}, _from, state) do
+    %{browser: browser, session_id: session_id} = state
 
-    Channel.send_call(self(), {"Page.enable", %{}})
+    protocol = PrintToPDF.new(session_id, params)
+    response = Browser.run(browser, protocol)
+
+    {:reply, response, state}
   end
 end
