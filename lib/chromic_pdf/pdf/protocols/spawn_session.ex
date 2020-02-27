@@ -17,30 +17,22 @@ defmodule ChromicPDF.SpawnSession do
       ["sessionId"]
     )
 
-    call(
-      :set_offline_mode,
-      "Network.emulateNetworkConditions",
-      [],
-      %{
-        "offline" => true,
-        "latency" => 0,
-        "downloadThroughput" => 0,
-        "uploadThroughput" => 0
-      }
-    )
+    if_option {:offline, true} do
+      call(
+        :set_offline_mode,
+        "Network.emulateNetworkConditions",
+        [],
+        %{
+          "offline" => true,
+          "latency" => 0,
+          "downloadThroughput" => 0,
+          "uploadThroughput" => 0
+        }
+      )
+    end
 
     call(:enable_page, "Page.enable", [], %{})
 
     reply("sessionId")
-  end
-
-  def new(args) do
-    offline = Keyword.get(args, :offline, true)
-    opts = (offline && []) || [exclude: [:set_offline_mode]]
-
-    opts
-    |> build_steps()
-    |> Enum.reject(&is_nil/1)
-    |> Protocol.new()
   end
 end

@@ -56,7 +56,7 @@ excludes =
 
 ExUnit.configure(
   formatters: [JUnitFormatter, ExUnit.CLIFormatter],
-  exclude: excludes
+  exclude: [:skip | excludes]
 )
 
 ExUnit.start()

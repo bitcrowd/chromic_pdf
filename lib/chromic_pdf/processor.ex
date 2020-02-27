@@ -6,130 +6,70 @@ defmodule ChromicPDF.Processor do
 
   @type url :: binary()
   @type path :: binary()
+  @type blob :: binary()
 
-  @type pdf_input :: {:url, url()} | {:html, binary()}
-  @type pdf_param :: {:print_to_pdf, map()}
-  @type pdf_params :: [pdf_param()]
+  @type pdf_input :: {:url, url()} | {:html, blob()}
 
-  @type pdfa_input :: {:path, path()}
-  @type pdfa_param :: {:pdfa_version, binary()} | {:pdfa_def_ext, binary()} | {:info, map()}
-  @type pdfa_params :: [pdfa_param()]
-  @type output :: path() | (path() -> any())
+  @type output_option :: {:output, binary()} | {:output, function()}
+  @type pdf_option :: {:print_to_pdf, map()} | output_option()
+  @type pdfa_option ::
+          {:pdfa_version, binary()} | {:pdfa_def_ext, binary()} | {:info, map()} | output_option()
 
-  @type request :: %{
-          required(:current) => pdf_input() | pdfa_input(),
-          optional(:pdf_params) => pdf_params(),
-          optional(:pdfa_params) => pdfa_params(),
-          required(:output) => output()
-        }
+  @spec print_to_pdf(module(), pdf_input(), [pdf_option()]) :: :ok | {:ok, blob()}
+  def print_to_pdf(chromic, pdf_input, opts) when tuple_size(pdf_input) == 2 and is_list(opts) do
+    data = SessionPool.print_to_pdf(chromic, pdf_input, opts)
 
-  defguardp is_path(path) when is_binary(path)
-  defguardp is_pdf_params(params) when is_list(params)
-  defguardp is_pdfa_params(params) when is_list(params)
-  defguardp is_output(output) when is_binary(output) or is_function(output, 1)
+    case Keyword.get(opts, :output) do
+      path when is_binary(path) ->
+        File.write!(path, Base.decode64!(data))
+        :ok
 
-  @spec print_to_pdf(pdf_input(), pdf_params(), output()) :: request()
-  def print_to_pdf(pdf_input, pdf_params, output)
-      when tuple_size(pdf_input) == 2 and is_pdf_params(pdf_params) and is_output(output) do
-    %{
-      current: pdf_input,
-      pdf_params: pdf_params,
-      output: output
-    }
+      fun when is_function(fun, 1) ->
+        fun.(data)
+        :ok
+
+      nil ->
+        {:ok, data}
+    end
   end
 
-  @spec convert_to_pdfa(pdfa_input(), pdfa_params(), output()) :: request()
-  def convert_to_pdfa(pdfa_input, pdfa_params, output)
-      when tuple_size(pdfa_input) == 2 and is_pdfa_params(pdfa_params) and is_output(output) do
-    %{
-      current: pdfa_input,
-      pdfa_params: pdfa_params,
-      output: output
-    }
-  end
-
-  @spec print_to_pdfa(pdf_input(), pdf_params(), pdfa_params(), output()) :: request()
-  def print_to_pdfa(pdf_input, pdf_params, pdfa_params, output)
-      when tuple_size(pdf_input) == 2 and is_pdf_params(pdf_params) and
-             is_pdfa_params(pdfa_params) and is_output(output) do
-    %{
-      current: pdf_input,
-      pdf_params: pdf_params,
-      pdfa_params: pdfa_params,
-      output: output
-    }
-  end
-
-  @spec run(request(), atom()) :: :ok
-  def run(request, chromic) do
+  @spec convert_to_pdfa(module(), path :: binary(), [pdfa_option()]) :: :ok | {:ok, blob()}
+  def convert_to_pdfa(chromic, pdf_path, opts) when is_binary(pdf_path) and is_list(opts) do
     with_tmp_dir(fn tmp_dir ->
-      Enum.reduce(
-        [
-          &step_persist_html/3,
-          &step_print_to_pdf/3,
-          &step_convert_to_pdfa/3,
-          &step_output/3
-        ],
-        request,
-        fn step, state ->
-          step.(state, chromic, tmp_dir)
-        end
-      )
+      do_convert_to_pdfa(chromic, pdf_path, opts, tmp_dir)
     end)
-
-    :ok
   end
 
-  defp step_persist_html(%{current: {:html, html}} = request, _chromic, tmp_dir) do
-    html_file = Path.join(tmp_dir, random_file_name(".html"))
-    File.write!(html_file, html)
-
-    %{request | current: {:url, "file://#{html_file}"}}
+  @spec print_to_pdfa(module(), pdf_input(), [pdf_option() | pdfa_option()]) ::
+          :ok | {:ok, blob()}
+  def print_to_pdfa(chromic, pdf_input, opts) when tuple_size(pdf_input) == 2 and is_list(opts) do
+    with_tmp_dir(fn tmp_dir ->
+      pdf_path = Path.join(tmp_dir, random_file_name(".pdf"))
+      :ok = print_to_pdf(chromic, pdf_input, Keyword.put(opts, :output, pdf_path))
+      do_convert_to_pdfa(chromic, pdf_path, opts, tmp_dir)
+    end)
   end
 
-  defp step_persist_html(request, _chromic, _tmp_dir) do
-    request
-  end
+  defp do_convert_to_pdfa(chromic, pdf_path, opts, tmp_dir) do
+    pdfa_path = Path.join(tmp_dir, random_file_name(".pdf"))
+    :ok = GhostscriptPool.convert(chromic, pdf_path, opts, pdfa_path)
 
-  defp step_print_to_pdf(
-         %{current: {:url, url}, pdf_params: pdf_params} = request,
-         chromic,
-         tmp_dir
-       )
-       when not is_nil(pdf_params) do
-    pdf_file = Path.join(tmp_dir, random_file_name(".pdf"))
-    SessionPool.print_to_pdf(chromic, url, pdf_params, pdf_file)
+    case Keyword.get(opts, :output) do
+      path when is_binary(path) ->
+        File.cp!(pdfa_path, path)
+        :ok
 
-    %{request | current: {:path, pdf_file}}
-  end
+      fun when is_function(fun, 1) ->
+        fun.(pdfa_path)
+        :ok
 
-  defp step_print_to_pdf(request, _chromic, _tmp_dir) do
-    request
-  end
+      nil ->
+        data =
+          pdfa_path
+          |> File.read!()
+          |> Base.encode64()
 
-  defp step_convert_to_pdfa(
-         %{current: {:path, pdf_file}, pdfa_params: pdfa_params} = request,
-         chromic,
-         tmp_dir
-       )
-       when not is_nil(pdfa_params) do
-    pdfa_file = Path.join(tmp_dir, random_file_name(".pdf"))
-    GhostscriptPool.convert(chromic, pdf_file, pdfa_params, pdfa_file)
-
-    %{request | current: {:path, pdfa_file}}
-  end
-
-  defp step_convert_to_pdfa(request, _chromic, _tmp_dir) do
-    request
-  end
-
-  defp step_output(%{current: {:path, path}, output: output}, _chromic, _tmp_dir)
-       when is_function(output, 1) do
-    output.(path)
-  end
-
-  defp step_output(%{current: {:path, path}, output: output}, _chromic, _tmp_dir)
-       when is_path(output) do
-    File.cp!(path, output)
+        {:ok, data}
+    end
   end
 end

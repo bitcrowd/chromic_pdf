@@ -1,22 +1,71 @@
 defmodule ChromicPDF.ProtocolMacros do
   @moduledoc false
 
+  # credo:disable-for-next-line
   defmacro steps(do: block) do
     quote do
+      alias ChromicPDF.{JsonRPC, Protocol}
+
       Module.register_attribute(__MODULE__, :steps, accumulate: true)
 
       unquote(block)
 
-      defp build_steps(opts \\ []) do
-        excludes = Keyword.get(opts, :exclude, [])
+      @spec new(keyword()) :: Protocol.t()
+      def new(opts) do
+        Protocol.new(
+          build_steps(opts),
+          Enum.into(opts, %{})
+        )
+      end
 
+      @spec new(JsonRPC.session_id(), keyword()) :: Protocol.t()
+      def new(session_id, opts) do
+        Protocol.new(
+          build_steps(opts),
+          opts |> Enum.into(%{}) |> Map.put("sessionId", session_id)
+        )
+      end
+
+      defp build_steps(opts) do
         @steps
         |> Enum.reverse()
-        |> Enum.reject(fn {_, name, _arity} -> name in excludes end)
-        |> Enum.map(fn {type, name, arity} ->
-          {type, Function.capture(__MODULE__, name, arity)}
-        end)
+        |> do_build_steps([], opts)
+        |> Enum.reverse()
       end
+
+      defp do_build_steps([], acc, _opts), do: acc
+
+      defp do_build_steps([:end | rest], acc, opts) do
+        do_build_steps(rest, acc, opts)
+      end
+
+      defp do_build_steps([{:if_option, key, value} | rest], acc, opts) do
+        if Keyword.get(opts, key) == value do
+          do_build_steps(rest, acc, opts)
+        else
+          skip_branch(rest, acc, opts)
+        end
+      end
+
+      defp do_build_steps([{type, name, arity} | rest], acc, opts) do
+        do_build_steps(
+          rest,
+          [{type, Function.capture(__MODULE__, name, arity)} | acc],
+          opts
+        )
+      end
+
+      defp skip_branch([], acc, _opts), do: acc
+      defp skip_branch([:end | rest], acc, opts), do: do_build_steps(rest, acc, opts)
+      defp skip_branch([_skipped | rest], acc, opts), do: skip_branch(rest, acc, opts)
+    end
+  end
+
+  defmacro if_option({test_key, test_value}, do: block) do
+    quote do
+      @steps {:if_option, unquote(test_key), unquote(test_value)}
+      unquote(block)
+      @steps :end
     end
   end
 
@@ -57,12 +106,7 @@ defmodule ChromicPDF.ProtocolMacros do
         last_call_id = Map.fetch!(state, :last_call_id)
 
         if ChromicPDF.JsonRPC.is_response?(msg, last_call_id) do
-          state =
-            Enum.into(
-              unquote(put_keys),
-              state,
-              &{&1, get_in(msg, ["result", &1])}
-            )
+          state = extract_from_payload(msg, "result", unquote(put_keys), state)
 
           {:match, state}
         else
@@ -79,12 +123,7 @@ defmodule ChromicPDF.ProtocolMacros do
         with true <- ChromicPDF.JsonRPC.is_notification?(msg, unquote(method)),
              true <- state["sessionId"] == msg["sessionId"],
              true <- Enum.all?(unquote(match_keys), &notification_matches?(state, msg, &1)) do
-          state =
-            Enum.into(
-              unquote(put_keys),
-              state,
-              &{&1, get_in(msg, ["params", &1])}
-            )
+          state = extract_from_payload(msg, "params", unquote(put_keys), state)
 
           {:match, state}
         else
@@ -92,6 +131,17 @@ defmodule ChromicPDF.ProtocolMacros do
         end
       end
     end
+  end
+
+  def extract_from_payload(msg, payload_key, put_keys, state) do
+    Enum.into(
+      put_keys,
+      state,
+      fn
+        {path, key} -> {key, get_in(msg, [payload_key | path])}
+        key -> {key, get_in(msg, [payload_key, key])}
+      end
+    )
   end
 
   def notification_matches?(state, msg, {msg_path, key}) do
