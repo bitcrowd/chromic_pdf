@@ -6,34 +6,39 @@ defmodule ChromicPDF.Session do
 
   # ------------- API ----------------
 
-  @spec start_link(Keyword.t()) :: GenServer.on_start()
+  @spec start_link(keyword()) :: GenServer.on_start()
   # Called by :poolboy to instantiate the worker process.
-  def start_link(args) do
-    GenServer.start_link(__MODULE__, args)
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts)
   end
 
-  @spec print_to_pdf(pid(), url :: binary(), params :: keyword(), output :: binary()) :: :ok
+  @spec print_to_pdf(pid(), {atom(), binary()}, keyword()) :: :ok
   # Prints a PDF by navigating the session target to a URL.
-  def print_to_pdf(pid, url, params, output) do
-    params = %{
-      print_to_pdf_opts: Keyword.get(params, :print_to_pdf, %{}),
-      url: url,
-      output: output
-    }
+  def print_to_pdf(pid, {source_type, source}, opts) do
+    opts =
+      Keyword.merge(
+        [
+          {:source_type, source_type},
+          {source_type, source}
+        ],
+        opts
+      )
 
-    GenServer.call(pid, {:print_to_pdf, params})
+    GenServer.call(pid, {:print_to_pdf, opts})
   end
 
   # ----------- Callbacks ------------
 
   @impl GenServer
-  def init(args) do
+  def init(opts) do
+    opts = Keyword.put_new(opts, :offline, true)
+
     browser =
-      args
+      opts
       |> Keyword.fetch!(:chromic)
       |> Browser.server_name()
 
-    protocol = SpawnSession.new(args)
+    protocol = SpawnSession.new(opts)
     session_id = Browser.run(browser, protocol)
 
     {:ok, %{session_id: session_id, browser: browser}}

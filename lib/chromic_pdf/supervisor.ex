@@ -53,70 +53,67 @@ defmodule ChromicPDF.Supervisor do
 
       This call blocks until the PDF has been created.
 
-      ## Example 1: Print to file
+      ## Print and return Base64-encoded PDF
 
-          ChromicPDF.print_to_pdf({:url, "file:///example.html"}, "output.pdf")
+          {:ok, blob} = ChromicPDF.print_to_pdf({:url, "file:///example.html"})
 
-      ## Example 2: Print to temporary file
+      ## Print to file
 
-          ChromicPDF.print_to_pdf({:url, "file:///example.html"}, fn output_pdf ->
+          ChromicPDF.print_to_pdf({:url, "file:///example.html"}, output: "output.pdf")
+
+      ## Print to temporary file
+
+          ChromicPDF.print_to_pdf({:url, "file:///example.html"}, output: fn output_pdf ->
             send_download(...)
           end)
 
       The temporary file passed to the callback will be deleted when the callback returns.
 
-      ## Example 3: Print with 2cm margin on each side
+      ## PDF printing options
 
           ChromicPDF.print_to_pdf(
             {:url, "file:///example.html"},
-            [print_to_pdf: %{
+            print_to_pdf: %{
               marginTop: 0.787402,
               marginLeft: 0.787402,
               marginRight: 0.787402,
               marginBottom: 0.787402,
-            }],
-            "output.pdf"
+            }
           )
-
-      ## Example 4: Print from in-memory HTML
-
-      For convenience, it is also possible to pass a HTML blob to `print_to_pdf/3` which is
-      automatically stored in a temporary file and cleaned up afterwards. It is served over
-      the `file://` scheme.
-
-          ChromicPDF.print_to_pdf(
-            {:html, "<html><body><h1>Hello World!</h1></body></html>"},
-            "output.pdf"
-          )
-
-      ## Options
 
       For a full list of options to the `printToPDF` function, please see the Chrome
       documentation at:
 
       https://chromedevtools.github.io/devtools-protocol/tot/Page#method-printToPDF
+
+      ## Print from in-memory HTML
+
+      For convenience, it is also possible to pass a HTML blob to `print_to_pdf/2` which is
+      automatically stored in a temporary file and cleaned up afterwards. It is served over
+      the `file://` scheme.
+
+          ChromicPDF.print_to_pdf(
+            {:html, "<html><body><h1>Hello World!</h1></body></html>"}
+          )
       """
       @spec print_to_pdf(
               url :: Processor.pdf_input(),
-              pdf_params :: Processor.pdf_params(),
-              output :: Processor.output()
-            ) :: :ok
-      def print_to_pdf(input, pdf_params \\ [], output) do
-        input
-        |> Processor.print_to_pdf(pdf_params, output)
-        |> Processor.run(__MODULE__)
+              opts :: [Processor.pdf_option()]
+            ) :: :ok | {:ok, Processor.blob()}
+      def print_to_pdf(input, opts \\ []) do
+        Processor.print_to_pdf(__MODULE__, input, opts)
       end
 
       @doc """
       Converts a PDF to PDF/A (either PDF/A-2b or PDF/A-3b).
 
-      ## Example
+      ## Convert an input PDF and return a Base64-encoded blob
 
-          ChromicPDF.convert_to_pdfa(
-            "some_pdf_file.pdf",
-            [info: %{creator: "ChromicPDF"}],
-            "output.pdf"
-          )
+          {:ok, blob} = ChromicPDF.convert_to_pdfa("some_pdf_file.pdf")
+
+      ## Convert and write to file
+
+          ChromicPDF.convert_to_pdfa("some_pdf_file.pdf", output: "output.pdf")
 
       ## PDF/A versions & levels
 
@@ -124,11 +121,7 @@ defmodule ChromicPDF.Supervisor do
       default, ChromicPDF generates version PDF/A-3b files.  Set the `pdfa_version` option for
       version 2.
 
-          ChromicPDF.convert_to_pdfa(
-            "some_pdf_file.pdf",
-            [pdfa_version: "2"],
-            "output.pdf"
-          )
+          ChromicPDF.convert_to_pdfa("some_pdf_file.pdf", pdfa_version: "2")
 
       ## Specifying PDF metadata
 
@@ -137,8 +130,11 @@ defmodule ChromicPDF.Supervisor do
       information (except "Creator" being "Chrome").
 
       The `:info` option of the PDF/A converter allows to specify metatadata for the output file
-      directly. The converter understands the following keys, all of which accept only String
-      values.
+      directly.
+
+          ChromicPDF.convert_to_pdfa("some_pdf_file.pdf", info: %{creator: "ChromicPDF"})
+
+      The converter understands the following keys, all of which accept only String values:
 
       * `:title`
       * `:author`
@@ -164,40 +160,32 @@ defmodule ChromicPDF.Supervisor do
 
           ChromicPDF.convert_to_pdfa(
             "some_pdf_file.pdf",
-            [pdfa_def_ext: "[/Title (OverriddenTitle) /DOCINFO pdfmark"],
-            "output.pdf"
+            pdfa_def_ext: "[/Title (OverriddenTitle) /DOCINFO pdfmark",
           )
       """
       @spec convert_to_pdfa(
               pdf_path :: Processor.path(),
-              pdfa_params :: Processor.pdfa_params(),
-              output :: Processor.output()
-            ) :: :ok
-      def convert_to_pdfa(pdf_path, pdfa_params \\ [], output) do
-        {:path, pdf_path}
-        |> Processor.convert_to_pdfa(pdfa_params, output)
-        |> Processor.run(__MODULE__)
+              opts :: [Processor.pdfa_option()]
+            ) :: :ok | {:ok, Processor.blob()}
+      def convert_to_pdfa(pdf_path, opts \\ []) do
+        Processor.convert_to_pdfa(__MODULE__, pdf_path, opts)
       end
 
       @doc """
       Prints a PDF and converts it to PDF/A in a single call.
 
-      See `print_to_pdf/3` and `convert_to_pdfa/3` for options.
+      See `print_to_pdf/2` and `convert_to_pdfa/2` for options.
 
       ## Example
 
-          ChromicPDF.print_to_pdfa({:url, "https://example.net"}, [], [], "output.pdf")
+          ChromicPDF.print_to_pdfa({:url, "https://example.net"})
       """
       @spec print_to_pdfa(
               url :: Processor.pdf_input(),
-              pdf_params :: Processor.pdf_params(),
-              pdfa_params :: Processor.pdfa_params(),
-              output :: Processor.output()
-            ) :: :ok
-      def print_to_pdfa(input, pdf_params \\ [], pdfa_params \\ [], output) do
-        input
-        |> Processor.print_to_pdfa(pdf_params, pdfa_params, output)
-        |> Processor.run(__MODULE__)
+              opts :: [Processor.pdf_option() | Processor.pdfa_option()]
+            ) :: :ok | {:ok, Processor.blob()}
+      def print_to_pdfa(input, opts \\ []) do
+        Processor.print_to_pdfa(__MODULE__, input, opts)
       end
     end
   end

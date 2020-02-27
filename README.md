@@ -52,7 +52,7 @@ ChromicPDF.print_to_pdfa(
 
   # Parameters to the PDF renderer, specifically for Chromium's printToPDF function,
   # see https://chromedevtools.github.io/devtools-protocol/tot/Page#method-printToPDF
-  [print_to_pdf: %{
+  print_to_pdf: %{
     # Margins are in given inches
     marginTop: 0.393701,
     marginLeft: 0.787402,
@@ -88,20 +88,18 @@ ChromicPDF.print_to_pdfa(
     Page <span class="pageNumber"></span> of <span class="totalPages"></span>
     </p>
     """
-  }],
+  },
 
   # Parameters for the PDF/A converter
-  [
-    info: %{
-      title: "Example",
-      author: "Jane Doe",
-      creator: "ChromicPDF"
-    },
-    pdfa_version: "3"
-  ],
+  info: %{
+    title: "Example",
+    author: "Jane Doe",
+    creator: "ChromicPDF"
+  },
+  pdfa_version: "3"
 
   # Output path.
-  "test.pdf"
+  output: "test.pdf"
 )
 ```
 
