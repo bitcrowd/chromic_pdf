@@ -5,16 +5,19 @@ defmodule ChromicPDF.SessionPool do
 
   @timeout 5000
 
-  # Creates a PDF using the Chrome Session pool.
   @spec print_to_pdf(atom(), tuple(), keyword()) :: binary()
   def print_to_pdf(chromic, input, opts) do
-    timeout = Keyword.get(opts, :timeout, @timeout)
+    transaction(chromic, opts, &Session.print_to_pdf(&1, input, opts))
+  end
 
-    :poolboy.transaction(
-      pool_name(chromic),
-      &Session.print_to_pdf(&1, input, opts),
-      timeout
-    )
+  @spec capture_screenshot(atom(), tuple(), keyword()) :: binary()
+  def capture_screenshot(chromic, input, opts) do
+    transaction(chromic, opts, &Session.capture_screenshot(&1, input, opts))
+  end
+
+  defp transaction(chromic, opts, fun) do
+    timeout = Keyword.get(opts, :timeout, @timeout)
+    :poolboy.transaction(pool_name(chromic), fun, timeout)
   end
 
   @spec child_spec(keyword()) :: :supervisor.child_spec()
