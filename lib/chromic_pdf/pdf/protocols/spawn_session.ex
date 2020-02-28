@@ -2,7 +2,6 @@ defmodule ChromicPDF.SpawnSession do
   @moduledoc false
 
   import ChromicPDF.ProtocolMacros
-  alias ChromicPDF.Protocol
 
   steps do
     call(:create_target, "Target.createTarget", [], %{"url" => "about:blank"})

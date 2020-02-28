@@ -2,7 +2,7 @@ defmodule ChromicPDF.Session do
   @moduledoc false
 
   use GenServer
-  alias ChromicPDF.{Browser, PrintToPDF, SpawnSession}
+  alias ChromicPDF.{Browser, CaptureScreenshot, PrintToPDF, SpawnSession}
 
   # ------------- API ----------------
 
@@ -12,9 +12,20 @@ defmodule ChromicPDF.Session do
     GenServer.start_link(__MODULE__, opts)
   end
 
-  @spec print_to_pdf(pid(), {atom(), binary()}, keyword()) :: :ok
+  @spec print_to_pdf(pid(), tuple(), keyword()) :: binary()
   # Prints a PDF by navigating the session target to a URL.
-  def print_to_pdf(pid, {source_type, source}, opts) do
+  def print_to_pdf(pid, input, opts) do
+    navigate_and_export(pid, PrintToPDF, input, opts)
+  end
+
+  @spec capture_screenshot(pid(), tuple(), keyword()) :: binary()
+  # Captures a screenshot by navigating the session target to a URL.
+  def capture_screenshot(pid, input, opts) do
+    navigate_and_export(pid, CaptureScreenshot, input, opts)
+  end
+
+  @spec navigate_and_export(pid(), module(), {atom(), binary()}, keyword()) :: binary()
+  defp navigate_and_export(pid, protocol, {source_type, source}, opts) do
     opts =
       Keyword.merge(
         [
@@ -24,7 +35,7 @@ defmodule ChromicPDF.Session do
         opts
       )
 
-    GenServer.call(pid, {:print_to_pdf, opts})
+    GenServer.call(pid, {:run_protocol, protocol, opts})
   end
 
   # ----------- Callbacks ------------
@@ -45,10 +56,10 @@ defmodule ChromicPDF.Session do
   end
 
   @impl GenServer
-  def handle_call({:print_to_pdf, params}, _from, state) do
+  def handle_call({:run_protocol, protocol, params}, _from, state) do
     %{browser: browser, session_id: session_id} = state
 
-    protocol = PrintToPDF.new(session_id, params)
+    protocol = protocol.new(session_id, params)
     response = Browser.run(browser, protocol)
 
     {:reply, response, state}

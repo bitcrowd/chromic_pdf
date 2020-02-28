@@ -97,11 +97,43 @@ defmodule ChromicPDF.Supervisor do
           )
       """
       @spec print_to_pdf(
-              url :: Processor.pdf_input(),
+              url :: Processor.source(),
               opts :: [Processor.pdf_option()]
             ) :: :ok | {:ok, Processor.blob()}
       def print_to_pdf(input, opts \\ []) do
         Processor.print_to_pdf(__MODULE__, input, opts)
+      end
+
+      @doc """
+      Captures a screenshot.
+
+      This call blocks until the screenshot has been created.
+
+      ## Print and return Base64-encoded PNG
+
+          {:ok, blob} = ChromicPDF.capture_screenshot({:url, "file:///example.html"})
+
+      ## Options
+
+      Options can be passed by passing a map to the `:capture_screenshot` key.
+
+          ChromicPDF.capture_screenshot(
+            {:url, "file:///example.html"},
+            capture_screenshot: %{
+              format: "jpeg"
+            }
+          )
+
+      Please see docs for details:
+
+      https://chromedevtools.github.io/devtools-protocol/tot/Page#method-captureScreenshot
+      """
+      @spec capture_screenshot(
+              url :: Processor.source(),
+              opts :: keyword()
+            ) :: :ok | {:ok, Processor.blob()}
+      def capture_screenshot(input, opts \\ []) do
+        Processor.capture_screenshot(__MODULE__, input, opts)
       end
 
       @doc """
@@ -181,7 +213,7 @@ defmodule ChromicPDF.Supervisor do
           ChromicPDF.print_to_pdfa({:url, "https://example.net"})
       """
       @spec print_to_pdfa(
-              url :: Processor.pdf_input(),
+              url :: Processor.source(),
               opts :: [Processor.pdf_option() | Processor.pdfa_option()]
             ) :: :ok | {:ok, Processor.blob()}
       def print_to_pdfa(input, opts \\ []) do
