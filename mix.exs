@@ -41,7 +41,7 @@ defmodule ChromicPdf.MixProject do
   defp package do
     [
       maintainers: ["@bitcrowd"],
-      licenses: ["MIT"],
+      licenses: ["Apache-2.0"],
       links: %{github: "https://github.com/bitcrowd/chromic_pdf"}
     ]
   end
