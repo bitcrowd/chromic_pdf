@@ -1,6 +1,6 @@
 defmodule ChromicPDF do
   @moduledoc """
-  ChromicPDF is a fast HTML-2-PDF/A renderer based on Chrome & Ghostscript.
+  ChromicPDF is a fast HTML-to-PDF/A renderer based on Chrome & Ghostscript.
 
   ## Usage
 
@@ -25,7 +25,7 @@ defmodule ChromicPDF do
 
   ### Print a PDF / PDF/A
 
-  Please see `ChromicPDF.print_to_pdf/3` and `ChromicPDF.print_to_pdfa/3`.
+  Please see `ChromicPDF.print_to_pdf/2` and `ChromicPDF.convert_to_pdfa/2`.
 
   ### Options
 
