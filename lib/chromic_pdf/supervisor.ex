@@ -57,15 +57,22 @@ defmodule ChromicPDF.Supervisor do
 
           {:ok, blob} = ChromicPDF.print_to_pdf({:url, "file:///example.html"})
 
+          # Can be displayed in iframes
+          "data:application/pdf;base64,\#{blob}"
+
       ## Print to file
 
           ChromicPDF.print_to_pdf({:url, "file:///example.html"}, output: "output.pdf")
 
       ## Print to temporary file
 
-          ChromicPDF.print_to_pdf({:url, "file:///example.html"}, output: fn output_pdf ->
-            send_download(...)
+          ChromicPDF.print_to_pdf({:url, "file:///example.html"}, output: fn path ->
+            send_download(path)
           end)
+
+      ## Print from a remote URL
+
+          ChromicPDF.print_to_pdf({:url, "http://example.net/"}, offline: false)
 
       The temporary file passed to the callback will be deleted when the callback returns.
 
@@ -81,16 +88,15 @@ defmodule ChromicPDF.Supervisor do
             }
           )
 
-      For a full list of options to the `printToPDF` function, please see the Chrome
-      documentation at:
+      Please note the camel-case. For a full list of options to the `printToPDF` function,
+      please see the Chrome documentation at:
 
       https://chromedevtools.github.io/devtools-protocol/tot/Page#method-printToPDF
 
       ## Print from in-memory HTML
 
-      For convenience, it is also possible to pass a HTML blob to `print_to_pdf/2` which is
-      automatically stored in a temporary file and cleaned up afterwards. It is served over
-      the `file://` scheme.
+      For convenience, it is also possible to pass a HTML blob to `print_to_pdf/2`. The HTML is
+      sent to the target using the [`Pahe.setDocumentContent`](https://chromedevtools.github.io/devtools-protocol/tot/Page#method-setDocumentContent) function.
 
           ChromicPDF.print_to_pdf(
             {:html, "<html><body><h1>Hello World!</h1></body></html>"}

@@ -21,8 +21,6 @@ defmodule ChromicPDF.Session do
 
   @impl GenServer
   def init(opts) do
-    opts = Keyword.put_new(opts, :offline, true)
-
     browser =
       opts
       |> Keyword.fetch!(:chromic)
