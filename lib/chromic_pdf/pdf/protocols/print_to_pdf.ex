@@ -5,6 +5,11 @@ defmodule ChromicPDF.PrintToPDF do
   alias ChromicPDF.Protocol
 
   steps do
+    if_option :set_cookie do
+      call(:set_cookie, "Network.setCookie", &Map.fetch!(&1, :set_cookie), %{})
+      await_response(:cookie_set, [])
+    end
+
     if_option {:source_type, :html} do
       call(:get_frame_tree, "Page.getFrameTree", [], %{})
       await_response(:frame_tree, [{["frameTree", "frame", "id"], "frameId"}])
@@ -20,9 +25,15 @@ defmodule ChromicPDF.PrintToPDF do
 
     call(:print_to_pdf, "Page.printToPDF", &Map.get(&1, :print_to_pdf, %{}), %{})
     await_response(:printed, ["data"])
-    reply("data")
 
     call(:blank, "Page.navigate", [], %{"url" => "about:blank"})
     await_response(:blanked, ["frameId"])
+
+    if_option :set_cookie do
+      call(:clear_cookies, "Network.clearBrowserCookies", [], %{})
+      await_response(:cleared, [])
+    end
+
+    reply("data")
   end
 end

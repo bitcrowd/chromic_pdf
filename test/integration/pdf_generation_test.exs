@@ -4,33 +4,34 @@ defmodule ChromicPDF.PDFGenerationTest do
 
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)
   @output Path.expand("../test.pdf", __ENV__.file)
+  @test_server_port Application.fetch_env!(:chromic_pdf, :test_server_port)
+
+  defp print_to_pdf(cb) do
+    print_to_pdf({:url, "file://#{@test_html}"}, [], cb)
+  end
+
+  defp print_to_pdf(params, cb) when is_list(params) do
+    print_to_pdf({:url, "file://#{@test_html}"}, params, cb)
+  end
+
+  defp print_to_pdf(input, cb) do
+    print_to_pdf(input, [], cb)
+  end
+
+  defp print_to_pdf(input, pdf_params, cb) do
+    assert ChromicPDF.print_to_pdf(input, Keyword.put(pdf_params, :output, @output)) == :ok
+    assert File.exists?(@output)
+
+    text = system_cmd!("pdftotext", [@output, "-"])
+    cb.(text)
+  after
+    File.rm_rf!(@output)
+  end
 
   describe "PDF printing" do
     setup do
       start_supervised!(ChromicPDF)
       :ok
-    end
-
-    defp print_to_pdf(cb) do
-      print_to_pdf({:url, "file://#{@test_html}"}, [], cb)
-    end
-
-    defp print_to_pdf(params, cb) when is_list(params) do
-      print_to_pdf({:url, "file://#{@test_html}"}, params, cb)
-    end
-
-    defp print_to_pdf(input, cb) do
-      print_to_pdf(input, [], cb)
-    end
-
-    defp print_to_pdf(input, pdf_params, cb) do
-      assert ChromicPDF.print_to_pdf(input, Keyword.put(pdf_params, :output, @output)) == :ok
-      assert File.exists?(@output)
-
-      text = system_cmd!("pdftotext", [@output, "-"])
-      cb.(text)
-    after
-      File.rm_rf!(@output)
     end
 
     @tag :pdftotext
@@ -40,11 +41,6 @@ defmodule ChromicPDF.PDFGenerationTest do
       end)
     end
 
-    # credo:disable-for-next-line Credo.Check.Design.TagFIXME
-    # FIXME: currently out-of-order
-    #
-    # Plan is to do this with
-    #  https://chromedevtools.github.io/devtools-protocol/tot/Page#method-setDocumentContent
     @tag :pdftotext
     test "it prints PDF from HTML content" do
       print_to_pdf({:html, File.read!(@test_html)}, fn text ->
@@ -119,6 +115,48 @@ defmodule ChromicPDF.PDFGenerationTest do
     test "it prints PDF from https:// URLs when given the offline: false parameter" do
       print_to_pdf({:url, "https://example.net"}, fn text ->
         assert String.contains?(text, "Example Domain")
+      end)
+    end
+  end
+
+  describe "a cookie can be set when printing" do
+    @cookie %{
+      name: "foo",
+      value: "bar",
+      domain: "localhost"
+    }
+
+    defmodule CookieEcho do
+      use Plug.Router
+
+      plug(:fetch_cookies)
+      plug(:match)
+      plug(:dispatch)
+
+      get "/" do
+        send_resp(conn, 200, inspect(conn.req_cookies))
+      end
+    end
+
+    setup do
+      start_supervised!({ChromicPDF, offline: false})
+
+      start_supervised!(
+        {Plug.Cowboy, scheme: :http, plug: CookieEcho, options: [port: @test_server_port]}
+      )
+
+      :ok
+    end
+
+    test "cookies can be set thru print_to_pdf/2 and are cleared afterwards" do
+      input = {:url, "http://localhost:#{@test_server_port}/"}
+
+      print_to_pdf(input, [set_cookie: @cookie], fn text ->
+        assert text =~ ~s(%{"foo" => "bar"})
+      end)
+
+      print_to_pdf(input, [], fn text ->
+        assert text =~ "%{}"
       end)
     end
   end
