@@ -53,24 +53,66 @@ defmodule ChromicPDF.Supervisor do
 
       This call blocks until the PDF has been created.
 
-      ## Print and return Base64-encoded PDF
+      ## Output options
+
+      ### Print and return Base64-encoded PDF
 
           {:ok, blob} = ChromicPDF.print_to_pdf({:url, "file:///example.html"})
 
           # Can be displayed in iframes
           "data:application/pdf;base64,\#{blob}"
 
-      ## Print to file
+      ### Print to file
 
           ChromicPDF.print_to_pdf({:url, "file:///example.html"}, output: "output.pdf")
 
-      ## Print to temporary file
+      ### Print to temporary file
 
           ChromicPDF.print_to_pdf({:url, "file:///example.html"}, output: fn path ->
             send_download(path)
           end)
 
       The temporary file passed to the callback will be deleted when the callback returns.
+
+      ## Input options
+
+      ### Print from URL
+
+      Passing in a URL is the simplest way of printing a PDF. A target in Chrome is told to
+      navigate to the given URL. When navigation is finished, the PDF is printed.
+
+          ChromicPDF.print_to_pdf({:url, "file:///example.html"})
+
+      One may pass `http` or `https` URLs just like above, only be aware that you will need to
+      enable "online mode" first. See ["Running in online mode"](#module-running-in-online-mode)
+      for explanation.
+
+          ChromicPDF.print_to_pdf({:url, "http:///example.net"})
+
+      #### Cookies
+
+      If your URL requires authentication, you can pass in a session cookie. The cookie is
+      automatically cleared after the PDF has been printed.
+
+          cookie = %{
+            name: "foo",
+            value: "bar",
+            domain: "localhost"
+          }
+
+          ChromicPDF.print_to_pdf({:url, "http:///example.net"}, set_cookie: cookie)
+
+      See [`Network.setCookie`](https://chromedevtools.github.io/devtools-protocol/tot/Network#method-setCookie)
+      for options. `name` and `value` keys are required.
+
+      ### Print from in-memory HTML
+
+      For convenience, it is also possible to pass a HTML blob to `print_to_pdf/2`. The HTML is
+      sent to the target using the [`Pahe.setDocumentContent`](https://chromedevtools.github.io/devtools-protocol/tot/Page#method-setDocumentContent) function.
+
+          ChromicPDF.print_to_pdf(
+            {:html, "<html><body><h1>Hello World!</h1></body></html>"}
+          )
 
       ## PDF printing options
 
@@ -88,15 +130,6 @@ defmodule ChromicPDF.Supervisor do
       please see the Chrome documentation at:
 
       https://chromedevtools.github.io/devtools-protocol/tot/Page#method-printToPDF
-
-      ## Print from in-memory HTML
-
-      For convenience, it is also possible to pass a HTML blob to `print_to_pdf/2`. The HTML is
-      sent to the target using the [`Pahe.setDocumentContent`](https://chromedevtools.github.io/devtools-protocol/tot/Page#method-setDocumentContent) function.
-
-          ChromicPDF.print_to_pdf(
-            {:html, "<html><body><h1>Hello World!</h1></body></html>"}
-          )
       """
       @spec print_to_pdf(
               url :: Processor.source(),

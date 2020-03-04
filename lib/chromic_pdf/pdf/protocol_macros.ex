@@ -39,6 +39,14 @@ defmodule ChromicPDF.ProtocolMacros do
         do_build_steps(rest, acc, opts)
       end
 
+      defp do_build_steps([{:if_option, key} | rest], acc, opts) do
+        if Keyword.has_key?(opts, key) do
+          do_build_steps(rest, acc, opts)
+        else
+          skip_branch(rest, acc, opts)
+        end
+      end
+
       defp do_build_steps([{:if_option, key, value} | rest], acc, opts) do
         if Keyword.get(opts, key) == value do
           do_build_steps(rest, acc, opts)
@@ -64,6 +72,14 @@ defmodule ChromicPDF.ProtocolMacros do
   defmacro if_option({test_key, test_value}, do: block) do
     quote do
       @steps {:if_option, unquote(test_key), unquote(test_value)}
+      unquote(block)
+      @steps :end
+    end
+  end
+
+  defmacro if_option(test_key, do: block) do
+    quote do
+      @steps {:if_option, unquote(test_key)}
       unquote(block)
       @steps :end
     end

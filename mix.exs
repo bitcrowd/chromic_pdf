@@ -61,7 +61,9 @@ defmodule ChromicPdf.MixProject do
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.21.3", only: [:test, :dev], runtime: false},
       {:junit_formatter, "~> 3.0", only: [:test, :integration]},
-      {:mox, "~> 0.5.1", only: [:test]}
+      {:mox, "~> 0.5.1", only: [:test]},
+      {:plug, "~> 1.9", only: [:integration]},
+      {:plug_cowboy, "~> 2.1", only: [:integration]}
     ]
   end
 
