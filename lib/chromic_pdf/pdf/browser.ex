@@ -24,9 +24,14 @@ defmodule ChromicPDF.Browser do
     Module.concat(chromic, :Browser)
   end
 
-  @spec run(browser(), Protocol.t()) :: {:ok, any()}
-  def run(browser, protocol) do
-    GenServer.call(browser, {:run, protocol})
+  @spec run_protocol(browser(), module(), keyword()) :: {:ok, any()}
+  def run_protocol(browser, protocol_mod, opts) do
+    GenServer.call(browser, {:run_protocol, protocol_mod.new(opts)})
+  end
+
+  @spec run_protocol(browser(), Protocol.t()) :: {:ok, any()}
+  def run_protocol(browser, %Protocol{} = protocol) do
+    GenServer.call(browser, {:run_protocol, protocol})
   end
 
   # ----------- Callbacks ------------
@@ -53,7 +58,11 @@ defmodule ChromicPDF.Browser do
   end
 
   @impl GenServer
-  def handle_call({:run, protocol}, from, %{dispatch: dispatch, protocols: protocols} = state) do
+  def handle_call(
+        {:run_protocol, protocol},
+        from,
+        %{dispatch: dispatch, protocols: protocols} = state
+      ) do
     protocols = [Protocol.init(protocol, from, dispatch) | protocols]
     {:noreply, update_protocols(state, protocols)}
   end

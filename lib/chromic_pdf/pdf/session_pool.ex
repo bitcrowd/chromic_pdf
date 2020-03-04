@@ -5,19 +5,15 @@ defmodule ChromicPDF.SessionPool do
 
   @timeout 5000
 
-  @spec print_to_pdf(atom(), tuple(), keyword()) :: binary()
-  def print_to_pdf(chromic, input, opts) do
-    transaction(chromic, opts, &Session.print_to_pdf(&1, input, opts))
-  end
-
-  @spec capture_screenshot(atom(), tuple(), keyword()) :: binary()
-  def capture_screenshot(chromic, input, opts) do
-    transaction(chromic, opts, &Session.capture_screenshot(&1, input, opts))
-  end
-
-  defp transaction(chromic, opts, fun) do
+  @spec run_protocol(atom(), module(), keyword()) :: any()
+  def run_protocol(chromic, protocol_mod, opts) do
     timeout = Keyword.get(opts, :timeout, @timeout)
-    :poolboy.transaction(pool_name(chromic), fun, timeout)
+
+    :poolboy.transaction(
+      pool_name(chromic),
+      &Session.run_protocol(&1, protocol_mod, opts),
+      timeout
+    )
   end
 
   @spec child_spec(keyword()) :: :supervisor.child_spec()
