@@ -11,7 +11,7 @@ defmodule ChromicPDF.Processor do
   @type source :: {:url, url()} | {:html, blob()}
 
   @type output_option :: {:output, binary()} | {:output, function()}
-  @type pdf_option :: {:print_to_pdf, map()} | {:offline, boolean()} | output_option()
+  @type pdf_option :: {:print_to_pdf, map()} | output_option()
   @type pdfa_option ::
           {:pdfa_version, binary()} | {:pdfa_def_ext, binary()} | {:info, map()} | output_option()
   @type screenshot_option :: {:capture_screenshot, map()} | output_option()
@@ -21,9 +21,7 @@ defmodule ChromicPDF.Processor do
     chromic
     |> SessionPool.run_protocol(
       PrintToPDF,
-      opts
-      |> Keyword.put_new(:offline, true)
-      |> merge_source_into_opts(source)
+      merge_source_into_opts(opts, source)
     )
     |> feed_chrome_data_into_output(opts)
   end

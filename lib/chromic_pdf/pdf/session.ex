@@ -21,12 +21,14 @@ defmodule ChromicPDF.Session do
 
   @impl GenServer
   def init(opts) do
-    browser =
-      opts
-      |> Keyword.fetch!(:chromic)
-      |> Browser.server_name()
+    browser = Keyword.fetch!(opts, :chromic)
 
-    session_id = Browser.run_protocol(browser, SpawnSession, opts)
+    session_id =
+      Browser.run_protocol(
+        browser,
+        SpawnSession,
+        Keyword.put_new(opts, :offline, true)
+      )
 
     {:ok, %{session_id: session_id, browser: browser}}
   end
