@@ -67,20 +67,17 @@ defmodule ChromicPDF do
 
   ### Running in online mode
 
-  Before navigating to a URL, browser targets will switch to "offline mode" by default, using the
-  DevTools command [`Network.emulateNetworkConditions`](https://chromedevtools.github.io/devtools-protocol/tot/Network#method-emulateNetworkConditions).
+  Browser targets will be spawned in "offline mode" by default (using the DevTools command
+  [`Network.emulateNetworkConditions`](https://chromedevtools.github.io/devtools-protocol/tot/Network#method-emulateNetworkConditions).
   Users are required to take this extra step (basically reading this paragraph) to re-consider
   whether remote printing is a requirement.
 
   However, there are a lot of valid use-cases for printing from a URL, particularly from a
-  webserver on localhost. To switch to "online mode", pass the `offline: false` parameter when
-  printing.
+  webserver on localhost. To switch to "online mode", pass the `offline: false` parameter.
 
-      ChromicPDF.print_to_pdf(
-        {:url, "http://localhost:4000/invoices/123"},
-        offline: false,
-        output: "output.pdf"
-      )
+      def chromic_pdf_opts do
+        [offline: false]
+      end
 
   ### Chrome Sandbox
 

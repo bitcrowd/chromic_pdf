@@ -3,11 +3,12 @@ defmodule ChromicPDF.SessionPool do
 
   alias ChromicPDF.Session
 
-  @timeout 5000
+  @default_pool_size Application.get_env(:chromic_pdf, :default_pool_size, 5)
+  @default_timeout Application.get_env(:chromic_pdf, :default_timeout, 5000)
 
   @spec run_protocol(atom(), module(), keyword()) :: any()
   def run_protocol(chromic, protocol_mod, opts) do
-    timeout = Keyword.get(opts, :timeout, @timeout)
+    timeout = Keyword.get(opts, :timeout, @default_timeout)
 
     :poolboy.transaction(
       pool_name(chromic),
@@ -36,7 +37,7 @@ defmodule ChromicPDF.SessionPool do
     [
       name: {:local, pool_name},
       worker_module: ChromicPDF.Session,
-      size: 1,
+      size: @default_pool_size,
       max_overflow: 0
     ]
   end

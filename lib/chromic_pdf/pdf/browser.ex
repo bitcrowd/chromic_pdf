@@ -19,19 +19,26 @@ defmodule ChromicPDF.Browser do
     GenServer.start_link(__MODULE__, args, name: name)
   end
 
-  @spec server_name(atom()) :: atom()
-  def server_name(chromic) do
-    Module.concat(chromic, :Browser)
-  end
-
   @spec run_protocol(browser(), module(), keyword()) :: {:ok, any()}
   def run_protocol(browser, protocol_mod, opts) do
-    GenServer.call(browser, {:run_protocol, protocol_mod.new(opts)})
+    genserver_call(browser, {:run_protocol, protocol_mod.new(opts)})
   end
 
   @spec run_protocol(browser(), Protocol.t()) :: {:ok, any()}
   def run_protocol(browser, %Protocol{} = protocol) do
-    GenServer.call(browser, {:run_protocol, protocol})
+    genserver_call(browser, {:run_protocol, protocol})
+  end
+
+  defp server_name(chromic) do
+    Module.concat(chromic, :Browser)
+  end
+
+  defp genserver_call(chromic, msg) when is_atom(chromic) do
+    GenServer.call(server_name(chromic), msg)
+  end
+
+  defp genserver_call(browser, msg) when is_pid(browser) do
+    GenServer.call(browser, msg)
   end
 
   # ----------- Callbacks ------------

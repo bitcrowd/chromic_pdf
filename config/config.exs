@@ -1,5 +1,9 @@
 import Config
 
 if Mix.env() == :test do
-  config :chromic_pdf, :chrome, ChromicPDF.ChromeMock
+  config :chromic_pdf, chrome: ChromicPDF.ChromeMock
+end
+
+if Mix.env() in [:test, :dev] do
+  config :chromic_pdf, default_pool_size: 1
 end

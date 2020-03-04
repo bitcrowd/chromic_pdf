@@ -70,10 +70,6 @@ defmodule ChromicPDF.Supervisor do
             send_download(path)
           end)
 
-      ## Print from a remote URL
-
-          ChromicPDF.print_to_pdf({:url, "http://example.net/"}, offline: false)
-
       The temporary file passed to the callback will be deleted when the callback returns.
 
       ## PDF printing options
