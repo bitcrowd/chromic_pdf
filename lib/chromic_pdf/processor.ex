@@ -2,7 +2,7 @@ defmodule ChromicPDF.Processor do
   @moduledoc false
 
   import ChromicPDF.Utils
-  alias ChromicPDF.{GhostscriptPool, SessionPool}
+  alias ChromicPDF.{CaptureScreenshot, GhostscriptPool, PrintToPDF, SessionPool}
 
   @type url :: binary()
   @type path :: binary()
@@ -17,14 +17,32 @@ defmodule ChromicPDF.Processor do
 
   @spec print_to_pdf(module(), source(), [pdf_option()]) :: :ok | {:ok, blob()}
   def print_to_pdf(chromic, source, opts) when tuple_size(source) == 2 and is_list(opts) do
-    data = SessionPool.print_to_pdf(chromic, source, opts)
-    feed_chrome_data_into_output(data, opts)
+    chromic
+    |> SessionPool.run_protocol(
+      PrintToPDF,
+      merge_source_into_opts(source, opts)
+    )
+    |> feed_chrome_data_into_output(opts)
   end
 
   @spec capture_screenshot(module(), source(), keyword()) :: :ok | {:ok, blob()}
   def capture_screenshot(chromic, source, opts) when tuple_size(source) == 2 and is_list(opts) do
-    data = SessionPool.capture_screenshot(chromic, source, opts)
-    feed_chrome_data_into_output(data, opts)
+    chromic
+    |> SessionPool.run_protocol(
+      CaptureScreenshot,
+      merge_source_into_opts(source, opts)
+    )
+    |> feed_chrome_data_into_output(opts)
+  end
+
+  defp merge_source_into_opts({source_type, source}, opts) do
+    Keyword.merge(
+      [
+        {:source_type, source_type},
+        {source_type, source}
+      ],
+      opts
+    )
   end
 
   defp feed_chrome_data_into_output(data, opts) do
