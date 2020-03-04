@@ -75,6 +75,13 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     @tag :pdftotext
+    test "it prints PDF from https:// URLs when given the offline: false parameter" do
+      print_to_pdf({:url, "https://example.net"}, [offline: false], fn text ->
+        assert String.contains?(text, "Example Domain")
+      end)
+    end
+
+    @tag :pdftotext
     test "it allows to pass thru options to printToPDF" do
       pdf_params = %{
         displayHeaderFooter: true,
@@ -94,19 +101,18 @@ defmodule ChromicPDF.PDFGenerationTest do
       assert {:ok, blob} = ChromicPDF.print_to_pdf({:url, "file://#{@test_html}"})
       assert blob =~ ~r<^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$>
     end
-  end
 
-  describe "online mode" do
-    setup do
-      start_supervised!({ChromicPDF, offline: false})
-      :ok
-    end
+    test "it can yield a temporary file to a callback" do
+      ChromicPDF.print_to_pdf({:url, "file://#{@test_html}"},
+        output: fn path ->
+          assert File.exists?(path)
+          send(self(), path)
+        end
+      )
 
-    @tag :pdftotext
-    test "it prints PDF from https:// URLs" do
-      print_to_pdf({:url, "https://example.net"}, fn text ->
-        assert String.contains?(text, "Example Domain")
-      end)
+      receive do
+        path -> refute File.exists?(path)
+      end
     end
   end
 end

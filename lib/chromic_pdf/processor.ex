@@ -11,37 +11,40 @@ defmodule ChromicPDF.Processor do
   @type source :: {:url, url()} | {:html, blob()}
 
   @type output_option :: {:output, binary()} | {:output, function()}
-  @type pdf_option :: {:print_to_pdf, map()} | output_option()
+  @type pdf_option :: {:print_to_pdf, map()} | {:offline, boolean()} | output_option()
   @type pdfa_option ::
           {:pdfa_version, binary()} | {:pdfa_def_ext, binary()} | {:info, map()} | output_option()
+  @type screenshot_option :: {:capture_screenshot, map()} | output_option()
 
   @spec print_to_pdf(module(), source(), [pdf_option()]) :: :ok | {:ok, blob()}
   def print_to_pdf(chromic, source, opts) when tuple_size(source) == 2 and is_list(opts) do
     chromic
     |> SessionPool.run_protocol(
       PrintToPDF,
-      merge_source_into_opts(source, opts)
+      opts
+      |> Keyword.put_new(:offline, true)
+      |> merge_source_into_opts(source)
     )
     |> feed_chrome_data_into_output(opts)
   end
 
-  @spec capture_screenshot(module(), source(), keyword()) :: :ok | {:ok, blob()}
+  @spec capture_screenshot(module(), source(), [screenshot_option()]) :: :ok | {:ok, blob()}
   def capture_screenshot(chromic, source, opts) when tuple_size(source) == 2 and is_list(opts) do
     chromic
     |> SessionPool.run_protocol(
       CaptureScreenshot,
-      merge_source_into_opts(source, opts)
+      merge_source_into_opts(opts, source)
     )
     |> feed_chrome_data_into_output(opts)
   end
 
-  defp merge_source_into_opts({source_type, source}, opts) do
+  defp merge_source_into_opts(opts, {source_type, source}) do
     Keyword.merge(
+      opts,
       [
         {:source_type, source_type},
         {source_type, source}
-      ],
-      opts
+      ]
     )
   end
 
@@ -52,7 +55,12 @@ defmodule ChromicPDF.Processor do
         :ok
 
       fun when is_function(fun, 1) ->
-        fun.(data)
+        with_tmp_dir(fn tmp_dir ->
+          path = Path.join(tmp_dir, random_file_name(".pdf"))
+          File.write!(path, Base.decode64!(data))
+          fun.(path)
+        end)
+
         :ok
 
       nil ->

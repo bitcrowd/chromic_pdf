@@ -4,7 +4,7 @@ defmodule ChromicPDF do
 
   ## Usage
 
-  ### Boot
+  ### Start
 
   Start ChromicPDF as part of your supervision tree:
 
@@ -23,15 +23,18 @@ defmodule ChromicPDF do
         end
       end
 
-  ### Print a PDF / PDF/A
+  ### Print a PDF or PDF/A
 
-  Please see `ChromicPDF.print_to_pdf/2` and `ChromicPDF.convert_to_pdfa/2`.
+      ChromicPDF.print_to_pdf({:url, "file:///example.html"}, output: "output.pdf")
+
+  See `ChromicPDF.print_to_pdf/2` and `ChromicPDF.convert_to_pdfa/2`.
 
   ### Options
 
-  ChromicPDF spawns two worker pools, the session pool and the ghostscript pool.  By default, it
-  will create 5 workers with no overflow. To change these options, you may pass configuration to
-  the supervisor.
+  ChromicPDF spawns two worker pools, the session pool and the ghostscript pool. By default, it
+  will create 5 workers with no overflow. To change these options, you can pass configuration to
+  the supervisor. Please note that these are only worker pools. If you intend to max them out,
+  you will need a job queue as well.
 
   Please see https://github.com/devinus/poolboy for available options.
 
@@ -48,32 +51,44 @@ defmodule ChromicPDF do
         ]
       end
 
-  Please note, that these are only worker pools. If you intend to max them out, you will need a
-  job queue as well.
+  ## Security Considerations
 
-  ## Security
+  Before adding a browser to your application's (perhaps already long) list of dependencies, you
+  may want consider the security hints below.
 
-  ### Chrome Sandbox
+  ### Escape user-supplied data
 
-  By default, ChromicPDF will run Chrome in sandbox mode. If you absolutely must run Chrome as
-  root, you can turn of its sandbox by passing the `no_sandbox: true` option.
-
-      defp chromic_pdf_opts do
-        [no_sandbox: true]
-      end
+  If you can, make sure to escape any data provided by users with something like
+  [`Phoenix.HTML.escape_html`](https://hexdocs.pm/phoenix_html/Phoenix.HTML.html#html_escape/1).
+  Chrome is designed to make displaying HTML pages relatively safe, in terms of preventing
+  undesired access of a page to the host operating system. However, the attack surface of your
+  application is still increased. Running this in a contained application with a small HTTP
+  interface creates an additional barrier (and has other benefits).
 
   ### Running in online mode
 
-  Browser targets spawned by ChromicPDF will be set to "offline" mode using the DevTools'
-  `emulateNetworkConditions` command. This is intentional. Users are required to take an extra
-  step (basically reading this paragraph) to re-consider whether basing their application's PDF
-  printing on remote URL requests. Both because it can lead to unexpected performance
-  fluctuation, as well as because it might increase the attack surface of their app.
+  Before navigating to a URL, browser targets will switch to "offline mode" by default, using the
+  DevTools command [`Network.emulateNetworkConditions`](https://chromedevtools.github.io/devtools-protocol/tot/Network#method-emulateNetworkConditions).
+  Users are required to take this extra step (basically reading this paragraph) to re-consider
+  whether remote printing is a requirement.
 
-  To switch on "online" mode, pass the `offline: false` parameter.
+  However, there are a lot of valid use-cases for printing from a URL, particularly from a
+  webserver on localhost. To switch to "online mode", pass the `offline: false` parameter when
+  printing.
+
+      ChromicPDF.print_to_pdf(
+        {:url, "http://localhost:4000/invoices/123"},
+        offline: false,
+        output: "output.pdf"
+      )
+
+  ### Chrome Sandbox
+
+  By default, ChromicPDF will run Chrome targets in a sandboxed OS process. If you absolutely
+  must run Chrome as root, you can turn of its sandbox by passing the `no_sandbox: true` option.
 
       defp chromic_pdf_opts do
-        [offline: true]
+        [no_sandbox: true]
       end
 
   ## How it works
