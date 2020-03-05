@@ -12,7 +12,7 @@ defmodule ChromicPDF.Session do
     GenServer.start_link(__MODULE__, opts)
   end
 
-  @spec run_protocol(pid(), module(), keyword()) :: any()
+  @spec run_protocol(pid(), module(), keyword()) :: {:ok, any()} | {:error, term()}
   def run_protocol(pid, protocol_mod, opts) do
     GenServer.call(pid, {:run_protocol, protocol_mod, opts})
   end
@@ -23,7 +23,7 @@ defmodule ChromicPDF.Session do
   def init(opts) do
     browser = Keyword.fetch!(opts, :chromic)
 
-    session_id =
+    {:ok, session_id} =
       Browser.run_protocol(
         browser,
         SpawnSession,

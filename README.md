@@ -96,7 +96,7 @@ ChromicPDF.print_to_pdfa(
     author: "Jane Doe",
     creator: "ChromicPDF"
   },
-  pdfa_version: "3"
+  pdfa_version: "3",
 
   # Output path.
   output: "test.pdf"

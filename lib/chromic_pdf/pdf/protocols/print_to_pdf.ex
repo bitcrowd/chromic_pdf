@@ -19,7 +19,17 @@ defmodule ChromicPDF.PrintToPDF do
 
     if_option {:source_type, :url} do
       call(:navigate, "Page.navigate", [:url], %{})
-      await_response(:navigated, ["frameId"])
+
+      await_response(:navigated, ["frameId"]) do
+        case get_in(msg, ["result", "errorText"]) do
+          nil ->
+            :ok
+
+          error ->
+            {:error, error}
+        end
+      end
+
       await_notification(:frame_stopped_loading, "Page.frameStoppedLoading", ["frameId"], [])
     end
 

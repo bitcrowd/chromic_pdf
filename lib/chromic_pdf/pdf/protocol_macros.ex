@@ -115,16 +115,44 @@ defmodule ChromicPDF.ProtocolMacros do
     Enum.into(keys, defaults, &{&1, Map.fetch!(state, &1)})
   end
 
+  defmacro await_response(name, put_keys, do: block) do
+    quote generated: true do
+      await_response(unquote(name), unquote(put_keys))
+      await_response_callback(unquote(name), do: unquote(block))
+    end
+  end
+
+  defmacro await_response_callback(name, do: block) do
+    quote generated: true do
+      def unquote(:"#{name}_callback")(var!(state), var!(msg)) do
+        unquote(block)
+      end
+    end
+  end
+
   defmacro await_response(name, put_keys) do
+    cb_name = :"#{name}_callback"
+
     quote do
       @steps {:await, unquote(name), 2}
+
       def unquote(name)(state, msg) do
         last_call_id = Map.fetch!(state, :last_call_id)
 
         if ChromicPDF.JsonRPC.is_response?(msg, last_call_id) do
-          state = extract_from_payload(msg, "result", unquote(put_keys), state)
+          if function_exported?(__MODULE__, unquote(cb_name), 2) do
+            apply(__MODULE__, unquote(cb_name), [state, msg])
+          else
+            :ok
+          end
+          |> case do
+            :ok ->
+              state = extract_from_payload(msg, "result", unquote(put_keys), state)
+              {:match, state}
 
-          {:match, state}
+            {:error, error} ->
+              {:error, error}
+          end
         else
           :no_match
         end
@@ -169,7 +197,7 @@ defmodule ChromicPDF.ProtocolMacros do
   defmacro reply(key) do
     quote do
       @steps {:reply, :reply, 1}
-      def reply(state), do: Map.fetch!(state, unquote(key))
+      def reply(state), do: {:ok, Map.fetch!(state, unquote(key))}
     end
   end
 end
