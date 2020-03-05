@@ -46,7 +46,22 @@ defmodule ChromicPDF.Processor do
     )
   end
 
-  defp feed_chrome_data_into_output(data, opts) do
+  defp feed_chrome_data_into_output({:error, "net::ERR_INTERNET_DISCONNECTED"}, _opts) do
+    raise("""
+    net::ERR_INTERNET_DISCONNECTED
+
+    This indicates you are trying to navigate to a remote URL without having enabled the "online
+    mode". Please start ChromicPDF with the `offline: false` parameter.
+
+        {ChromicPDF, offline: false}
+    """)
+  end
+
+  defp feed_chrome_data_into_output({:error, error}, _opts) do
+    raise(error)
+  end
+
+  defp feed_chrome_data_into_output({:ok, data}, opts) do
     case Keyword.get(opts, :output) do
       path when is_binary(path) ->
         File.write!(path, Base.decode64!(data))

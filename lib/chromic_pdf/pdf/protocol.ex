@@ -14,11 +14,17 @@ defmodule ChromicPDF.Protocol do
   @type dispatch :: (JsonRPC.call() -> JsonRPC.call_id())
 
   @type state :: map()
+  @type error :: {:error, term()}
   @type step :: call_step() | await_step() | reply_step()
 
-  @type call_step :: {:call, (state(), dispatch() -> state())}
-  @type await_step :: {:await, (state(), message() -> :no_match | {:match, state()})}
-  @type reply_step :: {:reply, (state() -> any())}
+  @type call_fun :: (state(), dispatch() -> state() | error())
+  @type call_step :: {:call, call_fun()}
+
+  @type await_fun :: (state(), message() -> :no_match | {:match, state()} | error())
+  @type await_step :: {:await, await_fun()}
+
+  @type reply_fun :: (state() -> any())
+  @type reply_step :: {:reply, reply_fun()}
 
   @type t :: %__MODULE__{
           steps: [step()],
@@ -41,6 +47,11 @@ defmodule ChromicPDF.Protocol do
   @spec init(__MODULE__.t(), GenServer.from(), dispatch()) :: __MODULE__.t()
   def init(%__MODULE__{} = protocol, from, dispatch) do
     advance(%{protocol | from: from}, dispatch)
+  end
+
+  defp advance(%__MODULE__{state: {:error, error}, from: from} = protocol, _dispatch) do
+    GenServer.reply(from, {:error, error})
+    %{protocol | steps: []}
   end
 
   defp advance(%__MODULE__{steps: []} = protocol, _dispatch), do: protocol
@@ -70,6 +81,7 @@ defmodule ChromicPDF.Protocol do
     case fun.(state, msg) do
       :no_match -> protocol
       {:match, state} -> %{protocol | steps: rest, state: state}
+      {:error, error} -> %{protocol | steps: [], state: {:error, error}}
     end
   end
 

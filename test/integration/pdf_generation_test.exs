@@ -48,26 +48,10 @@ defmodule ChromicPDF.PDFGenerationTest do
       end)
     end
 
-    # credo:disable-for-next-line Credo.Check.Design.TagFIXME
-    # FIXME: Broken in recent Chrome
-    #
-    # This test case is currently broken on my machine, presumably due to a change in Chrome.
-    # Previously we received a `frameStoppedLoading` event regardless of whether the page could be
-    # loaded or not. Since this event isn't received anymore, this call instead aborts from a
-    # timed out `GenServer.call/2` call. Fix could be proper error handling in the protocols. The
-    # response to `Page.navigate` contains an error message:
-    #
-    #     %{
-    #       "result" => %{
-    #         "errorText" => "net::ERR_INTERNET_DISCONNECTED"
-    #       }
-    #     }
-    @tag :skip
-    @tag :pdftotext
     test "it does not print PDF from https:// URLs by default" do
-      print_to_pdf({:url, "https://example.net"}, fn text ->
-        assert String.trim(text) == ""
-      end)
+      assert_raise RuntimeError, ~r/net::ERR_INTERNET_DISCONNECTED/, fn ->
+        ChromicPDF.print_to_pdf({:url, "https://example.net"})
+      end
     end
 
     @tag :pdftotext
