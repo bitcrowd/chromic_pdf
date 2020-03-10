@@ -119,10 +119,7 @@ defmodule ChromicPDF.Supervisor do
           ChromicPDF.print_to_pdf(
             {:url, "file:///example.html"},
             print_to_pdf: %{
-              marginTop: 0.787402,
-              marginLeft: 0.787402,
-              marginRight: 0.787402,
-              marginBottom: 0.787402,
+              pageRanges: "1-2"
             }
           )
 
@@ -130,6 +127,46 @@ defmodule ChromicPDF.Supervisor do
       please see the Chrome documentation at:
 
       https://chromedevtools.github.io/devtools-protocol/tot/Page#method-printToPDF
+
+      ### Header and footer
+
+      Chrome's support for native header and footer sections is a little bit finicky. Still, to
+      the best of my knowledge, `headerTemplate` and `footerTemplate` are the only
+      well-functioning solutions if you need headers or footers that are repeated on multiple
+      pages even in the presence of body elements stretching across a page break.
+
+      In order to make header and footer visible in the first place, you will need to be aware of
+      a couple of caveats:
+
+      * HTML for header and footer is interpreted in a new page context which means no body
+        styles will be applied. In fact, even default browser styles are not present, so all
+        content will have a default `font-size` of zero, and so on.
+      * You need to make space for the header and footer templates first, by adding page margins.
+        Margins can either be given using the `marginTop` and `marginBottom` options or with CSS
+        styles. If you use the options, the height of header and footer elements will inherit
+        these values. If you use CSS styles, make sure to set the height of the elements in CSS
+        as well.
+      * Header and footer have a default *padding* to the page ends of 0.4 centimeters. To remote
+        this, add the following to header/footer template styles [(source)](https://github.com/puppeteer/puppeteer/issues/4132).
+
+            #header, #footer { padding: 0 !important; }
+
+      * If header or footer is not displayed when it should, make sure your HTML is valid. Tuning
+        the margins for an hour looking for mistakes there, only to discover that you are missing
+        a closing `</style>` tag, can be quite painful.
+      * Javascript is not interpreted.
+      * Background colors are not applied, unless you include set `-webkit-print-color-adjust: exact`
+        in the CSS.
+
+      See [`print_header_footer_template.html`](https://cs.chromium.org/chromium/src/components/printing/resources/print_header_footer_template_page.html)
+      from the Chromium sources to see how these values are interpreted.
+
+      ### Page size and margins
+
+      Chrome will use the provided `pagerWidth` and `paperHeight` dimensions as the PDF paper
+      format, unless the `preferCSSPageSize` option is set to `true` in which case it prioritizes
+      values set in a `@page` section in the (body) CSS. However, any margin applied to the page
+      using the options above is generally overridden by margin rules in the `@page` section.
       """
       @spec print_to_pdf(
               url :: Processor.source(),
