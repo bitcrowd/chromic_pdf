@@ -1,3 +1,9 @@
+## Unreleased
+
+### Added
+
+- HTML source and header and footer template accept iolists now
+
 ## [0.1.0] - 2020-03-06
 
 ### Added
