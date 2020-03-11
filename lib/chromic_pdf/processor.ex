@@ -6,44 +6,73 @@ defmodule ChromicPDF.Processor do
 
   @type url :: binary()
   @type path :: binary()
-  @type blob :: binary()
+  @type blob :: iodata()
 
   @type source :: {:url, url()} | {:html, blob()}
+  @type return :: :ok | {:ok, binary()}
 
   @type output_option :: {:output, binary()} | {:output, function()}
-  @type pdf_option :: {:print_to_pdf, map()} | {:set_cookie, map()} | output_option()
+
+  @type pdf_option ::
+          {:print_to_pdf, map()}
+          | {:set_cookie, map()}
+          | output_option()
+
   @type pdfa_option ::
-          {:pdfa_version, binary()} | {:pdfa_def_ext, binary()} | {:info, map()} | output_option()
+          {:pdfa_version, binary()}
+          | {:pdfa_def_ext, binary()}
+          | {:info, map()}
+          | output_option()
   @type screenshot_option :: {:capture_screenshot, map()} | output_option()
 
-  @spec print_to_pdf(module(), source(), [pdf_option()]) :: :ok | {:ok, blob()}
+  @spec print_to_pdf(module(), source(), [pdf_option()]) :: return()
   def print_to_pdf(chromic, source, opts) when tuple_size(source) == 2 and is_list(opts) do
-    chromic
-    |> SessionPool.run_protocol(
-      PrintToPDF,
-      merge_source_into_opts(opts, source)
-    )
-    |> feed_chrome_data_into_output(opts)
+    chrome_export(chromic, PrintToPDF, source, opts)
   end
 
-  @spec capture_screenshot(module(), source(), [screenshot_option()]) :: :ok | {:ok, blob()}
+  @spec capture_screenshot(module(), source(), [screenshot_option()]) :: return()
   def capture_screenshot(chromic, source, opts) when tuple_size(source) == 2 and is_list(opts) do
+    chrome_export(chromic, CaptureScreenshot, source, opts)
+  end
+
+  defp chrome_export(chromic, protocol, {source_type, source}, opts) do
+    opts =
+      opts
+      |> Keyword.merge([{:source_type, source_type}, {source_type, source}])
+      |> stringify_map_keys()
+      |> iolists_to_binary()
+
     chromic
-    |> SessionPool.run_protocol(
-      CaptureScreenshot,
-      merge_source_into_opts(opts, source)
-    )
+    |> SessionPool.run_protocol(protocol, opts)
     |> feed_chrome_data_into_output(opts)
   end
 
-  defp merge_source_into_opts(opts, {source_type, source}) do
-    Keyword.merge(
-      opts,
-      [
-        {:source_type, source_type},
-        {source_type, source}
-      ]
-    )
+  @map_options [:print_to_pdf, :capture_screenshot]
+
+  defp stringify_map_keys(opts) do
+    Enum.reduce(@map_options, opts, fn key, acc ->
+      Keyword.update(acc, key, %{}, &do_stringify_map_keys/1)
+    end)
+  end
+
+  defp do_stringify_map_keys(map) do
+    Enum.into(map, %{}, fn {k, v} -> {to_string(k), v} end)
+  end
+
+  @iolist_options [
+    [:html],
+    [:print_to_pdf, "headerTemplate"],
+    [:print_to_pdf, "footerTemplate"]
+  ]
+
+  defp iolists_to_binary(opts) do
+    Enum.reduce(@iolist_options, opts, fn path, acc ->
+      update_in(acc, path, fn
+        nil -> ""
+        value when is_list(value) -> :erlang.iolist_to_binary(value)
+        value -> value
+      end)
+    end)
   end
 
   defp feed_chrome_data_into_output({:error, "net::ERR_INTERNET_DISCONNECTED"}, _opts) do
@@ -81,15 +110,14 @@ defmodule ChromicPDF.Processor do
     end
   end
 
-  @spec convert_to_pdfa(module(), path :: binary(), [pdfa_option()]) :: :ok | {:ok, blob()}
+  @spec convert_to_pdfa(module(), path :: binary(), [pdfa_option()]) :: return()
   def convert_to_pdfa(chromic, pdf_path, opts) when is_binary(pdf_path) and is_list(opts) do
     with_tmp_dir(fn tmp_dir ->
       do_convert_to_pdfa(chromic, pdf_path, opts, tmp_dir)
     end)
   end
 
-  @spec print_to_pdfa(module(), source(), [pdf_option() | pdfa_option()]) ::
-          :ok | {:ok, blob()}
+  @spec print_to_pdfa(module(), source(), [pdf_option() | pdfa_option()]) :: return()
   def print_to_pdfa(chromic, source, opts) when tuple_size(source) == 2 and is_list(opts) do
     with_tmp_dir(fn tmp_dir ->
       pdf_path = Path.join(tmp_dir, random_file_name(".pdf"))
