@@ -70,6 +70,21 @@ defmodule ChromicPDF.PDFGenerationTest do
       end)
     end
 
+    @tag :pdftotext
+    test "it accepts iolists in source and header/footer options" do
+      pdf_params = %{
+        displayHeaderFooter: true,
+        marginTop: 3,
+        marginBottom: 3,
+        headerTemplate: [~S(<span style="font-size: 40px">), ["Header", "</span>"]]
+      }
+
+      print_to_pdf({:html, ["foo", ["bar"]]}, [print_to_pdf: pdf_params], fn text ->
+        assert String.contains?(text, "Header")
+        assert String.contains?(text, "foobar")
+      end)
+    end
+
     test "it can return the Base64 encoded PDF" do
       assert {:ok, blob} = ChromicPDF.print_to_pdf({:url, "file://#{@test_html}"})
       assert blob =~ ~r<^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$>
