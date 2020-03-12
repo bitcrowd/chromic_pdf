@@ -169,7 +169,7 @@ defmodule ChromicPDF.Supervisor do
       using the options above is generally overridden by margin rules in the `@page` section.
       """
       @spec print_to_pdf(
-              url :: Processor.source(),
+              input :: Processor.source() | Processor.source_and_options(),
               opts :: [Processor.pdf_option()]
             ) :: :ok | {:ok, Processor.blob()}
       def print_to_pdf(input, opts \\ []) do
@@ -285,7 +285,7 @@ defmodule ChromicPDF.Supervisor do
           ChromicPDF.print_to_pdfa({:url, "https://example.net"})
       """
       @spec print_to_pdfa(
-              url :: Processor.source(),
+              input :: Processor.source() | Processor.source_and_options(),
               opts :: [Processor.pdf_option() | Processor.pdfa_option()]
             ) :: :ok | {:ok, Processor.blob()}
       def print_to_pdfa(input, opts \\ []) do
