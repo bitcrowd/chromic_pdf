@@ -9,6 +9,7 @@ defmodule ChromicPDF.Processor do
   @type blob :: iodata()
 
   @type source :: {:url, url()} | {:html, blob()}
+  @type source_and_options :: %{source: source(), opts: [pdf_option()]}
   @type return :: :ok | {:ok, binary()}
 
   @type output_option :: {:output, binary()} | {:output, function()}
@@ -25,7 +26,12 @@ defmodule ChromicPDF.Processor do
           | output_option()
   @type screenshot_option :: {:capture_screenshot, map()} | output_option()
 
-  @spec print_to_pdf(module(), source(), [pdf_option()]) :: return()
+  @spec print_to_pdf(module(), source() | source_and_options(), [pdf_option()]) :: return()
+  def print_to_pdf(chromic, %{source: source, opts: opts}, overrides)
+      when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
+    print_to_pdf(chromic, source, Keyword.merge(opts, overrides))
+  end
+
   def print_to_pdf(chromic, source, opts) when tuple_size(source) == 2 and is_list(opts) do
     chrome_export(chromic, PrintToPDF, source, opts)
   end

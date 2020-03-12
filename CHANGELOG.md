@@ -3,6 +3,7 @@
 ### Added
 
 - HTML source and header and footer template accept iolists now
+- New `Template` module contains basic CSS skeleton to easily dimension & layout pages (header & footer margins)
 
 ## [0.2.0] - 2020-03-06
 

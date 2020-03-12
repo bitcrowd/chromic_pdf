@@ -48,7 +48,7 @@ end
 
 ## Usage
 
-### Example
+### Main API
 
 ```elixir
 ChromicPDF.print_to_pdfa(
@@ -106,6 +106,34 @@ ChromicPDF.print_to_pdfa(
   # Output path.
   output: "test.pdf"
 )
+```
+
+### Sample boilerplate for a template
+
+This more sophisticated example shows how to use `Phoenix.View` to move HTML markup into template
+files.
+
+```elixir
+defmodule MyApp.InvoiceView do
+  use Phoenix.View,
+    root: "lib/my_app/path/to/pdf_templates",
+    namespace: MyApp
+
+  def print_to_pdf(assigns) do
+    [content: content(assigns)]
+    |> ChromicPDF.Template.source_and_options()
+    |> ChromicPDF.print_to_pdf()
+  end
+
+  @style File.read!("../path/to/assets/css/invoice.css")
+
+  defp content(assigns) do
+    [
+      @style,
+      Phoenix.HTML.safe_to_string(render("content.html", assigns))
+    ]
+  end
+end
 ```
 
 ## Development
