@@ -71,6 +71,13 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     @tag :pdftotext
+    test "it can deal with {:safe, iolist()} tuples" do
+      print_to_pdf({:html, {:safe, [File.read!(@test_html)]}}, fn text ->
+        assert String.contains?(text, "Hello ChromicPDF!")
+      end)
+    end
+
+    @tag :pdftotext
     test "it accepts iolists in source and header/footer options" do
       pdf_params = %{
         displayHeaderFooter: true,
