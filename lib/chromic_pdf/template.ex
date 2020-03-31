@@ -113,17 +113,30 @@ defmodule ChromicPDF.Template do
     styles = styles(opts)
 
     %{
-      source: {:html, [styles, content]},
+      source: {:html, html_concat(styles, content)},
       opts: [
         print_to_pdf: %{
           preferCSSPageSize: true,
           displayHeaderFooter: true,
-          headerTemplate: [styles, header],
-          footerTemplate: [styles, footer]
+          headerTemplate: html_concat(styles, header),
+          footerTemplate: html_concat(styles, footer)
         }
       ]
     }
   end
+
+  @doc """
+  Concatenes two HTML strings or iolists into one.
+
+  From `{:safe, iolist}` tuples, the `:safe` is dropped. This is useful to prepare data coming
+  from a Phoenix-compiled `.eex` template.
+
+      content = html_concat(@styles, render("content.html"))
+  """
+  @spec html_concat({:safe, iolist()} | iodata(), {:safe, iolist()} | iodata()) :: iolist()
+  def html_concat({:safe, styles}, content), do: html_concat(styles, content)
+  def html_concat(styles, {:safe, content}), do: html_concat(styles, content)
+  def html_concat(styles, content), do: [styles, content]
 
   @styles """
   <style>

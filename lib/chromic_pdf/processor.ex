@@ -75,6 +75,7 @@ defmodule ChromicPDF.Processor do
     Enum.reduce(@iolist_options, opts, fn path, acc ->
       update_in(acc, path, fn
         nil -> ""
+        {:safe, value} -> :erlang.iolist_to_binary(value)
         value when is_list(value) -> :erlang.iolist_to_binary(value)
         value -> value
       end)
