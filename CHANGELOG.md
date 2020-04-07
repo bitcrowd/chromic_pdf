@@ -4,6 +4,7 @@
 
 - Handle `{:safe, iolist()}` tuples in Processor and Template (for content coming from Phoenix.View).
   Expose `Template.html_concat` as potentially useful helper.
+- Reset navigation history after each print job to avoid leaking information.
 
 ## [0.3.0] - 2020-03-30
 

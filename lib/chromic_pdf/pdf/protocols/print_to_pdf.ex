@@ -39,6 +39,9 @@ defmodule ChromicPDF.PrintToPDF do
     call(:blank, "Page.navigate", [], %{"url" => "about:blank"})
     await_response(:blanked, ["frameId"])
 
+    call(:reset_history, "Page.resetNavigationHistory", [], %{})
+    await_response(:history_reset, [])
+
     if_option :set_cookie do
       call(:clear_cookies, "Network.clearBrowserCookies", [], %{})
       await_response(:cleared, [])
