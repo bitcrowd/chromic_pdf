@@ -4,8 +4,11 @@ defmodule ChromicPDF.SpawnSession do
   import ChromicPDF.ProtocolMacros
 
   steps do
-    call(:create_target, "Target.createTarget", [], %{"url" => "about:blank"})
-    await_response(:created, ["targetId"])
+    call(:create_browser_context, "Target.createBrowserContext", [], %{"disposeOnDetach" => true})
+    await_response(:browser_context_created, ["browserContextId"])
+
+    call(:create_target, "Target.createTarget", ["browserContextId"], %{"url" => "about:blank"})
+    await_response(:target_created, ["targetId"])
 
     call(:attach, "Target.attachToTarget", ["targetId"], %{"flatten" => true})
 
