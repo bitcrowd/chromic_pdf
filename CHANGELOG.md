@@ -7,6 +7,10 @@
 - Reset navigation history after each print job to avoid leaking information.
 - Create new empty browser context for each target (similar to incognito tab).
 
+### Changed
+
+- Set user agent to custom string
+
 ## [0.3.0] - 2020-03-30
 
 ### Added
