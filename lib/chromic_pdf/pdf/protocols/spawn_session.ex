@@ -3,6 +3,8 @@ defmodule ChromicPDF.SpawnSession do
 
   import ChromicPDF.ProtocolMacros
 
+  @version Mix.Project.config()[:version]
+
   steps do
     call(:create_browser_context, "Target.createBrowserContext", [], %{"disposeOnDetach" => true})
     await_response(:browser_context_created, ["browserContextId"])
@@ -18,6 +20,10 @@ defmodule ChromicPDF.SpawnSession do
       [{["targetInfo", "targetId"], "targetId"}],
       ["sessionId"]
     )
+
+    call(:set_user_agent, "Emulation.setUserAgentOverride", [], %{
+      "userAgent" => "ChromicPDF #{@version}"
+    })
 
     if_option {:offline, true} do
       call(
