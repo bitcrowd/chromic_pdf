@@ -2,7 +2,9 @@ defmodule ChromicPDF.Session do
   @moduledoc false
 
   use GenServer
-  alias ChromicPDF.{Browser, SpawnSession}
+  alias ChromicPDF.{Browser, CloseTarget, CreateTarget, SpawnSession}
+
+  @default_max_session_uses 1000
 
   # ------------- API ----------------
 
@@ -21,25 +23,70 @@ defmodule ChromicPDF.Session do
 
   @impl GenServer
   def init(opts) do
-    browser = Keyword.fetch!(opts, :chromic)
-
-    {:ok, session_id} =
-      Browser.run_protocol(
-        browser,
-        SpawnSession,
-        Keyword.put_new(opts, :offline, true)
-      )
-
-    {:ok, %{session_id: session_id, browser: browser}}
+    {:ok, start_session(opts)}
   end
 
   @impl GenServer
   def handle_call({:run_protocol, protocol_mod, params}, _from, state) do
-    %{browser: browser, session_id: session_id} = state
+    %{opts: opts, session_id: session_id} = state
 
-    protocol = protocol_mod.new(session_id, params)
-    response = Browser.run_protocol(browser, protocol)
+    response =
+      session_id
+      |> protocol_mod.new(params)
+      |> run_protocol_through_browser(opts)
 
-    {:reply, response, state}
+    case increase_session_uses(state) do
+      {:max_uses_reached, new_state} ->
+        {:reply, response, new_state, {:continue, :restart_session}}
+
+      {_, new_state} ->
+        {:reply, response, new_state}
+    end
+  end
+
+  @impl GenServer
+  def handle_continue(:restart_session, state) do
+    %{opts: opts, target_id: target_id} = state
+
+    {:ok, true} =
+      [targetId: target_id]
+      |> CloseTarget.new()
+      |> run_protocol_through_browser(opts)
+
+    {:noreply, start_session(opts)}
+  end
+
+  defp start_session(opts) do
+    {:ok, target_id} = run_protocol_through_browser(CreateTarget.new(), opts)
+
+    {:ok, session_id} =
+      opts
+      |> Keyword.put(:targetId, target_id)
+      |> Keyword.put_new(:offline, true)
+      |> SpawnSession.new()
+      |> run_protocol_through_browser(opts)
+
+    %{
+      opts: opts,
+      target_id: target_id,
+      session_id: session_id,
+      session_uses: 0
+    }
+  end
+
+  defp run_protocol_through_browser(protocol, opts) do
+    Browser.run_protocol(Keyword.fetch!(opts, :chromic), protocol)
+  end
+
+  defp increase_session_uses(state) do
+    %{opts: opts, session_uses: old_session_uses} = state
+
+    session_uses = old_session_uses + 1
+    max_session_uses = Keyword.get(opts, :max_session_uses, @default_max_session_uses)
+
+    {
+      session_uses >= max_session_uses && :max_uses_reached,
+      %{state | session_uses: session_uses}
+    }
   end
 end

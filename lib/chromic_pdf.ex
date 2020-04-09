@@ -29,7 +29,9 @@ defmodule ChromicPDF do
 
   See `ChromicPDF.print_to_pdf/2` and `ChromicPDF.convert_to_pdfa/2`.
 
-  ### Options
+  ## Options
+
+  ### Worker pools
 
   ChromicPDF spawns two worker pools, the session pool and the ghostscript pool. By default, it
   will create 5 workers with no overflow. To change these options, you can pass configuration to
@@ -49,6 +51,16 @@ defmodule ChromicPDF do
             max_overflow: 2
           ]
         ]
+      end
+
+  ### Automatic session restarts to avoid memory drain
+
+  By default, ChromicPDF will restart sessions within the Chrome process after 1000 operations.
+  This helps to prevent infinite growth in Chrome's overall memory consumption. This "max age" of
+  a session can be configured by setting the `:max_session_uses` option.
+
+      defp chromic_pdf_opts do
+        [max_session_uses: 1000]
       end
 
   ## Security Considerations
