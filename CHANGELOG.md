@@ -10,7 +10,8 @@
 
 ### Changed
 
-- Set user agent to custom string
+- Set user agent to custom string.
+- Default number of sessions in pool to half the number of available cores.
 
 ## [0.3.0] - 2020-03-30
 
