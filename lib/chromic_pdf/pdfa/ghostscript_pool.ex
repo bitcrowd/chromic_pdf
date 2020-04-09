@@ -3,7 +3,9 @@ defmodule ChromicPDF.GhostscriptPool do
 
   alias ChromicPDF.GhostscriptWorker
 
-  @default_timeout 5000
+  @cores System.schedulers_online()
+  @default_pool_size Application.get_env(:chromic_pdf, :default_pool_size, div(@cores, 2))
+  @default_timeout Application.get_env(:chromic_pdf, :default_timeout, 5000)
 
   @spec convert(atom(), binary(), keyword(), binary(), keyword()) :: :ok
   # Converts a PDF to PDF-A/2 using Ghostscript.
@@ -37,7 +39,7 @@ defmodule ChromicPDF.GhostscriptPool do
     [
       name: {:local, pool_name},
       worker_module: ChromicPDF.GhostscriptWorker,
-      size: 5,
+      size: @default_pool_size,
       max_overflow: 0
     ]
   end
