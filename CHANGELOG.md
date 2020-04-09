@@ -6,6 +6,7 @@
   Expose `Template.html_concat` as potentially useful helper.
 - Reset navigation history after each print job to avoid leaking information.
 - Create new empty browser context for each target (similar to incognito tab).
+- Restart browser target after a maximum number of PDFs have been printed to avoid memory bloat.
 
 ### Changed
 

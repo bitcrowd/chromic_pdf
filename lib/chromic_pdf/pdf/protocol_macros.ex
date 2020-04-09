@@ -11,7 +11,7 @@ defmodule ChromicPDF.ProtocolMacros do
       unquote(block)
 
       @spec new(keyword()) :: Protocol.t()
-      def new(opts) do
+      def new(opts \\ []) do
         Protocol.new(
           build_steps(opts),
           Enum.into(opts, %{})

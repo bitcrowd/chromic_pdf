@@ -19,11 +19,6 @@ defmodule ChromicPDF.Browser do
     GenServer.start_link(__MODULE__, args, name: name)
   end
 
-  @spec run_protocol(browser(), module(), keyword()) :: {:ok, any()}
-  def run_protocol(browser, protocol_mod, opts) do
-    genserver_call(browser, {:run_protocol, protocol_mod.new(opts)})
-  end
-
   @spec run_protocol(browser(), Protocol.t()) :: {:ok, any()} | {:error, term()}
   def run_protocol(browser, %Protocol{} = protocol) do
     genserver_call(browser, {:run_protocol, protocol})
