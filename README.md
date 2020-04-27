@@ -1,11 +1,11 @@
-# ChromicPDF
+![](priv/assets/logo.svg)
 
 [![Hex pm](http://img.shields.io/hexpm/v/chromic_pdf.svg?style=flat)](https://hex.pm/packages/chromic_pdf)
 [![Hex docs](http://img.shields.io/badge/hex.pm-docs-green.svg?style=flat)](https://hexdocs.pm/chromic_pdf/ChromicPDF.html)
 [![License](https://img.shields.io/hexpm/l/chromic_pdf?style=flat)](https://www.apache.org/licenses/LICENSE-2.0)
 [![CircleCI](https://circleci.com/gh/bitcrowd/chromic_pdf.svg?style=shield)](https://circleci.com/gh/bitcrowd/chromic_pdf)
 
-ChromicPDF is a small wrapper around Chrome's `printToPDF` API that allows to print a URL to PDF.
+ChromicPDF is a HTML-to-PDF renderer for Elixir, based on headless Chrome.
 
 ## Features
 
