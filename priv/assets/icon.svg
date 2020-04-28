@@ -2,6 +2,9 @@
   <defs>
     <g id="sheet">
       <rect x="0" y="0" rx="2" ry="2" width="75" height="107" class="sheet" />
+    </g>
+
+    <g id="sheet__lines">
       <path d="M 15 21.4 l 45 0" class="sheet__line" />
       <path d="M 15 42.8 l 45 0" class="sheet__line" />
       <path d="M 15 64.2 l 45 0" class="sheet__line" />
@@ -32,6 +35,7 @@
 
     <g class="sheet--red">
       <use x="0" y="0" xlink:href="#sheet" />
+      <use x="0" y="0" xlink:href="#sheet__lines" />
     </g>
   </g>
 </svg>
