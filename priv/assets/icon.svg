@@ -19,7 +19,7 @@
   <style>
     .sheet { stroke-width: 6; fill: none; }
     .sheet--red { stroke: #cc5545; }
-    .sheet--yellow { stroke: #f5ce62; }
+    .sheet--yellow { stroke: #f0b81c; }
     .sheet--green { stroke: #489a61; }
     .sheet__line { stroke-width: 3; fill: none; }
   </style>
