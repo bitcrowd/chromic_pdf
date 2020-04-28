@@ -21,7 +21,7 @@
     .sheet--red { stroke: #cc5545; }
     .sheet--yellow { stroke: #f0b81c; }
     .sheet--green { stroke: #489a61; }
-    .sheet__line { stroke-width: 3; fill: none; }
+    .sheet__line { stroke-width: 4.5; fill: none; }
   </style>
 
   <g transform="translate(19.5, 3.5)">

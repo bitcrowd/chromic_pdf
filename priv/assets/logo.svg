@@ -22,7 +22,7 @@
     .sheet--red { stroke: #cc5545; }
     .sheet--yellow { stroke: #f0b81c; }
     .sheet--green { stroke: #489a61; }
-    .sheet__line { stroke-width: 3; fill: none; }
+    .sheet__line { stroke-width: 4.5; fill: none; }
     .caption { stroke: none; fill: #cc5545; }
     .caption--green { fill: #489a61 !important; }
     .caption--yellow { fill: #f0b81c !important; }
