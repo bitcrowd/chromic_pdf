@@ -7,22 +7,27 @@
       <path d="M 15 64.2 l 45 0" class="sheet__line" />
       <path d="M 15 85.6 l 45 0" class="sheet__line" />
     </g>
+
+    <mask id="sheet-mask" width="81" height="113">
+      <rect x="-3" y="-3"  width="81" height="113" style="stroke: none; fill: #fff"/>
+      <rect x="-3" y="-3" width="65" height="97" style="stroke: none; fill: #222"/>
+    </mask>
   </defs>
   <style>
-    .sheet { stroke-width: 5; fill: white; fill-opacity: 0.85; }
+    .sheet { stroke-width: 6; fill: none; }
     .sheet--red { stroke: #cc5545; }
     .sheet--yellow { stroke: #f5ce62; }
     .sheet--green { stroke: #489a61; }
-    .sheet__line { stroke-width: 2; fill: none; }
+    .sheet__line { stroke-width: 3; fill: none; }
   </style>
 
   <g transform="translate(19.5, 3.5)">
     <g class="sheet--green" transform="translate(20, 20)">
-      <use x="0" y="0" xlink:href="#sheet" />
+      <use x="0" y="0" xlink:href="#sheet" mask="url(#sheet-mask)" />
     </g>
 
     <g class="sheet--yellow" transform="translate(10, 10)">
-      <use x="0" y="0" xlink:href="#sheet" />
+      <use x="0" y="0" xlink:href="#sheet" mask="url(#sheet-mask)" />
     </g>
 
     <g class="sheet--red">
