@@ -433,14 +433,13 @@ end
 STEP
 - protocol logic is still tied to the GenServer
 - new process clauses: They'll all be tried, and code structure wise it's not good
+- need some way of dynamic dispatch
 STEP
-
-couple solutions:
-- introduce more processes -> no real reason, no parallelism, no additional error handling
-- used an Agent for a while
-
+- also lots of boilerplate that needed to be eliminated
 STEP
-- it occurred to me, I prefer
+- it occurred to me, I would like to code the protocol flow in an imperative fashion
+- do this, wait for that
+- basically like JavaScript `async/await`
 -->
 
 ## *sigh* 😩
@@ -472,26 +471,45 @@ await notification("frameStoppedLoading", frame_id)
 ---
 
 <!--
-STEP
-- think about it: This is like a state machine. Events come in, state changes, actions emitted
+- we need to get rid of the protocol details from the GenServer (infrastructure)
+- find a good abstraction for it
 -->
 
 ## Abstract away the protocol 💡
 
-* Protocol flow is like a state machine.
-
-
 ---
+
+<!--
+- This is like a state machine. Events come in, state changes, actions emitted
+- hence we can represent it as data
+STEP
+- the GenServer only knows to execute the state machine, but doesn't know its "program"
+-->
 
 ## Abstract away the protocol 💡
 
 - Protocol flow is like a state machine.
-* Build a processor for it and keep the “program” in data.
-
 
 ![center contain](state_machine.png)
 
+* Build a processor for it and keep the “program” in data.
+
 ---
+
+<!--
+- Soo this is what I built
+- "FSM" probably misused term, didn't look it up, but it seemed fitting
+- the protocol is a linear list of steps to process, a call followed by an await, etc.
+- this is our representation of a single "operation" on the Browser module
+- it has its own state (a simple map) and stores its own client origin
+
+- WITH THIS: what we can do, we can start a new operation by initializing a list of functions
+- pass it to the Browser module which keeps it in its state and forwards messages to them
+
+- NOTE: this is just one representation, there would be multiple valid representations
+- also for more complex interactions, it's not sufficient
+- real code: very simple control flow with a conditional step that can then skip sections
+-->
 
 ## Functional State Machine (1)
 
@@ -507,6 +525,17 @@ STEP
 ```
 
 ---
+
+<!--
+
+- call_fun: gets a "dispatch" function that encapsulates the "upstream" communication
+- can also alter the state (they sometimes do)
+
+- await_fun: is not allowed to dispatch
+- but can alter the state on match (for storing response data)
+
+- dispatch: a function that receives "call" data and returns the last call id for storing
+-->
 
 ## Functional State Machine (2)
 
@@ -528,6 +557,16 @@ STEP
 
 ## Functional State Machine (3)
 
+<!--
+- this is our PROCESSOR
+- or an overly simplified version of it
+
+- when a message arrives, the first function step on the queue is always an await
+- if matches, is popped from queue
+- if not, it remains
+
+- then all "call" steps are processed until another await is up top
+-->
 
 ```elixir
 def run(protocol, msg, dispatch) do
@@ -551,6 +590,18 @@ end
 
 ---
 
+<!--
+- this is going to be a bit rough
+- these macros define functions (call funs or await funs)
+- then add them to a list
+- so technically this syntax is just sugar for a list of functions
+
+- the macros are basically helpful because a lot of the steps are similar
+- e.g. wait for the response and fetch some value
+- Macros aren't required here, could do this with normal functions
+- at this point I wanted to code like JavaScript
+-->
+
 ## With the help of some macros
 
 This is actually how the code looks. Almost.
@@ -570,6 +621,13 @@ call("Page.navigate", %{"url" => "about:blank"})
 ```
 
 ---
+
+<!--
+- here's the Browser
+- with support for multiple "protocols" / operations in parallel
+- simply sends incoming messages to all protocols
+- remove protocols that don't have any more steps
+-->
 
 ```elixir
 defmodule Browser do
@@ -594,27 +652,43 @@ end
 ---
 
 <!-- 
-  - macros help sharing code
-  - custom implementations are possible
+- we're through, we made it
+- WHY I think this is cool
+STEP
+- first off, GenServer has very limited knowledge now
+- can be dynamically told how operations work
+STEP
+- wrt. "functional" state machine
+- would have been possible without function steps (eg just primitives)
+- then the processor becomes more complex
+- with functions, this logic is inside them
+- MACROS help sharing code
+- custom implementations are possible
+STEP
+- lbnl new protocol steps are trivial to add
+- no surprise with so much boilerplate :)
+- added screenshot capturing in no time
 -->
 
-## Why I like this
+## Benefits of this design
 
-* many “step” functions are alike, some are different
+
 * GenServer is ignorant of the protocol details 🎉
+* many “step” functions are alike, some are different
 * adding new protocol steps / protocols is easy
 
 ---
 
-<!-- 
-  - macros help sharing code
-  - custom implementations are possible
+<!--
+- quite likely there are better ways
+- probably not the best in PERFORMANCE
+- this was FUN to build
 -->
 
-## Why I like this
+## Benefits of this design
 
-- many “step” functions are alike, some are different
 - GenServer is ignorant of the protocol details 🎉
+- many “step” functions are alike, some are different
 - adding new protocol steps / protocols is easy
 
 there are a million other (probably better) ways to solve this
@@ -627,7 +701,7 @@ there are a million other (probably better) ways to solve this
 
 ---
 
-# ChromicPDF
+## ChromicPDF
 
 - it was fun building it
 - maybe it's useful for somebody
@@ -640,8 +714,9 @@ https://github.com/bitcrowd/chromic_pdf
 ## Further plans
 
 - keep a pulse so people don't think it's dead
-- but otherwise 🤷‍♂️
-- perhaps more error handling & tests
+- otherwise 🤷‍♂️
+  - fun idea 1: connect it to LiveView
+  - fun idea 2: assisted templating (e.g. DIN5008)
 
 ![center width:200px opacity:0.8](icon.svg)
 
@@ -651,5 +726,11 @@ https://github.com/bitcrowd/chromic_pdf
 
 # 🙏
 
-## Questions?
+`@xhr15` `@andreasknoepfle` `@nickgnd` `@klappradla` `@lwassermann` `@planktonic` `@tessi` and others
+
+---
+
+# Questions?
+
+## 🦉
 
