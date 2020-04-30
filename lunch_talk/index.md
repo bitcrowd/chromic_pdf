@@ -16,41 +16,58 @@ img[alt~="center"] {
 
 ---
 
+<!--
+- first time doing a talk through remote call, hope the audio is ok
+- Headset on, windows closed, but we'll see
+
+- thanks for listening in to this lunch talk
+- sorry it took me so long to do it
+- talk will be largely technical & focused on the programming
+- quick outlook
+- It's also going to be looong, approx 1h just me talking
+- hope it's bearable
+-->
 
 ## Hello 👋
 
+---
+
 <!--
+our agenda
+1. what CPDF actually is, most of you will know by now, but I'll try to summarize it again
+2. give you an introduction to the underlying technology
+ - namely the protocol that drives Chrome's remote debugging capabilities
+3. show how it works in ChromicPDF
+ - in this section iteratively develop the PDF printing logic with you
+ - this will be long, some code, hopefully understandable
+ - BUT IMO interesting, because I think it has now an interesting solution
+ - AND it's a problem that I think might be quite common on Erlang / any Actor language
 
-- first time talk through remote call
-STEP
-- quick outlook
-- talk will be largely technical & focused on the programming
-STEP
-- rush
-- not sure if I can make it under an hour
-- don't hesitate to interrupt
-
+- as said, this will take about 1h
+- still, don't hesitate to interrupt
 -->
 
-* can you hear me? 👂
-* Agenda
-  - Brief introduction
-  - How a PDF is printed with Chrome “DevTools”
-  - How this is implemented in ChromicPDF
-* going to rush the first part, so we can spend more time in the code
+## Agenda
+
+🕐 Brief introduction
+
+🕓 Printing PDFs with Chrome “DevTools”
+
+🕚 Implementation in ChromicPDF
+
 
 ---
 
 <!--
 - to start off, here's two screenshots I took (github, hexpm)
 - we're going to talk about a little Elixir library that I wrote
-- pet project, night work
+- named ChromicPDF, word play on Chrome, also a chemical Chromic acid
+- pet project, night work, some paid time thanks to Chris
+
 - as you can see, not much traffic, but I hope to change
-
 - released library beginning of March
-- trying to keep the heartbeat alive
+- mostly trying to keep the heartbeat alive
 - announced on elixirforum, 2 blog posts, Chris twitter
-
  -->
 
 ![bg vertical contain](github.png)
@@ -64,14 +81,16 @@ STEP
   where we also had to print PDFs in Elixir
 - we wanted to print from HTML
   - which can be controversial
-  - we see a lot of benefits, like we can use familiar tools
+  - we saw a lot of benefits, like we can use familiar tools
 - we wanted to use Chrome, because Tessi said wkhtmltopdf has bad render quality
-- all alternative libraries used puppeteer, JS wrapper around Chrome, but we weren't allowed to use NodeJS
+
+- all major PDF libraries in Elixir land used puppeteer, JS wrapper around Chrome, but we weren't allowed to use NodeJS
 - in the end, used command line
   --print-to-pdf
 
 - command line has drawbacks (not all options, wasting resources)
-- why not consume the protocol ourselves, in Elixir
+- when I looked at the underlying DevTools protocol
+- I thought why not consume the protocol ourselves, in Elixir
 - ChromicPdf came to life
 -->
 
@@ -230,7 +249,7 @@ STEP
 ...
 <-  {method: "Page.frameStoppedLoading"}
 
- -> {id: 4, method: "Page.printPDF", params: ...}
+ -> {id: 4, method: "Page.printToPDF", params: ...}
 <-  {id: 4, result: {data: "<base64-encoded PDF>"}}
 ```
 
@@ -239,6 +258,10 @@ STEP
 <!--
 - any questions so far?
 - otherwise going into the code
+
+- now going to show you how this is implemented in ChromicPDF
+- by showing some code iterations I had in there
+- focus on the second part, just the navigating/printing
 -->
 
 <!-- _class: lead -->
@@ -263,7 +286,6 @@ STEP
 -- this will be important soon
 STEP
 - so we need to make sure communication of target A does not interfere with target B
-- actually 2 "operations": 1. spawn target, 2. print PDF
 - session pool
 
 -->
@@ -275,6 +297,7 @@ STEP
 * Do we want multiple targets? 🎯
   - Communication multiplexed on the same channel
   - `sessionId` becomes relevant at some point
+  - out of scope for our example
 
 ---
 
@@ -282,6 +305,7 @@ STEP
 - visualize the process again
 - so we all are on the same page
 - largely simplify the reality here
+- actually 2 "operations": 1. spawn target, 2. print PDF; this is just part 2
 -->
 
 ![bg contain](flow1.png)
@@ -326,7 +350,7 @@ STEP
   - message sending
   - message parsing tokenization / decoding
   - error handling
-  - target creation (first part of before), focus on navigate/print: relatively simple, but good example
+  - target creation (first part of before)
   - multiple targets / requests in parallel -> assume there is only one
 - a lot of the code will be pseudo code
 -->
@@ -453,6 +477,12 @@ STEP
 *  prefer to write it in an “imperative” style
 
 ---
+
+<!--
+- this is not Elixir
+- not even sure if possible, even with macros
+- as you have to suspend execution/reduction of a function
+-->
 
 ## JS meets Elixir
 
@@ -657,6 +687,7 @@ end
 STEP
 - first off, GenServer has very limited knowledge now
 - can be dynamically told how operations work
+- doesn't need to change when we change protocol
 STEP
 - wrt. "functional" state machine
 - would have been possible without function steps (eg just primitives)
