@@ -1,3 +1,9 @@
+## Unreleased
+
+### Added
+
+- Allow `{:url, <path>}` input tuples where path is only a path, and not a `file://` URL.
+
 ## [0.3.1] - 2020-04-09
 
 ### Added

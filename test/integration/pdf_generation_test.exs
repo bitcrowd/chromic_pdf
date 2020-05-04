@@ -35,8 +35,15 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     @tag :pdftotext
-    test "it prints PDF from file:/// URLs" do
+    test "it prints PDF from file:// URLs" do
       print_to_pdf(fn text ->
+        assert String.contains?(text, "Hello ChromicPDF!")
+      end)
+    end
+
+    @tag :pdftotext
+    test "it prints PDF from files (expanding to file://) URLs" do
+      print_to_pdf({:url, @test_html}, fn text ->
         assert String.contains?(text, "Hello ChromicPDF!")
       end)
     end
