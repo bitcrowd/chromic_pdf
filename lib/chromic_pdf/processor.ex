@@ -41,16 +41,31 @@ defmodule ChromicPDF.Processor do
     chrome_export(chromic, CaptureScreenshot, source, opts)
   end
 
-  defp chrome_export(chromic, protocol, {source_type, source}, opts) do
+  defp chrome_export(chromic, protocol, source, opts) do
     opts =
       opts
-      |> Keyword.merge([{:source_type, source_type}, {source_type, source}])
+      |> put_source(source)
       |> stringify_map_keys()
       |> iolists_to_binary()
 
     chromic
     |> SessionPool.run_protocol(protocol, opts)
     |> feed_chrome_data_into_output(opts)
+  end
+
+  defp put_source(opts, {:file, source}), do: put_source(opts, {:url, source})
+  defp put_source(opts, {:path, source}), do: put_source(opts, {:url, source})
+  defp put_source(opts, {:html, source}), do: put_source(opts, :html, source)
+
+  defp put_source(opts, {:url, source}) do
+    url = if File.exists?(source), do: "file://#{Path.expand(source)}", else: source
+    put_source(opts, :url, url)
+  end
+
+  defp put_source(opts, source_type, source) do
+    opts
+    |> Keyword.put_new(:source_type, source_type)
+    |> Keyword.put_new(source_type, source)
   end
 
   @map_options [:print_to_pdf, :capture_screenshot]
@@ -117,7 +132,7 @@ defmodule ChromicPDF.Processor do
     end
   end
 
-  @spec convert_to_pdfa(module(), path :: binary(), [pdfa_option()]) :: return()
+  @spec convert_to_pdfa(module(), path(), [pdfa_option()]) :: return()
   def convert_to_pdfa(chromic, pdf_path, opts) when is_binary(pdf_path) and is_list(opts) do
     with_tmp_dir(fn tmp_dir ->
       do_convert_to_pdfa(chromic, pdf_path, opts, tmp_dir)
