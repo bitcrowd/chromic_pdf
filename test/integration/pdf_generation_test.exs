@@ -105,12 +105,16 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     test "it can yield a temporary file to a callback" do
-      ChromicPDF.print_to_pdf({:url, "file://#{@test_html}"},
-        output: fn path ->
-          assert File.exists?(path)
-          send(self(), path)
-        end
-      )
+      result =
+        ChromicPDF.print_to_pdf({:url, "file://#{@test_html}"},
+          output: fn path ->
+            assert File.exists?(path)
+            send(self(), path)
+            :some_result
+          end
+        )
+
+      assert result == {:ok, :some_result}
 
       receive do
         path -> refute File.exists?(path)

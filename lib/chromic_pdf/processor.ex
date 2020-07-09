@@ -10,9 +10,12 @@ defmodule ChromicPDF.Processor do
 
   @type source :: {:url, url()} | {:html, blob()}
   @type source_and_options :: %{source: source(), opts: [pdf_option()]}
-  @type return :: :ok | {:ok, binary()}
 
-  @type output_option :: {:output, binary()} | {:output, function()}
+  @type output_function_result :: any()
+  @type output_function :: (blob() -> output_function_result())
+  @type output_option :: {:output, binary()} | {:output, output_function()}
+
+  @type return :: :ok | {:ok, binary()} | {:ok, output_function_result()}
 
   @type pdf_option ::
           {:print_to_pdf, map()}
@@ -119,13 +122,14 @@ defmodule ChromicPDF.Processor do
         :ok
 
       fun when is_function(fun, 1) ->
-        with_tmp_dir(fn tmp_dir ->
-          path = Path.join(tmp_dir, random_file_name(".pdf"))
-          File.write!(path, Base.decode64!(data))
-          fun.(path)
-        end)
+        result_from_callback =
+          with_tmp_dir(fn tmp_dir ->
+            path = Path.join(tmp_dir, random_file_name(".pdf"))
+            File.write!(path, Base.decode64!(data))
+            fun.(path)
+          end)
 
-        :ok
+        {:ok, result_from_callback}
 
       nil ->
         {:ok, data}
@@ -158,8 +162,7 @@ defmodule ChromicPDF.Processor do
         :ok
 
       fun when is_function(fun, 1) ->
-        fun.(pdfa_path)
-        :ok
+        {:ok, fun.(pdfa_path)}
 
       nil ->
         data =

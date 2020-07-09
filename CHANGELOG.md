@@ -4,6 +4,11 @@
 
 - Allow `{:url, <path>}` input tuples where path is only a path, and not a `file://` URL.
 
+### Changed
+
+- When passing a function to the `:output` parameter, the function result will now be returned as
+  part of the `print_to_pdf` & friends result as `{:ok, <callback_result>}`.
+
 ## [0.3.1] - 2020-04-09
 
 ### Added
