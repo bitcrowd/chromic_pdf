@@ -1,4 +1,4 @@
-## Unreleased
+## [0.4.0] - 2020-07-09
 
 ### Added
 
@@ -7,7 +7,7 @@
 ### Changed
 
 - When passing a function to the `:output` parameter, the function result will now be returned as
-  part of the `print_to_pdf` & friends result as `{:ok, <callback_result>}`.
+  part of the `print_to_pdf` & friends result as `{:ok, <callback_result>}` instead of `:ok`.
 
 ## [0.3.1] - 2020-04-09
 
