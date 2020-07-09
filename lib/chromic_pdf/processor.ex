@@ -143,7 +143,13 @@ defmodule ChromicPDF.Processor do
     end)
   end
 
-  @spec print_to_pdfa(module(), source(), [pdf_option() | pdfa_option()]) :: return()
+  @spec print_to_pdfa(module(), source() | source_and_options(), [pdf_option() | pdfa_option()]) ::
+          return()
+  def print_to_pdfa(chromic, %{source: source, opts: opts}, overrides)
+      when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
+    print_to_pdfa(chromic, source, Keyword.merge(opts, overrides))
+  end
+
   def print_to_pdfa(chromic, source, opts) when tuple_size(source) == 2 and is_list(opts) do
     with_tmp_dir(fn tmp_dir ->
       pdf_path = Path.join(tmp_dir, random_file_name(".pdf"))
