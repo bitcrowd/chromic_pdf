@@ -64,13 +64,15 @@ defmodule ChromicPDF.Supervisor do
 
       ### Print to file
 
-          ChromicPDF.print_to_pdf({:url, "file:///example.html"}, output: "output.pdf")
+          :ok = ChromicPDF.print_to_pdf({:url, "file:///example.html"}, output: "output.pdf")
 
       ### Print to temporary file
 
-          ChromicPDF.print_to_pdf({:url, "file:///example.html"}, output: fn path ->
-            send_download(path)
-          end)
+          {:ok, :some_result} =
+            ChromicPDF.print_to_pdf({:url, "file:///example.html"}, output: fn path ->
+              send_download(path)
+              :some_result
+            end)
 
       The temporary file passed to the callback will be deleted when the callback returns.
 
@@ -189,7 +191,7 @@ defmodule ChromicPDF.Supervisor do
       @spec print_to_pdf(
               input :: Processor.source() | Processor.source_and_options(),
               opts :: [Processor.pdf_option()]
-            ) :: :ok | {:ok, Processor.blob()}
+            ) :: Processor.return()
       def print_to_pdf(input, opts \\ []) do
         Processor.print_to_pdf(__MODULE__, input, opts)
       end
@@ -221,7 +223,7 @@ defmodule ChromicPDF.Supervisor do
       @spec capture_screenshot(
               url :: Processor.source(),
               opts :: keyword()
-            ) :: :ok | {:ok, Processor.blob()}
+            ) :: Processor.return()
       def capture_screenshot(input, opts \\ []) do
         Processor.capture_screenshot(__MODULE__, input, opts)
       end
@@ -288,7 +290,7 @@ defmodule ChromicPDF.Supervisor do
       @spec convert_to_pdfa(
               pdf_path :: Processor.path(),
               opts :: [Processor.pdfa_option()]
-            ) :: :ok | {:ok, Processor.blob()}
+            ) :: Processor.return()
       def convert_to_pdfa(pdf_path, opts \\ []) do
         Processor.convert_to_pdfa(__MODULE__, pdf_path, opts)
       end
@@ -305,7 +307,7 @@ defmodule ChromicPDF.Supervisor do
       @spec print_to_pdfa(
               input :: Processor.source() | Processor.source_and_options(),
               opts :: [Processor.pdf_option() | Processor.pdfa_option()]
-            ) :: :ok | {:ok, Processor.blob()}
+            ) :: Processor.return()
       def print_to_pdfa(input, opts \\ []) do
         Processor.print_to_pdfa(__MODULE__, input, opts)
       end
