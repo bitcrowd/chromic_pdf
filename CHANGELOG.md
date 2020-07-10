@@ -6,7 +6,7 @@
   `Template.source_and_options/1` as it turns out that Chrome does not pay attention to `@page`
   dimensions and instead still sets the size of the produced PDF to US letter. Since it does not
   seem possible to the PDF size in Chrome headless besides using the `paperWidth` and
-  `paperHeight` options, modved to a `:size` option instead that accepts names like `:a4`,
+  `paperHeight` options, moved to a `:size` option instead that accepts names like `:a4`,
   `:us_letter`, and tuples of `{<width>, <height>}` in inches. These are then passed to
   `paperWidth` and `paperHeight`.
 - Ditched the `preferCssPageSize` option from `Template.source_and_options/1` as it did not seem
