@@ -25,7 +25,7 @@ defmodule ChromicPDF.Template do
           | {:header, blob()}
           | {:footer, blob()}
 
-  @type paper_size :: :a4 | :letter | {float(), float()}
+  @type paper_size :: :a4 | :us_letter | {float(), float()}
 
   @type style_option ::
           {:size, paper_size()}
@@ -36,7 +36,7 @@ defmodule ChromicPDF.Template do
 
   @paper_sizes_in_inch %{
     a4: {8.3, 11.7},
-    letter: {8.5, 11.0}
+    us_letter: {8.5, 11.0}
   }
 
   @default_content """
@@ -194,8 +194,8 @@ defmodule ChromicPDF.Template do
 
   ## Options
 
-  * `size` page size, either a standard name (`:a4`, `:letter`) or a
-     `{<width>, <height>}` tuple in inches, default: `:letter`
+  * `size` page size, either a standard name (`:a4`, `:us_letter`) or a
+     `{<width>, <height>}` tuple in inches, default: `:us_letter`
   * `header_height` default: zero
   * `header_font_size` default: 10pt
   * `header_zoom` default: 0.75
@@ -231,7 +231,7 @@ defmodule ChromicPDF.Template do
 
   defp get_paper_size(opts) when is_list(opts) do
     opts
-    |> Keyword.get(:size, :letter)
+    |> Keyword.get(:size, :us_letter)
     |> get_paper_size()
   end
 end
