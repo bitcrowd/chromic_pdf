@@ -10,7 +10,7 @@ defmodule ChromicPDF.Template do
   One particularly cumbersome detail is that Chrome in headless mode does not correctly interpret
   the `@page` CSS rule to configure the page dimensions. Resulting PDF files will always be in
   US-letter format unless configured differently with the `paperWidth` and `paperHeight` options.
-  In my experience, results will be best if the `@page` rule aligns with the values passed to
+  Experience has shown, that results will be best if the `@page` rule aligns with the values passed to
   `printToPDF`, which is why these helpers exist to make basic page styling a bit easier.
 
   For a start, see `source_and_options/1`.
