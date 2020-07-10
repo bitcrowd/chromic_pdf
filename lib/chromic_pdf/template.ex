@@ -6,6 +6,14 @@ defmodule ChromicPDF.Template do
   set of page sizing options. Using this module is entirely optional, but perhaps can help to
   avoid some common pitfalls arising from the slightly unintuitive and sometimes conflicting
   behaviour of `printToPDF` options and `@page` CSS styles in Chrome.
+
+  One particularly cumbersome detail is that Chrome in headless mode does not correctly interpret
+  the `@page` CSS rule to configure the page dimensions. Resulting PDF files will always be in
+  US-letter format unless configured differently with the `paperWidth` and `paperHeight` options.
+  Experience has shown, that results will be best if the `@page` rule aligns with the values passed to
+  `printToPDF`, which is why these helpers exist to make basic page styling a bit easier.
+
+  For a start, see `source_and_options/1`.
   """
 
   require EEx
@@ -17,13 +25,19 @@ defmodule ChromicPDF.Template do
           | {:header, blob()}
           | {:footer, blob()}
 
+  @type paper_size :: :a4 | :us_letter | {float(), float()}
+
   @type style_option ::
-          {:width, binary()}
-          | {:height, binary()}
+          {:size, paper_size()}
           | {:header_height, binary()}
           | {:header_font_size, binary()}
           | {:footer_height, binary()}
           | {:footer_font_size, binary()}
+
+  @paper_sizes_in_inch %{
+    a4: {8.3, 11.7},
+    us_letter: {8.5, 11.0}
+  }
 
   @default_content """
   <style>
@@ -85,8 +99,7 @@ defmodule ChromicPDF.Template do
         content: "<p>Hello</p>",
         header: "<p>header</p>",
         footer: "<p>footer</p>"
-        width: "210mm",
-        height: "297mm",
+        size: :a4,
         header_height: "45mm",
         header_font_size: "20pt",
         footer_height: "40mm"
@@ -95,14 +108,10 @@ defmodule ChromicPDF.Template do
   Content, header, and footer templates should be unwrapped HTML markup (i.e. no `<html>` around
   the content), prefixed with any `<style>` tags that your page needs.
 
-      ChromicPDF.Template.source_and_options(
-        content: \"""
         <style>
           h1 { font-size: 22pt; }
         </style>
         <h1>Hello</h1>
-        \"""
-      )
   """
   @spec source_and_options([content_option() | style_option()]) ::
           ChromicPDF.Processor.source_and_options()
@@ -112,14 +121,17 @@ defmodule ChromicPDF.Template do
     footer = Keyword.get(opts, :footer, "")
     styles = styles(opts)
 
+    {width, height} = get_paper_size(opts)
+
     %{
       source: {:html, html_concat(styles, content)},
       opts: [
         print_to_pdf: %{
-          preferCSSPageSize: true,
           displayHeaderFooter: true,
           headerTemplate: html_concat(styles, header),
-          footerTemplate: html_concat(styles, footer)
+          footerTemplate: html_concat(styles, footer),
+          paperWidth: width,
+          paperHeight: height
         }
       ]
     }
@@ -140,6 +152,10 @@ defmodule ChromicPDF.Template do
 
   @styles """
   <style>
+    * {
+      -webkit-print-color-adjust: <%= @webkit_print_color_adjust %>;
+    }
+
     @page {
       width: <%= @width %>;
       height: <%= @height %>;
@@ -150,15 +166,17 @@ defmodule ChromicPDF.Template do
       padding: 0 !important;
       height: <%= @header_height %>;
       font-size: <%= @header_font_size %>;
+      zoom: <%= @header_zoom %>;
     }
 
     #footer {
       padding: 0 !important;
       height: <%= @footer_height %>;
       font-size: <%= @footer_font_size %>;
+      zoom: <%= @footer_zoom %>;
     }
 
-    body {
+    html, body {
       margin: 0;
       padding: 0;
     }
@@ -171,31 +189,49 @@ defmodule ChromicPDF.Template do
   These base styles will configure page dimensions and header and footer heights. They also
   remove any browser padding and margins from these elements, and set the font-size.
 
-  If you want to use these, make sure to set the `preferCSSPageSize: true` option, or use
-  `source_and_options/1`.
+  Additionally, they set the zoom level of header and footer templates to 0.75 which seems to
+  make them align with the content viewport scaling better.
 
   ## Options
 
-  * `width` page width in any CSS unit, default: 279.4mm / 11 inches (US letter)
-  * `height` default: 215.9mm / 8.5 inches
+  * `size` page size, either a standard name (`:a4`, `:us_letter`) or a
+     `{<width>, <height>}` tuple in inches, default: `:us_letter`
   * `header_height` default: zero
   * `header_font_size` default: 10pt
+  * `header_zoom` default: 0.75
   * `footer_height` default: zero
   * `footer_font_size` default: 10pt
+  * `footer_zoom` default: 0.75
+  * `webkit_color_print_adjust` default: "exact"
   """
   @spec styles([style_option()]) :: blob()
   def styles(opts \\ []) do
+    {width, height} = get_paper_size(opts)
+
     assigns = [
-      height: Keyword.get(opts, :height, "215.9mm"),
-      width: Keyword.get(opts, :width, "279.4mm"),
+      width: "#{width}in",
+      height: "#{height}in",
       header_height: Keyword.get(opts, :header_height, "0"),
       header_font_size: Keyword.get(opts, :header_font_size, "10pt"),
       footer_height: Keyword.get(opts, :footer_height, "0"),
-      footer_font_size: Keyword.get(opts, :footer_font_size, "10pt")
+      footer_font_size: Keyword.get(opts, :footer_font_size, "10pt"),
+      header_zoom: Keyword.get(opts, :header_zoom, "0.75"),
+      footer_zoom: Keyword.get(opts, :footer_zoom, "0.75"),
+      webkit_print_color_adjust: Keyword.get(opts, :webkit_print_color_adjust, "exact")
     ]
 
     render_styles(assigns)
   end
 
   EEx.function_from_string(:defp, :render_styles, @styles, [:assigns])
+
+  # Fetches paper size from opts, translates from config or uses given {width, height} tuple.
+  defp get_paper_size(manual) when tuple_size(manual) == 2, do: manual
+  defp get_paper_size(name) when is_atom(name), do: Map.fetch!(@paper_sizes_in_inch, name)
+
+  defp get_paper_size(opts) when is_list(opts) do
+    opts
+    |> Keyword.get(:size, :us_letter)
+    |> get_paper_size()
+  end
 end
