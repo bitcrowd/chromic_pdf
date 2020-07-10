@@ -1,3 +1,11 @@
+## Unreleased
+
+### Fixed
+
+- Fixed typespecs for `Template.source_and_options/1`. `[content_option]` weren't allowed as
+  call to `styles/1` narrowed type to `[style_option]`.
+- Added missing keys to `style_option`.
+
 ## [0.5.0] - 2020-07-10
 
 ### Changed

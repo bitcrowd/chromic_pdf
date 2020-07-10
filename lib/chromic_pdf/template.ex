@@ -31,8 +31,11 @@ defmodule ChromicPDF.Template do
           {:size, paper_size()}
           | {:header_height, binary()}
           | {:header_font_size, binary()}
+          | {:header_zoom, binary()}
           | {:footer_height, binary()}
           | {:footer_font_size, binary()}
+          | {:footer_zoom, binary()}
+          | {:webkit_print_color_adjust, binary()}
 
   @paper_sizes_in_inch %{
     a4: {8.3, 11.7},
@@ -119,7 +122,7 @@ defmodule ChromicPDF.Template do
     content = Keyword.get(opts, :content, @default_content)
     header = Keyword.get(opts, :header, "")
     footer = Keyword.get(opts, :footer, "")
-    styles = styles(opts)
+    styles = do_styles(opts)
 
     {width, height} = get_paper_size(opts)
 
@@ -205,7 +208,9 @@ defmodule ChromicPDF.Template do
   * `webkit_color_print_adjust` default: "exact"
   """
   @spec styles([style_option()]) :: blob()
-  def styles(opts \\ []) do
+  def styles(opts \\ []), do: do_styles(opts)
+
+  defp do_styles(opts) do
     {width, height} = get_paper_size(opts)
 
     assigns = [
