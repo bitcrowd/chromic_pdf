@@ -1,3 +1,9 @@
+## Unreleased
+
+### Fixed
+
+- Make `print_to_pdfa/2` actually accept `source_and_options()` map from `Template`.
+
 ## [0.4.0] - 2020-07-09
 
 ### Added
