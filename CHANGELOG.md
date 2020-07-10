@@ -1,5 +1,25 @@
 ## Unreleased
 
+### Changed
+
+- Removed the `:width` and `:height` options from `Template.styles/1` and
+  `Template.source_and_options/1` as it turns out that Chrome does not pay attention to `@page`
+  dimensions and instead still sets the size of the produced PDF to US letter. Since I could not
+  figure out a way to set the PDF size besides using the `paperWidth` and `paperHeight` options,
+  I resided to moving to a `:size` option instead that accepts names like `:a4`, `:letter`, and
+  tuples of `{<width>, <height>}` in inches. These are then passed to `paperWidth` and
+  `paperHeight`.
+- Ditched the `preferCssPageSize` option from `Template.source_and_options/1` as it did not seem
+  to have any effect. See above.
+
+### Added
+
+- Added `zoom: 0.75` to both `#header` and `#footer` in the template as this seems to be exactly
+  what is needed to reverse the viewport scaling that Chrome uses on them by default. With this,
+  headers & footers and the content can use the same CSS styles.
+- Included `-webkit-print-color-adjust: exact` rule to template so `background-color` rules are
+  enabled by default.
+
 ### Fixed
 
 - Make `print_to_pdfa/2` actually accept `source_and_options()` map from `Template`.
