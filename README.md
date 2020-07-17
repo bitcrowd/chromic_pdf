@@ -1,4 +1,4 @@
-![](priv/assets/logo.svg)
+![](images/logo.svg)
 
 [![Hex pm](http://img.shields.io/hexpm/v/chromic_pdf.svg?style=flat)](https://hex.pm/packages/chromic_pdf)
 [![Hex docs](http://img.shields.io/badge/hex.pm-docs-green.svg?style=flat)](https://hexdocs.pm/chromic_pdf/ChromicPDF.html)

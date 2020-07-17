@@ -19,10 +19,7 @@ defmodule ChromicPDF.GhostscriptWorker do
 
   # --------- Implementation ---------
 
-  @pdfinfo_ps Path.expand("../assets/pdfinfo.ps", __ENV__.file)
-  @eci_icc Path.expand("../assets/eciRGB_v2.icc", __ENV__.file)
-  @psdef_ps Path.expand("../assets/PDFA_def.ps.eex", __ENV__.file)
-
+  @psdef_ps Path.expand("../PDFA_def.ps.eex", __ENV__.file)
   @external_resource @psdef_ps
 
   @pdfinfo_keys %{
@@ -65,7 +62,7 @@ defmodule ChromicPDF.GhostscriptWorker do
       |> pdfinfo()
       |> Map.merge(info)
       |> Enum.into(%{}, &cast_info_value/1)
-      |> Map.put(:eci_icc, @eci_icc)
+      |> Map.put(:eci_icc, priv_asset("eciRGB_v2.icc"))
       |> Map.put(:pdfa_def_ext, pdfa_def_ext)
       |> render_pdfa_def_ps()
 
@@ -86,7 +83,7 @@ defmodule ChromicPDF.GhostscriptWorker do
       @ghostscript.convert_to_pdfa(
         pdf_with_fonts,
         pdfa_version,
-        @eci_icc,
+        priv_asset("eciRGB_v2.icc"),
         pdfa_def_ps_path,
         output_path
       )
@@ -95,7 +92,7 @@ defmodule ChromicPDF.GhostscriptWorker do
   defp pdfinfo(pdf_path) do
     infos_from_file =
       pdf_path
-      |> @ghostscript.run_postscript(@pdfinfo_ps)
+      |> @ghostscript.run_postscript(priv_asset("pdfinfo.ps"))
       |> String.trim()
       |> String.split("\n")
       |> Enum.map(&parse_info_line/1)
@@ -135,4 +132,8 @@ defmodule ChromicPDF.GhostscriptWorker do
   end
 
   defp cast_info_value(other), do: other
+
+  defp priv_asset(filename) do
+    Path.join([Application.app_dir(:chromic_pdf), "priv", filename])
+  end
 end

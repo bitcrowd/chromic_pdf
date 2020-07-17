@@ -1,3 +1,10 @@
+## Unreleased
+
+### Fixed
+
+- Moved static files required for PDF/A generation to /priv so they are embedded into releases.
+- Moved logo files *out of* /priv so they are not included in releases.
+
 ## [0.5.1] - 2020-07-10
 
 ### Fixed
