@@ -71,7 +71,7 @@ defmodule ChromicPDF do
   ### Escape user-supplied data
 
   If you can, make sure to escape any data provided by users with something like
-  [`Phoenix.HTML.escape_html`](https://hexdocs.pm/phoenix_html/Phoenix.HTML.html#html_escape/1).
+  [`Phoenix.HTML.html_escape`](https://hexdocs.pm/phoenix_html/Phoenix.HTML.html#html_escape/1).
   Chrome is designed to make displaying HTML pages relatively safe, in terms of preventing
   undesired access of a page to the host operating system. However, the attack surface of your
   application is still increased. Running this in a contained application with a small HTTP
@@ -114,6 +114,14 @@ defmodule ChromicPDF do
     the given URL, then wait until it receives a "frameStoppedLoading" event, and proceed to call
     the `printToPDF` function.
   * The printed PDF will be sent to the session as Base64 encoded chunks.
+
+  ### PDF/A Conversion
+
+  * To convert a PDF to a PDF/A-3, ChromicPDF uses the [ghostscript](https://ghostscript.com/)
+    utility.
+  * Since it is required to embed a color scheme into PDF/A files, ChromicPDF ships with a copy
+    of the free [`eciRGB_V2`](http://www.eci.org/) scheme by the European Color Initiative.
+    If you need to be able a different color scheme, please open an issue.
   """
 
   use ChromicPDF.Supervisor

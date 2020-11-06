@@ -1,5 +1,11 @@
 defmodule ChromicPDF.Template do
   @moduledoc """
+  Helper functions for page styling.
+
+  For a start, see `source_and_options/1`.
+
+  ## Motivation
+
   This module contains helper functions that make it easier to to build HTML templates (body,
   header, and footer) that fully cover a given page. Like an adapter, it tries to harmonize
   Chrome's `printToPDF` options and related CSS layout styles (`@page` and friends) with a custom
@@ -7,13 +13,14 @@ defmodule ChromicPDF.Template do
   avoid some common pitfalls arising from the slightly unintuitive and sometimes conflicting
   behaviour of `printToPDF` options and `@page` CSS styles in Chrome.
 
+
+  ## Page dimensions
+
   One particularly cumbersome detail is that Chrome in headless mode does not correctly interpret
   the `@page` CSS rule to configure the page dimensions. Resulting PDF files will always be in
   US-letter format unless configured differently with the `paperWidth` and `paperHeight` options.
-  Experience has shown, that results will be best if the `@page` rule aligns with the values passed to
-  `printToPDF`, which is why these helpers exist to make basic page styling a bit easier.
-
-  For a start, see `source_and_options/1`.
+  Experience has shown, that results will be best if the `@page` rule aligns with the values
+  passed to `printToPDF/2`, which is why this module exists to make basic page sizing easier.
   """
 
   require EEx
@@ -115,6 +122,13 @@ defmodule ChromicPDF.Template do
           h1 { font-size: 22pt; }
         </style>
         <h1>Hello</h1>
+
+  ## ⚠ Markup is injected into the DOM ⚠
+
+  Please be aware that the options returned by this function cause ChromicPDF to inject the
+  markup directly into the DOM using the remote debugging API. This comes with some pitfalls
+  which are explained in `ChromicPDF.print_to_pdf/2`. Most notably, **no relative URLs** may be
+  used within the given HTML.
   """
   @spec source_and_options([content_option() | style_option()]) ::
           ChromicPDF.source_and_options()
