@@ -43,8 +43,6 @@ defmodule ChromicPDF.Browser do
     {:ok, conn_pid} = Connection.start_link(self(), args)
     {:ok, call_count_pid} = CallCount.start_link()
 
-    Process.flag(:trap_exit, true)
-
     dispatch = fn call ->
       call_id = CallCount.bump(call_count_pid)
       Connection.send_msg(conn_pid, JsonRPC.encode(call, call_id))
