@@ -1,3 +1,11 @@
+## Unreleased
+
+### Changed
+
+- Elixir version housekeeping. Fixed a warning on Elixir 1.11 by adding `:eex` to
+  `:extra_applications`. ChromicPDF now **requires Elixir >= 1.10** for its use of
+  `Application.compile_env/3`.
+
 ## [0.5.2] - 2020-07-17
 
 ### Fixed

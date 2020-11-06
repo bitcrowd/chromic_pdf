@@ -4,8 +4,8 @@ defmodule ChromicPDF.SessionPool do
   alias ChromicPDF.Session
 
   @cores System.schedulers_online()
-  @default_pool_size Application.get_env(:chromic_pdf, :default_pool_size, div(@cores, 2))
-  @default_timeout Application.get_env(:chromic_pdf, :default_timeout, 5000)
+  @default_pool_size Application.compile_env(:chromic_pdf, :default_pool_size, div(@cores, 2))
+  @default_timeout Application.compile_env(:chromic_pdf, :default_timeout, 5000)
 
   @spec run_protocol(atom(), module(), keyword()) :: {:ok, any()} | {:error, term()}
   def run_protocol(chromic, protocol_mod, opts) do
