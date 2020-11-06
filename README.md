@@ -52,7 +52,7 @@ end
 
 ```elixir
 ChromicPDF.print_to_pdfa(
-  # URL to of local file to print
+  # URL of local file to print
   {:url, "file:///example.html"},
 
   # Parameters to the PDF renderer, specifically for Chromium's printToPDF function,
@@ -95,7 +95,7 @@ ChromicPDF.print_to_pdfa(
     """
   },
 
-  # Parameters for the PDF/A converter
+  # Parameters for the PDF/A converter.
   info: %{
     title: "Example",
     author: "Jane Doe",
@@ -110,8 +110,8 @@ ChromicPDF.print_to_pdfa(
 
 ### Sample boilerplate for a template
 
-This more sophisticated example shows how to use `Phoenix.View` to move HTML markup into template
-files.
+This example shows how one could use `Phoenix.View` to move HTML markup into template
+files and `ChromicPDF.Template` for basic page formatting.
 
 ```elixir
 defmodule MyApp.InvoiceView do
