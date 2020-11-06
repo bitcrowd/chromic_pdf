@@ -1,35 +1,12 @@
-defmodule ChromicPDF.Processor do
+defmodule ChromicPDF.API do
   @moduledoc false
 
   import ChromicPDF.Utils
   alias ChromicPDF.{CaptureScreenshot, GhostscriptPool, PrintToPDF, SessionPool}
 
-  @type url :: binary()
-  @type path :: binary()
-  @type blob :: iodata()
-
-  @type source :: {:url, url()} | {:html, blob()}
-  @type source_and_options :: %{source: source(), opts: [pdf_option()]}
-
-  @type output_function_result :: any()
-  @type output_function :: (blob() -> output_function_result())
-  @type output_option :: {:output, binary()} | {:output, output_function()}
-
-  @type return :: :ok | {:ok, binary()} | {:ok, output_function_result()}
-
-  @type pdf_option ::
-          {:print_to_pdf, map()}
-          | {:set_cookie, map()}
-          | output_option()
-
-  @type pdfa_option ::
-          {:pdfa_version, binary()}
-          | {:pdfa_def_ext, binary()}
-          | {:info, map()}
-          | output_option()
-  @type screenshot_option :: {:capture_screenshot, map()} | output_option()
-
-  @spec print_to_pdf(module(), source() | source_and_options(), [pdf_option()]) :: return()
+  @spec print_to_pdf(module(), ChromicPDF.source() | ChromicPDF.source_and_options(), [
+          ChromicPDF.pdf_option()
+        ]) :: ChromicPDF.return()
   def print_to_pdf(chromic, %{source: source, opts: opts}, overrides)
       when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
     print_to_pdf(chromic, source, Keyword.merge(opts, overrides))
@@ -39,7 +16,8 @@ defmodule ChromicPDF.Processor do
     chrome_export(chromic, PrintToPDF, source, opts)
   end
 
-  @spec capture_screenshot(module(), source(), [screenshot_option()]) :: return()
+  @spec capture_screenshot(module(), ChromicPDF.source(), [ChromicPDF.screenshot_option()]) ::
+          ChromicPDF.return()
   def capture_screenshot(chromic, source, opts) when tuple_size(source) == 2 and is_list(opts) do
     chrome_export(chromic, CaptureScreenshot, source, opts)
   end
@@ -136,15 +114,18 @@ defmodule ChromicPDF.Processor do
     end
   end
 
-  @spec convert_to_pdfa(module(), path(), [pdfa_option()]) :: return()
+  @spec convert_to_pdfa(module(), ChromicPDF.path(), [ChromicPDF.pdfa_option()]) ::
+          ChromicPDF.return()
   def convert_to_pdfa(chromic, pdf_path, opts) when is_binary(pdf_path) and is_list(opts) do
     with_tmp_dir(fn tmp_dir ->
       do_convert_to_pdfa(chromic, pdf_path, opts, tmp_dir)
     end)
   end
 
-  @spec print_to_pdfa(module(), source() | source_and_options(), [pdf_option() | pdfa_option()]) ::
-          return()
+  @spec print_to_pdfa(module(), ChromicPDF.source() | ChromicPDF.source_and_options(), [
+          ChromicPDF.pdf_option() | ChromicPDF.pdfa_option()
+        ]) ::
+          ChromicPDF.return()
   def print_to_pdfa(chromic, %{source: source, opts: opts}, overrides)
       when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
     print_to_pdfa(chromic, source, Keyword.merge(opts, overrides))

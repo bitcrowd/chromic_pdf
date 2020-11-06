@@ -117,7 +117,7 @@ defmodule ChromicPDF.Template do
         <h1>Hello</h1>
   """
   @spec source_and_options([content_option() | style_option()]) ::
-          ChromicPDF.Processor.source_and_options()
+          ChromicPDF.source_and_options()
   def source_and_options(opts) do
     content = Keyword.get(opts, :content, @default_content)
     header = Keyword.get(opts, :header, "")
