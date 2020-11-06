@@ -6,6 +6,16 @@
   `:extra_applications`. ChromicPDF now **requires Elixir >= 1.10** for its use of
   `Application.compile_env/3`.
 
+### Added
+
+- New global option `discard_stderr` allows to enable Chrome's stderr logging which is by default
+  piped to `/dev/null`.
+
+### Fixed
+
+- Graceful shutdown is now actually graceful in that it waits for Chrome to clean up the
+  debugging sessions and close the pipe on its end.
+
 ## [0.5.2] - 2020-07-17
 
 ### Fixed

@@ -21,7 +21,7 @@ defmodule ChromicPDF.Connection do
 
   @impl true
   def init({parent_pid, opts}) do
-    chrome_opts = Keyword.take(opts, [:no_sandbox])
+    chrome_opts = Keyword.take(opts, [:discard_stderr, :no_sandbox])
     {:ok, port} = @chrome.spawn(chrome_opts)
 
     state = %{
@@ -29,8 +29,6 @@ defmodule ChromicPDF.Connection do
       port: port,
       data: []
     }
-
-    Process.flag(:trap_exit, true)
 
     {:ok, state}
   end
@@ -42,7 +40,7 @@ defmodule ChromicPDF.Connection do
   end
 
   @impl true
-  # Message from chrome on its stdout through the port.
+  # Message from Chrome through the port.
   def handle_info({_port, {:data, data}}, state) do
     new_state =
       data
@@ -53,18 +51,12 @@ defmodule ChromicPDF.Connection do
   end
 
   # Message triggered by Port.monitor/1.
-  def handle_info({:DOWN, _ref, :port, _port, _exit_state}, state) do
-    {:stop, :chrome_has_crashed, state}
-  end
-
-  def handle_info({:EXIT, _port, :normal}, state) do
-    {:stop, :chrome_has_crashed, state}
-  end
-
-  @impl true
-  # Called on process termination.
-  def terminate(_reason, %{port: port}) do
-    @chrome.stop(port)
+  def handle_info({:DOWN, _ref, :port, _port, exit_state}, state) do
+    # Notify our parent about this. We're either performing a graceful shutdown at the moment (and
+    # hence Browser is currently waiting in c:GenServer.terminate/1), or this is in fact a Chrome
+    # crash in which case the Browser can decide what to do.
+    send(state.parent_pid, {:connection_terminated, exit_state})
+    {:noreply, state}
   end
 
   defp handle_chunks([blob], state), do: %{state | data: [blob | state.data]}

@@ -1,24 +1,13 @@
 defmodule ChromicPDF.ChromeImpl do
   @moduledoc false
 
-  import ChromicPDF.Utils, only: [system_cmd!: 2]
-
   @behaviour ChromicPDF.Chrome
 
   def spawn(opts) do
-    port = Port.open({:spawn, chrome_command(opts)}, [:binary])
+    port = Port.open({:spawn, chrome_command(opts)}, [:binary, :nouse_stdio])
     Port.monitor(port)
 
     {:ok, port}
-  end
-
-  def stop(port) do
-    with {:os_pid, os_pid} <- Port.info(port, :os_pid) do
-      system_cmd!("kill", [to_string(os_pid)])
-      Port.close(port)
-    end
-
-    :ok
   end
 
   def send_msg(port, msg) do
@@ -27,15 +16,23 @@ defmodule ChromicPDF.ChromeImpl do
     :ok
   end
 
-  # Chrome is started with the "--remote-debugging-pipe" switch
-  # and its FD 3 & 4 are redirected to and from stdin and stdout.
-  # stderr is silently discarded.
   defp chrome_command(opts) do
-    ~s("#{chrome_executable()}" #{no_sandbox(opts)} --headless --disable-gpu --remote-debugging-pipe 2>/dev/null 3<&0 4>&1)
+    ~s("#{chrome_executable()}" #{no_sandbox(opts)} --headless --disable-gpu --remote-debugging-pipe #{
+      discard_stderr(opts)
+    })
   end
 
-  defp no_sandbox(no_sandbox: true), do: "--no-sandbox"
-  defp no_sandbox(_), do: nil
+  defp no_sandbox(opts) do
+    if Keyword.get(opts, :no_sandbox, false) do
+      "--no-sandbox"
+    end
+  end
+
+  defp discard_stderr(opts) do
+    if Keyword.get(opts, :discard_stderr, true) do
+      "2>/dev/null"
+    end
+  end
 
   @chrome_paths [
     "chromium-browser",
