@@ -36,18 +36,13 @@ defmodule ChromicPDF.ConnectionTest do
   describe "external process supervision" do
     setup [:new_state]
 
-    test "it stops the GenServer when Chrome dies", %{state: state} do
-      assert handle_info({:DOWN, @ref, :port, @port, 127}, state) ==
-               {:stop, :chrome_has_crashed, state}
+    defp assert_connection_terminated do
+      assert_receive({:connection_terminated, 127})
     end
-  end
 
-  describe "graceful termination" do
-    setup [:new_state]
-
-    test "it stops the spawned Chrome instance when terminated", %{state: state} do
-      expect(ChromeMock, :stop, fn @port -> :ok end)
-      terminate(:normal, state)
+    test "it notifies the parent process when Chrome closes the pipe", %{state: state} do
+      assert handle_info({:DOWN, @ref, :port, @port, 127}, state) == {:noreply, state}
+      assert_connection_terminated()
     end
   end
 
