@@ -4,7 +4,7 @@ defmodule ChromicPDF.PDFGenerationTest do
 
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)
   @output Path.expand("../test.pdf", __ENV__.file)
-  @test_server_port Application.fetch_env!(:chromic_pdf, :test_server_port)
+  @test_server_port Application.compile_env!(:chromic_pdf, :test_server_port)
 
   defp print_to_pdf(cb) do
     print_to_pdf({:url, "file://#{@test_html}"}, [], cb)

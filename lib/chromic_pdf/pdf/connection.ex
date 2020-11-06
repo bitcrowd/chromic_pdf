@@ -3,7 +3,7 @@ defmodule ChromicPDF.Connection do
 
   use GenServer, shutdown: 10_000
 
-  @chrome Application.get_env(:chromic_pdf, :chrome, ChromicPDF.ChromeImpl)
+  @chrome Application.compile_env(:chromic_pdf, :chrome, ChromicPDF.ChromeImpl)
 
   # ------------- API ----------------
 

@@ -5,7 +5,7 @@ defmodule ChromicPDF.GhostscriptWorker do
   require EEx
   import ChromicPDF.Utils
 
-  @ghostscript Application.get_env(:chromic_pdf, :ghostscript, ChromicPDF.GhostscriptImpl)
+  @ghostscript Application.compile_env(:chromic_pdf, :ghostscript, ChromicPDF.GhostscriptImpl)
 
   # ------------- API ----------------
 

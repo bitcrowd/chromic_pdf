@@ -7,7 +7,7 @@ defmodule ChromicPdf.MixProject do
     [
       app: :chromic_pdf,
       version: @version,
-      elixir: "~> 1.9",
+      elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       dialyzer: [plt_file: {:no_warn, ".plts/dialyzer.plt"}],
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -60,8 +60,8 @@ defmodule ChromicPdf.MixProject do
     [
       {:jason, "~> 1.1"},
       {:poolboy, "~> 1.5"},
-      {:dialyxir, "~> 1.0.0-rc.7", only: [:dev, :test], runtime: false},
-      {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.23.0", only: [:test, :dev], runtime: false},
       {:junit_formatter, "~> 3.0", only: [:test, :integration]},
       {:mox, "~> 0.5.1", only: [:test]},
