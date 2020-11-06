@@ -100,6 +100,15 @@ defmodule ChromicPDF do
         [no_sandbox: true]
       end
 
+  ### Enabling Chrome stderr output
+
+  Chrome's stderr logging is silently discarded to not obscure your logfiles. In case you would
+  like to take a peek, add the `discard_stderr: false` option.
+
+      defp chromic_pdf_opts do
+        [discard_stderr: false]
+      end
+
   ## How it works
 
   ### PDF Printing
