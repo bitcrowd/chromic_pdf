@@ -29,7 +29,32 @@ defmodule ChromicPDF.Supervisor do
     # credo:disable-for-next-line Credo.Check.Refactor.LongQuoteBlocks
     quote do
       use Supervisor
-      alias ChromicPDF.{Browser, GhostscriptPool, Processor, SessionPool}
+      alias ChromicPDF.{API, Browser, GhostscriptPool, SessionPool}
+
+      @type url :: binary()
+      @type path :: binary()
+      @type blob :: iodata()
+
+      @type source :: {:url, url()} | {:html, blob()}
+      @type source_and_options :: %{source: source(), opts: [pdf_option()]}
+
+      @type output_function_result :: any()
+      @type output_function :: (blob() -> output_function_result())
+      @type output_option :: {:output, binary()} | {:output, output_function()}
+
+      @type return :: :ok | {:ok, binary()} | {:ok, output_function_result()}
+
+      @type pdf_option ::
+              {:print_to_pdf, map()}
+              | {:set_cookie, map()}
+              | output_option()
+
+      @type pdfa_option ::
+              {:pdfa_version, binary()}
+              | {:pdfa_def_ext, binary()}
+              | {:info, map()}
+              | output_option()
+      @type screenshot_option :: {:capture_screenshot, map()} | output_option()
 
       def start_link(config \\ []) do
         Supervisor.start_link(__MODULE__, config, name: __MODULE__)
@@ -189,11 +214,11 @@ defmodule ChromicPDF.Supervisor do
       using the options above is generally overridden by margin rules in the `@page` section.
       """
       @spec print_to_pdf(
-              input :: Processor.source() | Processor.source_and_options(),
-              opts :: [Processor.pdf_option()]
-            ) :: Processor.return()
+              input :: source() | source_and_options(),
+              opts :: [pdf_option()]
+            ) :: return()
       def print_to_pdf(input, opts \\ []) do
-        Processor.print_to_pdf(__MODULE__, input, opts)
+        API.print_to_pdf(__MODULE__, input, opts)
       end
 
       @doc """
@@ -220,12 +245,9 @@ defmodule ChromicPDF.Supervisor do
 
       https://chromedevtools.github.io/devtools-protocol/tot/Page#method-captureScreenshot
       """
-      @spec capture_screenshot(
-              url :: Processor.source(),
-              opts :: keyword()
-            ) :: Processor.return()
+      @spec capture_screenshot(url :: source(), opts :: keyword()) :: return()
       def capture_screenshot(input, opts \\ []) do
-        Processor.capture_screenshot(__MODULE__, input, opts)
+        API.capture_screenshot(__MODULE__, input, opts)
       end
 
       @doc """
@@ -287,12 +309,9 @@ defmodule ChromicPDF.Supervisor do
             pdfa_def_ext: "[/Title (OverriddenTitle) /DOCINFO pdfmark",
           )
       """
-      @spec convert_to_pdfa(
-              pdf_path :: Processor.path(),
-              opts :: [Processor.pdfa_option()]
-            ) :: Processor.return()
+      @spec convert_to_pdfa(pdf_path :: path(), opts :: [pdfa_option()]) :: return()
       def convert_to_pdfa(pdf_path, opts \\ []) do
-        Processor.convert_to_pdfa(__MODULE__, pdf_path, opts)
+        API.convert_to_pdfa(__MODULE__, pdf_path, opts)
       end
 
       @doc """
@@ -305,11 +324,11 @@ defmodule ChromicPDF.Supervisor do
           ChromicPDF.print_to_pdfa({:url, "https://example.net"})
       """
       @spec print_to_pdfa(
-              input :: Processor.source() | Processor.source_and_options(),
-              opts :: [Processor.pdf_option() | Processor.pdfa_option()]
-            ) :: Processor.return()
+              input :: source() | source_and_options(),
+              opts :: [pdf_option() | pdfa_option()]
+            ) :: return()
       def print_to_pdfa(input, opts \\ []) do
-        Processor.print_to_pdfa(__MODULE__, input, opts)
+        API.print_to_pdfa(__MODULE__, input, opts)
       end
     end
   end
