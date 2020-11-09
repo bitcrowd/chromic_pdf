@@ -2,6 +2,7 @@ defmodule ChromicPDF.Connection do
   @moduledoc false
 
   use GenServer
+  alias ChromicPDF.Connection.{Dispatcher, JsonRPC, Tokenizer}
 
   @chrome Application.compile_env(:chromic_pdf, :chrome, ChromicPDF.ChromeImpl)
 
@@ -12,67 +13,80 @@ defmodule ChromicPDF.Connection do
     GenServer.start_link(__MODULE__, {parent_pid, opts})
   end
 
-  @spec send_msg(pid(), binary()) :: :ok
-  def send_msg(pid, msg) do
-    GenServer.cast(pid, {:send_msg, msg})
+  @spec dispatch_call(pid(), binary()) :: :ok
+  def dispatch_call(pid, msg) do
+    GenServer.call(pid, {:dispatch_call, msg})
   end
 
   # ------------ Server --------------
 
-  @impl true
+  @impl GenServer
   def init({parent_pid, opts}) do
-    chrome_opts = Keyword.take(opts, [:discard_stderr, :no_sandbox])
-    {:ok, port} = @chrome.spawn(chrome_opts)
+    {:ok, port} = spawn_chrome(opts)
+
+    Process.flag(:trap_exit, true)
 
     state = %{
       parent_pid: parent_pid,
-      port: port,
-      data: []
+      tokenizer: Tokenizer.init(),
+      dispatcher: Dispatcher.init(port)
     }
 
     {:ok, state}
   end
 
-  @impl true
-  def handle_cast({:send_msg, msg}, state) do
-    @chrome.send_msg(state.port, msg)
-    {:noreply, state}
+  defp spawn_chrome(opts) do
+    opts
+    |> Keyword.take([:discard_stderr, :no_sandbox])
+    |> @chrome.spawn()
   end
 
-  @impl true
+  @impl GenServer
+  def handle_call({:dispatch_call, call}, _from, state) do
+    {reply, dispatcher} = Dispatcher.dispatch(call, state.dispatcher)
+
+    {:reply, reply, %{state | dispatcher: dispatcher}}
+  end
+
+  @impl GenServer
   # Message from Chrome through the port.
   def handle_info({_port, {:data, data}}, state) do
-    new_state =
-      data
-      |> String.split("\0")
-      |> handle_chunks(state)
+    {msgs, tokenizer} = Tokenizer.tokenize(data, state.tokenizer)
 
-    {:noreply, new_state}
+    for msg <- msgs do
+      send(state.parent_pid, {:msg_in, JsonRPC.decode(msg)})
+    end
+
+    {:noreply, %{state | tokenizer: tokenizer}}
   end
 
   # Message triggered by Port.monitor/1.
-  def handle_info({:DOWN, _ref, :port, _port, exit_state}, state) do
-    # Notify our parent about this. We're either performing a graceful shutdown at the moment (and
-    # hence Browser is currently waiting in c:GenServer.terminate/1), or this is in fact a Chrome
-    # crash in which case the Browser can decide what to do.
-    send(state.parent_pid, {:connection_terminated, exit_state})
+  # This is unlikely to happen outside terminate/2 (:shutdown).
+  def handle_info({:DOWN, _ref, :port, _port, _exit_state}, state) do
     {:noreply, state}
   end
 
-  defp handle_chunks([blob], state), do: %{state | data: [blob | state.data]}
-  defp handle_chunks([blob, ""], state), do: handle_data(%{state | data: [blob | state.data]})
+  # EXIT signal from port process since we trap signals.
+  def handle_info({:EXIT, _port, _reason}, state) do
+    # Chrome has crashed or was terminated externally.
+    {:stop, :connection_terminated, state}
+  end
 
-  defp handle_chunks([blob | rest], state),
-    do: handle_chunks(rest, handle_data(%{state | data: [blob | state.data]}))
+  @impl GenServer
+  def terminate(:normal, _state), do: :ok
+  def terminate(:connection_terminated, _state), do: :ok
 
-  defp handle_data(state) do
-    msg =
-      state.data
-      |> Enum.reverse()
-      |> Enum.join()
+  def terminate(:shutdown, state) do
+    # Graceful shutdown: Dispatch the Browser.close call to Chrome which will cause it to detach
+    # all debugging sessions and close the port.
+    Dispatcher.dispatch({"Browser.close", %{}}, state.dispatcher)
 
-    send(state.parent_pid, {:msg_in, msg})
-
-    %{state | data: []}
+    # We can't enter the GenServer loop from here, so we need to manually receive the message
+    # about the port going down. In case Chrome takes longer than the configured supervision
+    # shutdown time, we'll receive a :brutal_kill and exit immediately, so no need for a timeout.
+    receive do
+      {:DOWN, _ref, :port, _port, _exit_state} ->
+        :ok
+    end
   end
 end

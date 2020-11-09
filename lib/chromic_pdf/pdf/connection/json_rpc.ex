@@ -1,4 +1,4 @@
-defmodule ChromicPDF.JsonRPC do
+defmodule ChromicPDF.Connection.JsonRPC do
   @moduledoc false
 
   @type call_id :: integer()

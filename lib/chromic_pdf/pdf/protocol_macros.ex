@@ -1,10 +1,11 @@
 defmodule ChromicPDF.ProtocolMacros do
   @moduledoc false
 
-  # credo:disable-for-next-line
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defmacro steps(do: block) do
     quote do
-      alias ChromicPDF.{JsonRPC, Protocol}
+      alias ChromicPDF.Connection.JsonRPC
+      alias ChromicPDF.Protocol
 
       Module.register_attribute(__MODULE__, :steps, accumulate: true)
 
@@ -139,7 +140,8 @@ defmodule ChromicPDF.ProtocolMacros do
       def unquote(name)(state, msg) do
         last_call_id = Map.fetch!(state, :last_call_id)
 
-        if ChromicPDF.JsonRPC.is_response?(msg, last_call_id) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        if ChromicPDF.Connection.JsonRPC.is_response?(msg, last_call_id) do
           if function_exported?(__MODULE__, unquote(cb_name), 2) do
             apply(__MODULE__, unquote(cb_name), [state, msg])
           else
@@ -164,7 +166,8 @@ defmodule ChromicPDF.ProtocolMacros do
     quote do
       @steps {:await, unquote(name), 2}
       def unquote(name)(state, msg) do
-        with true <- ChromicPDF.JsonRPC.is_notification?(msg, unquote(method)),
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        with true <- ChromicPDF.Connection.JsonRPC.is_notification?(msg, unquote(method)),
              true <- state["sessionId"] == msg["sessionId"],
              true <- Enum.all?(unquote(match_keys), &notification_matches?(state, msg, &1)) do
           state = extract_from_payload(msg, "params", unquote(put_keys), state)
@@ -194,10 +197,17 @@ defmodule ChromicPDF.ProtocolMacros do
 
   def notification_matches?(state, msg, key), do: notification_matches?(state, msg, {[key], key})
 
-  defmacro reply(key) do
+  defmacro output(key) when is_binary(key) do
     quote do
-      @steps {:reply, :reply, 1}
-      def reply(state), do: {:ok, Map.fetch!(state, unquote(key))}
+      @steps {:output, :output, 1}
+      def output(state), do: Map.fetch!(state, unquote(key))
+    end
+  end
+
+  defmacro output(keys) when is_list(keys) do
+    quote do
+      @steps {:output, :output, 1}
+      def output(state), do: Map.take(state, unquote(keys))
     end
   end
 end
