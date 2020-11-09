@@ -2,7 +2,7 @@ defmodule ChromicPDF.Session do
   @moduledoc false
 
   use GenServer
-  alias ChromicPDF.{Browser, CloseTarget, CreateTarget, SpawnSession}
+  alias ChromicPDF.{Browser, CloseTarget, SpawnSession}
 
   @default_max_session_uses 1000
 
@@ -57,11 +57,8 @@ defmodule ChromicPDF.Session do
   end
 
   defp start_session(opts) do
-    {:ok, target_id} = run_protocol_through_browser(CreateTarget.new(), opts)
-
-    {:ok, session_id} =
+    {:ok, %{"targetId" => target_id, "sessionId" => session_id}} =
       opts
-      |> Keyword.put(:targetId, target_id)
       |> Keyword.put_new(:offline, true)
       |> SpawnSession.new()
       |> run_protocol_through_browser(opts)

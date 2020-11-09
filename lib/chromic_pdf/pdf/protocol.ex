@@ -1,7 +1,7 @@
 defmodule ChromicPDF.Protocol do
   @moduledoc false
 
-  alias ChromicPDF.JsonRPC
+  alias ChromicPDF.Connection.JsonRPC
 
   # A protocol is a sequence of JsonRPC calls and responses/notifications.
   #
@@ -15,7 +15,7 @@ defmodule ChromicPDF.Protocol do
 
   @type state :: map()
   @type error :: {:error, term()}
-  @type step :: call_step() | await_step() | reply_step()
+  @type step :: call_step() | await_step() | output_step()
 
   @type call_fun :: (state(), dispatch() -> state() | error())
   @type call_step :: {:call, call_fun()}
@@ -23,34 +23,37 @@ defmodule ChromicPDF.Protocol do
   @type await_fun :: (state(), message() -> :no_match | {:match, state()} | error())
   @type await_step :: {:await, await_fun()}
 
-  @type reply_fun :: (state() -> any())
-  @type reply_step :: {:reply, reply_fun()}
+  @type output_fun :: (state() -> any())
+  @type output_step :: {:output, output_fun()}
+
+  @type result :: {:ok, any()} | {:error, term()}
+  @type result_fun :: (result() -> any())
 
   @type t :: %__MODULE__{
           steps: [step()],
           state: state(),
-          from: GenServer.from() | nil
+          result_fun: result_fun() | nil
         }
 
-  @enforce_keys [:steps, :state, :from]
-  defstruct [:steps, :state, :from]
+  @enforce_keys [:steps, :state, :result_fun]
+  defstruct [:steps, :state, :result_fun]
 
   @spec new([step()], state()) :: __MODULE__.t()
   def new(steps, initial_state \\ %{}) do
     %__MODULE__{
       steps: steps,
       state: initial_state,
-      from: nil
+      result_fun: nil
     }
   end
 
-  @spec init(__MODULE__.t(), GenServer.from(), dispatch()) :: __MODULE__.t()
-  def init(%__MODULE__{} = protocol, from, dispatch) do
-    advance(%{protocol | from: from}, dispatch)
+  @spec init(__MODULE__.t(), result_fun(), dispatch()) :: __MODULE__.t()
+  def init(%__MODULE__{} = protocol, result_fun, dispatch) do
+    advance(%{protocol | result_fun: result_fun}, dispatch)
   end
 
-  defp advance(%__MODULE__{state: {:error, error}, from: from} = protocol, _dispatch) do
-    GenServer.reply(from, {:error, error})
+  defp advance(%__MODULE__{state: {:error, error}, result_fun: result_fun} = protocol, _dispatch) do
+    result_fun.({:error, error})
     %{protocol | steps: []}
   end
 
@@ -63,10 +66,11 @@ defmodule ChromicPDF.Protocol do
   end
 
   defp advance(
-         %__MODULE__{steps: [{:reply, fun} | rest], state: state, from: from} = protocol,
+         %__MODULE__{steps: [{:output, output_fun} | rest], state: state, result_fun: result_fun} =
+           protocol,
          dispatch
        ) do
-    GenServer.reply(from, fun.(state))
+    result_fun.({:ok, output_fun.(state)})
     advance(%{protocol | steps: rest}, dispatch)
   end
 

@@ -47,6 +47,6 @@ defmodule ChromicPDF.PrintToPDF do
       await_response(:cleared, [])
     end
 
-    reply("data")
+    output("data")
   end
 end

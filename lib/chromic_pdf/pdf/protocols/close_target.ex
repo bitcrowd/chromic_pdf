@@ -6,6 +6,6 @@ defmodule ChromicPDF.CloseTarget do
   steps do
     call(:close_target, "Target.closeTarget", [:targetId], %{})
     await_response(:target_closed, ["success"])
-    reply("success")
+    output("success")
   end
 end

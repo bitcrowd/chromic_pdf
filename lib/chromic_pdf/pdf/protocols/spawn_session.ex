@@ -6,12 +6,18 @@ defmodule ChromicPDF.SpawnSession do
   @version Mix.Project.config()[:version]
 
   steps do
-    call(:attach, "Target.attachToTarget", [:targetId], %{"flatten" => true})
+    call(:create_browser_context, "Target.createBrowserContext", [], %{"disposeOnDetach" => true})
+    await_response(:browser_context_created, ["browserContextId"])
+
+    call(:create_target, "Target.createTarget", ["browserContextId"], %{"url" => "about:blank"})
+    await_response(:target_created, ["targetId"])
+
+    call(:attach, "Target.attachToTarget", ["targetId"], %{"flatten" => true})
 
     await_notification(
       :attached,
       "Target.attachedToTarget",
-      [{["targetInfo", "targetId"], :targetId}],
+      [{["targetInfo", "targetId"], "targetId"}],
       ["sessionId"]
     )
 
@@ -35,6 +41,6 @@ defmodule ChromicPDF.SpawnSession do
 
     call(:enable_page, "Page.enable", [], %{})
 
-    reply("sessionId")
+    output(["targetId", "sessionId"])
   end
 end

@@ -19,6 +19,7 @@ defmodule ChromicPDF.CaptureScreenshot do
 
     call(:capture, "Page.captureScreenshot", &Map.get(&1, :capture_screenshot, %{}), %{})
     await_response(:captured, ["data"])
-    reply("data")
+
+    output("data")
   end
 end
