@@ -2,7 +2,7 @@ defmodule ChromicPDF.API do
   @moduledoc false
 
   import ChromicPDF.Utils
-  alias ChromicPDF.{CaptureScreenshot, GhostscriptPool, PrintToPDF, SessionPool}
+  alias ChromicPDF.{Browser, CaptureScreenshot, GhostscriptPool, PrintToPDF}
 
   @spec print_to_pdf(module(), ChromicPDF.source() | ChromicPDF.source_and_options(), [
           ChromicPDF.pdf_option()
@@ -30,7 +30,7 @@ defmodule ChromicPDF.API do
       |> iolists_to_binary()
 
     chromic
-    |> SessionPool.run_protocol(protocol, opts)
+    |> Browser.run_protocol(protocol, opts)
     |> feed_chrome_data_into_output(opts)
   end
 

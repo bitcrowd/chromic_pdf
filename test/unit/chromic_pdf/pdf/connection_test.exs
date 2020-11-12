@@ -11,7 +11,7 @@ defmodule ChromicPDF.ConnectionTest do
     %{
       parent_pid: self(),
       tokenizer: [],
-      dispatcher: %{
+      dispatcher: %ChromicPDF.Connection.Dispatcher{
         next_call_id: 1,
         port: @port
       }

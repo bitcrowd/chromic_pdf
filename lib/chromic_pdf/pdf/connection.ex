@@ -6,6 +6,12 @@ defmodule ChromicPDF.Connection do
 
   @chrome Application.compile_env(:chromic_pdf, :chrome, ChromicPDF.ChromeImpl)
 
+  @type state :: %{
+          parent_pid: pid(),
+          tokenizer: Tokenizer.t(),
+          dispatcher: Dispatcher.t()
+        }
+
   # ------------- API ----------------
 
   @spec start_link(pid(), keyword()) :: GenServer.on_start()
@@ -43,7 +49,7 @@ defmodule ChromicPDF.Connection do
 
   @impl GenServer
   def handle_call({:dispatch_call, call}, _from, state) do
-    {reply, dispatcher} = Dispatcher.dispatch(call, state.dispatcher)
+    {reply, dispatcher} = Dispatcher.dispatch(state.dispatcher, call)
 
     {:reply, reply, %{state | dispatcher: dispatcher}}
   end
@@ -79,7 +85,7 @@ defmodule ChromicPDF.Connection do
   def terminate(:shutdown, state) do
     # Graceful shutdown: Dispatch the Browser.close call to Chrome which will cause it to detach
     # all debugging sessions and close the port.
-    Dispatcher.dispatch({"Browser.close", %{}}, state.dispatcher)
+    Dispatcher.dispatch(state.dispatcher, {"Browser.close", %{}})
 
     # We can't enter the GenServer loop from here, so we need to manually receive the message
     # about the port going down. In case Chrome takes longer than the configured supervision

@@ -5,6 +5,8 @@
 - Elixir version housekeeping. Fixed a warning on Elixir 1.11 by adding `:eex` to
   `:extra_applications`. ChromicPDF now **requires Elixir >= 1.10** for its use of
   `Application.compile_env/3`.
+- Dropped `poolboy` in favour of `nimble_pool`. This renders the `max_overflow` poolboy option
+  without effect.
 
 ### Added
 

@@ -34,22 +34,15 @@ defmodule ChromicPDF do
   ### Worker pools
 
   ChromicPDF spawns two worker pools, the session pool and the ghostscript pool. By default, it
-  will create 5 workers with no overflow. To change these options, you can pass configuration to
-  the supervisor. Please note that these are only worker pools. If you intend to max them out,
+  will create as many sessions as schedulers are online, and allow up to 10 concurrent
+  Ghostscript processes to run. To change these options, you can pass configuration to the
+  supervisor. Please note that these are only worker pools. If you intend to max them out,
   you will need a job queue as well.
-
-  Please see https://github.com/devinus/poolboy for available options.
 
       defp chromic_pdf_opts do
         [
-          session_pool: [
-            size: 3,
-            max_overflow: 0
-          ],
-          ghostscript_pool: [
-            size: 10,
-            max_overflow: 2
-          ]
+          session_pool: [size: 3]
+          ghostscript_pool: [size: 10]
         ]
       end
 
