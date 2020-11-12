@@ -1,72 +1,55 @@
 defmodule ChromicPDF.Browser do
   @moduledoc false
 
-  use GenServer
-  alias ChromicPDF.{Connection, Protocol}
-
-  @type state :: %{dispatch: Protocol.dispatch(), protocols: [Protocol.t()]}
+  use Supervisor
+  alias ChromicPDF.Browser.{Channel, SessionPool}
 
   # ------------- API ----------------
 
-  def child_spec(args) do
-    %{
-      id: server_name_from_args(args),
-      start: {ChromicPDF.Browser, :start_link, [args]},
-      shutdown: 5_000
-    }
-  end
-
-  @spec start_link(Keyword.t()) :: GenServer.on_start()
+  @spec start_link(Keyword.t()) :: Supervisor.on_start()
   def start_link(args) do
-    GenServer.start_link(__MODULE__, args, name: server_name_from_args(args))
+    Supervisor.start_link(__MODULE__, args, name: name(args))
   end
 
-  @spec run_protocol(atom(), Protocol.t()) :: {:ok, any()} | {:error, term()}
-  def run_protocol(chromic, %Protocol{} = protocol) when is_atom(chromic) do
-    GenServer.call(server_name(chromic), {:run_protocol, protocol})
+  defp name(args) when is_list(args), do: args |> Keyword.fetch!(:chromic) |> name()
+  defp name(chromic) when is_atom(chromic), do: Module.concat(chromic, :Browser)
+
+  @spec channel(pid() | atom()) :: pid()
+  def channel(supervisor), do: find_child(supervisor, Channel)
+
+  @spec session_pool(pid() | atom()) :: pid()
+  def session_pool(supervisor), do: find_child(supervisor, SessionPool)
+
+  defp find_child(supervisor, module) do
+    supervisor
+    |> Supervisor.which_children()
+    |> Enum.find(fn {mod, _, _, _} -> mod == module end)
+    |> elem(1)
   end
 
-  defp server_name_from_args(args) do
-    args
-    |> Keyword.fetch!(:chromic)
-    |> server_name()
+  @spec run_protocol(pid() | atom(), module(), keyword()) :: {:ok, any()} | {:error, term()}
+  def run_protocol(chromic, protocol, params) when is_atom(chromic) do
+    chromic
+    |> name()
+    |> Process.whereis()
+    |> run_protocol(protocol, params)
   end
 
-  defp server_name(chromic) do
-    Module.concat(chromic, :Browser)
+  def run_protocol(supervisor, protocol, params) when is_pid(supervisor) do
+    supervisor
+    |> session_pool()
+    |> SessionPool.run_protocol(protocol, params)
   end
 
-  # ----------- Callbacks ------------
+  # ------------ Callbacks -----------
 
-  @impl GenServer
+  @impl Supervisor
   def init(args) do
-    {:ok, conn_pid} = Connection.start_link(self(), args)
+    children = [
+      {Channel, args},
+      {SessionPool, args}
+    ]
 
-    dispatch = fn call ->
-      Connection.dispatch_call(conn_pid, call)
-    end
-
-    {:ok, %{dispatch: dispatch, protocols: []}}
-  end
-
-  @impl GenServer
-  def handle_call(
-        {:run_protocol, protocol},
-        from,
-        %{dispatch: dispatch, protocols: protocols} = state
-      ) do
-    protocol = Protocol.init(protocol, &GenServer.reply(from, &1), dispatch)
-    {:noreply, update_protocols(state, [protocol | protocols])}
-  end
-
-  # Data packets coming in from connection.
-  @impl GenServer
-  def handle_info({:msg_in, msg}, %{dispatch: dispatch, protocols: protocols} = state) do
-    protocols = Enum.map(protocols, &Protocol.run(&1, msg, dispatch))
-    {:noreply, update_protocols(state, protocols)}
-  end
-
-  defp update_protocols(state, protocols) do
-    %{state | protocols: Enum.reject(protocols, &Protocol.finished?(&1))}
+    Supervisor.init(children, strategy: :one_for_all)
   end
 end

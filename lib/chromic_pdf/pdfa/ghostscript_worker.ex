@@ -1,23 +1,10 @@
 defmodule ChromicPDF.GhostscriptWorker do
   @moduledoc false
 
-  use GenServer
   require EEx
   import ChromicPDF.Utils
 
   @ghostscript Application.compile_env(:chromic_pdf, :ghostscript, ChromicPDF.GhostscriptImpl)
-
-  # ------------- API ----------------
-
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, nil)
-  end
-
-  def convert(pid, pdf_path, params, output_path) do
-    GenServer.call(pid, {:convert, pdf_path, params, output_path})
-  end
-
-  # --------- Implementation ---------
 
   @psdef_ps Path.expand("../PDFA_def.ps.eex", __ENV__.file)
   @external_resource @psdef_ps
@@ -33,15 +20,8 @@ defmodule ChromicPDF.GhostscriptWorker do
     "__knowninfoTrapped" => :trapped
   }
 
-  EEx.function_from_file(:defp, :render_pdfa_def_ps, @psdef_ps, [:assigns])
-
-  @impl GenServer
-  def init(_) do
-    {:ok, nil}
-  end
-
-  @impl GenServer
-  def handle_call({:convert, pdf_path, params, output_path}, _from, state) do
+  @spec convert(binary(), keyword(), binary()) :: :ok
+  def convert(pdf_path, params, output_path) do
     pdf_path = Path.expand(pdf_path)
     pdf_with_fonts = Path.join(Path.dirname(output_path), random_file_name(".pdf"))
     pdfa_def_ps_path = Path.join(Path.dirname(output_path), random_file_name(".ps"))
@@ -50,8 +30,10 @@ defmodule ChromicPDF.GhostscriptWorker do
     create_pdf_with_fonts!(pdf_path, pdf_with_fonts)
     convert_to_pdfa!(pdf_with_fonts, params, pdfa_def_ps_path, output_path)
 
-    {:reply, :ok, state}
+    :ok
   end
+
+  EEx.function_from_file(:defp, :render_pdfa_def_ps, @psdef_ps, [:assigns])
 
   defp create_pdfa_def_ps!(pdf_path, params, pdfa_def_ps_path) do
     info = Keyword.get(params, :info, %{})

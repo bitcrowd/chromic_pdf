@@ -59,7 +59,7 @@ defmodule ChromicPdf.MixProject do
   defp deps do
     [
       {:jason, "~> 1.1"},
-      {:poolboy, "~> 1.5"},
+      {:nimble_pool, "~> 0.2.3"},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.23.0", only: [:test, :dev], runtime: false},

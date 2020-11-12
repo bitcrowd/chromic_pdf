@@ -32,7 +32,7 @@ defmodule ChromicPDF.Supervisor do
       @doc false
       use Supervisor
 
-      alias ChromicPDF.{API, Browser, GhostscriptPool, SessionPool}
+      alias ChromicPDF.{API, Browser, GhostscriptPool}
 
       @type url :: binary()
       @type path :: binary()
@@ -60,6 +60,7 @@ defmodule ChromicPDF.Supervisor do
       @type screenshot_option :: {:capture_screenshot, map()} | output_option()
 
       @doc false
+      @spec start_link(Keyword.t()) :: Supervisor.on_start()
       def start_link(config \\ []) do
         Supervisor.start_link(__MODULE__, config, name: __MODULE__)
       end
@@ -71,8 +72,7 @@ defmodule ChromicPDF.Supervisor do
 
         children = [
           {GhostscriptPool, config},
-          {Browser, config},
-          {SessionPool, config}
+          {Browser, config}
         ]
 
         Supervisor.init(children, strategy: :rest_for_one)

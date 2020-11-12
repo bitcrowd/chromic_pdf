@@ -1,6 +1,8 @@
 defmodule ChromicPDF.Connection.Tokenizer do
   @moduledoc false
 
+  @type t :: list()
+
   # Returns initial memo.
   def init do
     []
