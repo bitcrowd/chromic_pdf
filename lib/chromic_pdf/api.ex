@@ -29,7 +29,7 @@ defmodule ChromicPDF.API do
       |> stringify_map_keys()
       |> iolists_to_binary()
 
-    chromic
+    chromic.browser()
     |> Browser.run_protocol(protocol, opts)
     |> feed_chrome_data_into_output(opts)
   end
@@ -141,7 +141,7 @@ defmodule ChromicPDF.API do
 
   defp do_convert_to_pdfa(chromic, pdf_path, opts, tmp_dir) do
     pdfa_path = Path.join(tmp_dir, random_file_name(".pdf"))
-    :ok = GhostscriptPool.convert(chromic, pdf_path, opts, pdfa_path)
+    :ok = GhostscriptPool.convert(chromic.ghostscript_pool(), pdf_path, opts, pdfa_path)
 
     case Keyword.get(opts, :output) do
       path when is_binary(path) ->
