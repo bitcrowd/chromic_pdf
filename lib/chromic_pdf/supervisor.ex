@@ -31,7 +31,7 @@ defmodule ChromicPDF.Supervisor do
       # disables the @doc for child_spec/1
       @doc false
       use Supervisor
-
+      import ChromicPDF.Utils, only: [find_supervisor_child: 2]
       alias ChromicPDF.{API, Browser, GhostscriptPool}
 
       @type url :: binary()
@@ -76,6 +76,16 @@ defmodule ChromicPDF.Supervisor do
         ]
 
         Supervisor.init(children, strategy: :rest_for_one)
+      end
+
+      @doc false
+      def browser do
+        find_supervisor_child(__MODULE__, Browser)
+      end
+
+      @doc false
+      def ghostscript_pool do
+        find_supervisor_child(__MODULE__, GhostscriptPool)
       end
 
       @doc """

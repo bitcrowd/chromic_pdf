@@ -57,4 +57,18 @@ defmodule ChromicPDF.Utils do
         """)
     end
   end
+
+  @spec find_supervisor_child(pid() | atom(), module()) :: pid()
+  def find_supervisor_child(supervisor, module) when is_atom(supervisor) do
+    supervisor
+    |> Process.whereis()
+    |> find_supervisor_child(module)
+  end
+
+  def find_supervisor_child(supervisor, module) when is_pid(supervisor) do
+    supervisor
+    |> Supervisor.which_children()
+    |> Enum.find(fn {mod, _, _, _} -> mod == module end)
+    |> elem(1)
+  end
 end

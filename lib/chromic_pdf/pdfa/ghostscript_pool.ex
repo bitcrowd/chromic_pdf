@@ -22,8 +22,7 @@ defmodule ChromicPDF.GhostscriptPool do
   def start_link(args) do
     NimblePool.start_link(
       worker: {__MODULE__, args},
-      pool_size: pool_size(args),
-      name: name(args)
+      pool_size: pool_size(args)
     )
   end
 
@@ -32,15 +31,12 @@ defmodule ChromicPDF.GhostscriptPool do
   end
 
   # Converts a PDF to PDF-A/2 using Ghostscript.
-  @spec convert(atom(), binary(), keyword(), binary()) :: :ok
-  def convert(chromic, pdf_path, params, output_path) do
-    NimblePool.checkout!(name(chromic), :checkout, fn _from, _worker_state ->
+  @spec convert(pid(), binary(), keyword(), binary()) :: :ok
+  def convert(pool, pdf_path, params, output_path) do
+    NimblePool.checkout!(pool, :checkout, fn _from, _worker_state ->
       {GhostscriptWorker.convert(pdf_path, params, output_path), :ok}
     end)
   end
-
-  defp name(args) when is_list(args), do: args |> Keyword.fetch!(:chromic) |> name()
-  defp name(chromic) when is_atom(chromic), do: Module.concat(chromic, :GhostscriptPool)
 
   # ------------ Callbacks -----------
 
