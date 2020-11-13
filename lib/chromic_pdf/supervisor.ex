@@ -24,15 +24,103 @@ defmodule ChromicPDF.Supervisor do
       end
   """
 
+  # disables the @doc for child_spec/1
+  @doc false
+  use Supervisor
+  import ChromicPDF.Utils, only: [find_supervisor_child: 2]
+  alias ChromicPDF.{Browser, GhostscriptPool}
+
+  @type services :: %{
+          browser: pid(),
+          ghostscript_pool: pid()
+        }
+
+  defp on_demand?(config), do: Keyword.get(config, :on_demand, false)
+  defp on_demand_name(chromic), do: Module.concat(chromic, :OnDemand)
+
+  @doc false
+  @spec start_link(module(), Keyword.t()) :: Supervisor.on_start() | Agent.on_start()
+  def start_link(chromic, config \\ []) do
+    if on_demand?(config) do
+      Agent.start_link(
+        fn ->
+          config
+          |> Keyword.update(:session_pool, [size: 1], &Keyword.put(&1, :size, 1))
+          |> Keyword.update(:ghostscript_pool, [size: 1], &Keyword.put(&1, :size, 1))
+        end,
+        name: on_demand_name(chromic)
+      )
+    else
+      Supervisor.start_link(__MODULE__, config, name: chromic)
+    end
+  end
+
+  @doc false
+  @impl Supervisor
+  def init(config) do
+    children = [
+      {Browser, config},
+      {GhostscriptPool, config}
+    ]
+
+    Supervisor.init(children, strategy: :one_for_one)
+  end
+
+  @doc """
+  Fetches pids of ChromicPDF's services and passes them to the given callback function.
+
+  If ChromicPDF has not been started but configured to run in `on_demand` mode, this will start a
+  temporary supervision tree.
+  """
+  @spec with_services(module(), (services() -> any())) :: any()
+  def with_services(chromic, fun) do
+    with_supervisor(chromic, fn supervisor ->
+      fun.(%{
+        browser: find_supervisor_child(supervisor, Browser),
+        ghostscript_pool: find_supervisor_child(supervisor, GhostscriptPool)
+      })
+    end)
+  end
+
+  defp with_supervisor(chromic, fun) do
+    with {_, nil} <- {chromic, Process.whereis(chromic)},
+         {_, nil} <- {:on_demand, Process.whereis(on_demand_name(chromic))} do
+      raise("""
+      ChromicPDF isn't running and no :on_demand config loaded.
+
+      Please make sure to start its supervisor as part of your application.
+
+          def start(_type, _args) do
+            children = [
+              # other apps...
+              #{__MODULE__ |> to_string() |> String.replace("Elixir.", "")}
+            ]
+
+            Supervisor.start_link(children, strategy: :one_for_one, name: MyApp.Supervisor)
+          end
+      """)
+    else
+      {^chromic, pid} -> fun.(pid)
+      {:on_demand, pid} -> pid |> Agent.get(& &1) |> with_on_demand_supervisor(fun)
+    end
+  end
+
+  defp with_on_demand_supervisor(config, fun) do
+    {:ok, sup} = Supervisor.start_link(__MODULE__, config)
+
+    try do
+      fun.(sup)
+    after
+      Supervisor.stop(sup)
+    end
+  end
+
   @doc false
   defmacro __using__(_opts) do
     # credo:disable-for-next-line Credo.Check.Refactor.LongQuoteBlocks
     quote do
-      # disables the @doc for child_spec/1
-      @doc false
-      use Supervisor
-      import ChromicPDF.Utils, only: [find_supervisor_child: 2]
-      alias ChromicPDF.{API, Browser, GhostscriptPool}
+      import ChromicPDF.Supervisor, only: [with_services: 2]
+      alias ChromicPDF.API
 
       @type url :: binary()
       @type path :: binary()
@@ -59,22 +147,23 @@ defmodule ChromicPDF.Supervisor do
               | output_option()
       @type screenshot_option :: {:capture_screenshot, map()} | output_option()
 
-      @doc false
-      @spec start_link(Keyword.t()) :: Supervisor.on_start()
-      def start_link(config \\ []) do
-        Supervisor.start_link(__MODULE__, config, name: __MODULE__)
+      @doc """
+      Returns a specification to start this module as part of a supervision tree.
+      """
+      @spec child_spec(keyword()) :: Supervisor.child_spec()
+      def child_spec(config) do
+        %{
+          id: __MODULE__,
+          start: {__MODULE__, :start_link, [config]},
+          type: :supervisor
+        }
       end
 
-      @doc false
-      @impl Supervisor
-      def init(config) do
-        children = [
-          {Browser, config},
-          {GhostscriptPool, config}
-        ]
-
-        Supervisor.init(children, strategy: :one_for_one)
-      end
+      @doc """
+      Starts ChromicPDF.
+      """
+      @spec start_link(Keyword.t()) :: Supervisor.on_start() | Agent.on_start()
+      def start_link(config \\ []), do: ChromicPDF.Supervisor.start_link(__MODULE__, config)
 
       @doc """
       Prints a PDF.
@@ -269,7 +358,7 @@ defmodule ChromicPDF.Supervisor do
               opts :: [pdf_option()]
             ) :: return()
       def print_to_pdf(input, opts \\ []) do
-        with_services(&API.print_to_pdf(&1, input, opts))
+        with_services(__MODULE__, &API.print_to_pdf(&1, input, opts))
       end
 
       @doc """
@@ -298,7 +387,7 @@ defmodule ChromicPDF.Supervisor do
       """
       @spec capture_screenshot(url :: source(), opts :: keyword()) :: return()
       def capture_screenshot(input, opts \\ []) do
-        with_services(&API.capture_screenshot(&1, input, opts))
+        with_services(__MODULE__, &API.capture_screenshot(&1, input, opts))
       end
 
       @doc """
@@ -362,7 +451,7 @@ defmodule ChromicPDF.Supervisor do
       """
       @spec convert_to_pdfa(pdf_path :: path(), opts :: [pdfa_option()]) :: return()
       def convert_to_pdfa(pdf_path, opts \\ []) do
-        with_services(&API.convert_to_pdfa(&1, pdf_path, opts))
+        with_services(__MODULE__, &API.convert_to_pdfa(&1, pdf_path, opts))
       end
 
       @doc """
@@ -379,14 +468,7 @@ defmodule ChromicPDF.Supervisor do
               opts :: [pdf_option() | pdfa_option()]
             ) :: return()
       def print_to_pdfa(input, opts \\ []) do
-        with_services(&API.print_to_pdfa(&1, input, opts))
-      end
-
-      defp with_services(fun) do
-        fun.(%{
-          browser: find_supervisor_child(__MODULE__, Browser),
-          ghostscript_pool: find_supervisor_child(__MODULE__, GhostscriptPool)
-        })
+        with_services(__MODULE__, &API.print_to_pdfa(&1, input, opts))
       end
     end
   end

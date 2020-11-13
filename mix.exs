@@ -49,6 +49,7 @@ defmodule ChromicPdf.MixProject do
     ]
   end
 
+  defp elixirc_paths(:integration), do: ["lib", "test/integration/support"]
   defp elixirc_paths(:test), do: ["lib", "test/unit/support"]
   defp elixirc_paths(_env), do: ["lib"]
 
