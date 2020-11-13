@@ -4,32 +4,37 @@ defmodule ChromicPDF.API do
   import ChromicPDF.Utils
   alias ChromicPDF.{Browser, CaptureScreenshot, GhostscriptPool, PrintToPDF}
 
-  @spec print_to_pdf(module(), ChromicPDF.source() | ChromicPDF.source_and_options(), [
+  @type services :: %{
+          browser: pid(),
+          ghostscript_pool: pid()
+        }
+
+  @spec print_to_pdf(services(), ChromicPDF.source() | ChromicPDF.source_and_options(), [
           ChromicPDF.pdf_option()
         ]) :: ChromicPDF.return()
-  def print_to_pdf(chromic, %{source: source, opts: opts}, overrides)
+  def print_to_pdf(services, %{source: source, opts: opts}, overrides)
       when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
-    print_to_pdf(chromic, source, Keyword.merge(opts, overrides))
+    print_to_pdf(services, source, Keyword.merge(opts, overrides))
   end
 
-  def print_to_pdf(chromic, source, opts) when tuple_size(source) == 2 and is_list(opts) do
-    chrome_export(chromic, PrintToPDF, source, opts)
+  def print_to_pdf(services, source, opts) when tuple_size(source) == 2 and is_list(opts) do
+    chrome_export(services, PrintToPDF, source, opts)
   end
 
-  @spec capture_screenshot(module(), ChromicPDF.source(), [ChromicPDF.screenshot_option()]) ::
+  @spec capture_screenshot(services(), ChromicPDF.source(), [ChromicPDF.screenshot_option()]) ::
           ChromicPDF.return()
-  def capture_screenshot(chromic, source, opts) when tuple_size(source) == 2 and is_list(opts) do
-    chrome_export(chromic, CaptureScreenshot, source, opts)
+  def capture_screenshot(services, source, opts) when tuple_size(source) == 2 and is_list(opts) do
+    chrome_export(services, CaptureScreenshot, source, opts)
   end
 
-  defp chrome_export(chromic, protocol, source, opts) do
+  defp chrome_export(services, protocol, source, opts) do
     opts =
       opts
       |> put_source(source)
       |> stringify_map_keys()
       |> iolists_to_binary()
 
-    chromic.browser()
+    services.browser
     |> Browser.run_protocol(protocol, opts)
     |> feed_chrome_data_into_output(opts)
   end
@@ -114,34 +119,34 @@ defmodule ChromicPDF.API do
     end
   end
 
-  @spec convert_to_pdfa(module(), ChromicPDF.path(), [ChromicPDF.pdfa_option()]) ::
+  @spec convert_to_pdfa(services(), ChromicPDF.path(), [ChromicPDF.pdfa_option()]) ::
           ChromicPDF.return()
-  def convert_to_pdfa(chromic, pdf_path, opts) when is_binary(pdf_path) and is_list(opts) do
+  def convert_to_pdfa(services, pdf_path, opts) when is_binary(pdf_path) and is_list(opts) do
     with_tmp_dir(fn tmp_dir ->
-      do_convert_to_pdfa(chromic, pdf_path, opts, tmp_dir)
+      do_convert_to_pdfa(services, pdf_path, opts, tmp_dir)
     end)
   end
 
-  @spec print_to_pdfa(module(), ChromicPDF.source() | ChromicPDF.source_and_options(), [
+  @spec print_to_pdfa(services(), ChromicPDF.source() | ChromicPDF.source_and_options(), [
           ChromicPDF.pdf_option() | ChromicPDF.pdfa_option()
         ]) ::
           ChromicPDF.return()
-  def print_to_pdfa(chromic, %{source: source, opts: opts}, overrides)
+  def print_to_pdfa(services, %{source: source, opts: opts}, overrides)
       when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
-    print_to_pdfa(chromic, source, Keyword.merge(opts, overrides))
+    print_to_pdfa(services, source, Keyword.merge(opts, overrides))
   end
 
-  def print_to_pdfa(chromic, source, opts) when tuple_size(source) == 2 and is_list(opts) do
+  def print_to_pdfa(services, source, opts) when tuple_size(source) == 2 and is_list(opts) do
     with_tmp_dir(fn tmp_dir ->
       pdf_path = Path.join(tmp_dir, random_file_name(".pdf"))
-      :ok = print_to_pdf(chromic, source, Keyword.put(opts, :output, pdf_path))
-      do_convert_to_pdfa(chromic, pdf_path, opts, tmp_dir)
+      :ok = print_to_pdf(services, source, Keyword.put(opts, :output, pdf_path))
+      do_convert_to_pdfa(services, pdf_path, opts, tmp_dir)
     end)
   end
 
-  defp do_convert_to_pdfa(chromic, pdf_path, opts, tmp_dir) do
+  defp do_convert_to_pdfa(services, pdf_path, opts, tmp_dir) do
     pdfa_path = Path.join(tmp_dir, random_file_name(".pdf"))
-    :ok = GhostscriptPool.convert(chromic.ghostscript_pool(), pdf_path, opts, pdfa_path)
+    :ok = GhostscriptPool.convert(services.ghostscript_pool, pdf_path, opts, pdfa_path)
 
     case Keyword.get(opts, :output) do
       path when is_binary(path) ->

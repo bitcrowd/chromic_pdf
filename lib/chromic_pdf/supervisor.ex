@@ -68,24 +68,12 @@ defmodule ChromicPDF.Supervisor do
       @doc false
       @impl Supervisor
       def init(config) do
-        config = Keyword.merge(config, chromic: __MODULE__)
-
         children = [
-          {GhostscriptPool, config},
-          {Browser, config}
+          {Browser, config},
+          {GhostscriptPool, config}
         ]
 
-        Supervisor.init(children, strategy: :rest_for_one)
-      end
-
-      @doc false
-      def browser do
-        find_supervisor_child(__MODULE__, Browser)
-      end
-
-      @doc false
-      def ghostscript_pool do
-        find_supervisor_child(__MODULE__, GhostscriptPool)
+        Supervisor.init(children, strategy: :one_for_one)
       end
 
       @doc """
@@ -281,7 +269,7 @@ defmodule ChromicPDF.Supervisor do
               opts :: [pdf_option()]
             ) :: return()
       def print_to_pdf(input, opts \\ []) do
-        API.print_to_pdf(__MODULE__, input, opts)
+        with_services(&API.print_to_pdf(&1, input, opts))
       end
 
       @doc """
@@ -310,7 +298,7 @@ defmodule ChromicPDF.Supervisor do
       """
       @spec capture_screenshot(url :: source(), opts :: keyword()) :: return()
       def capture_screenshot(input, opts \\ []) do
-        API.capture_screenshot(__MODULE__, input, opts)
+        with_services(&API.capture_screenshot(&1, input, opts))
       end
 
       @doc """
@@ -374,7 +362,7 @@ defmodule ChromicPDF.Supervisor do
       """
       @spec convert_to_pdfa(pdf_path :: path(), opts :: [pdfa_option()]) :: return()
       def convert_to_pdfa(pdf_path, opts \\ []) do
-        API.convert_to_pdfa(__MODULE__, pdf_path, opts)
+        with_services(&API.convert_to_pdfa(&1, pdf_path, opts))
       end
 
       @doc """
@@ -391,7 +379,14 @@ defmodule ChromicPDF.Supervisor do
               opts :: [pdf_option() | pdfa_option()]
             ) :: return()
       def print_to_pdfa(input, opts \\ []) do
-        API.print_to_pdfa(__MODULE__, input, opts)
+        with_services(&API.print_to_pdfa(&1, input, opts))
+      end
+
+      defp with_services(fun) do
+        fun.(%{
+          browser: find_supervisor_child(__MODULE__, Browser),
+          ghostscript_pool: find_supervisor_child(__MODULE__, GhostscriptPool)
+        })
       end
     end
   end
