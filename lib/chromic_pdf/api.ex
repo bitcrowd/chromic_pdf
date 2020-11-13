@@ -4,14 +4,13 @@ defmodule ChromicPDF.API do
   import ChromicPDF.Utils
   alias ChromicPDF.{Browser, CaptureScreenshot, GhostscriptPool, PrintToPDF}
 
-  @type services :: %{
-          browser: pid(),
-          ghostscript_pool: pid()
-        }
-
-  @spec print_to_pdf(services(), ChromicPDF.source() | ChromicPDF.source_and_options(), [
-          ChromicPDF.pdf_option()
-        ]) :: ChromicPDF.return()
+  @spec print_to_pdf(
+          ChromicPDF.Supervisor.services(),
+          ChromicPDF.source() | ChromicPDF.source_and_options(),
+          [
+            ChromicPDF.pdf_option()
+          ]
+        ) :: ChromicPDF.return()
   def print_to_pdf(services, %{source: source, opts: opts}, overrides)
       when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
     print_to_pdf(services, source, Keyword.merge(opts, overrides))
@@ -21,7 +20,9 @@ defmodule ChromicPDF.API do
     chrome_export(services, PrintToPDF, source, opts)
   end
 
-  @spec capture_screenshot(services(), ChromicPDF.source(), [ChromicPDF.screenshot_option()]) ::
+  @spec capture_screenshot(ChromicPDF.Supervisor.services(), ChromicPDF.source(), [
+          ChromicPDF.screenshot_option()
+        ]) ::
           ChromicPDF.return()
   def capture_screenshot(services, source, opts) when tuple_size(source) == 2 and is_list(opts) do
     chrome_export(services, CaptureScreenshot, source, opts)
@@ -119,7 +120,9 @@ defmodule ChromicPDF.API do
     end
   end
 
-  @spec convert_to_pdfa(services(), ChromicPDF.path(), [ChromicPDF.pdfa_option()]) ::
+  @spec convert_to_pdfa(ChromicPDF.Supervisor.services(), ChromicPDF.path(), [
+          ChromicPDF.pdfa_option()
+        ]) ::
           ChromicPDF.return()
   def convert_to_pdfa(services, pdf_path, opts) when is_binary(pdf_path) and is_list(opts) do
     with_tmp_dir(fn tmp_dir ->
@@ -127,9 +130,13 @@ defmodule ChromicPDF.API do
     end)
   end
 
-  @spec print_to_pdfa(services(), ChromicPDF.source() | ChromicPDF.source_and_options(), [
-          ChromicPDF.pdf_option() | ChromicPDF.pdfa_option()
-        ]) ::
+  @spec print_to_pdfa(
+          ChromicPDF.Supervisor.services(),
+          ChromicPDF.source() | ChromicPDF.source_and_options(),
+          [
+            ChromicPDF.pdf_option() | ChromicPDF.pdfa_option()
+          ]
+        ) ::
           ChromicPDF.return()
   def print_to_pdfa(services, %{source: source, opts: opts}, overrides)
       when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do

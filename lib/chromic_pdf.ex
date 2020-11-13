@@ -34,7 +34,7 @@ defmodule ChromicPDF do
   ### Worker pools
 
   ChromicPDF spawns two worker pools, the session pool and the ghostscript pool. By default, it
-  will create as many sessions as schedulers are online, and allow up to 10 concurrent
+  will create as many sessions as schedulers are online, and allow the same number of concurrent
   Ghostscript processes to run. To change these options, you can pass configuration to the
   supervisor. Please note that these are only worker pools. If you intend to max them out,
   you will need a job queue as well.
@@ -101,6 +101,29 @@ defmodule ChromicPDF do
       defp chromic_pdf_opts do
         [discard_stderr: false]
       end
+
+  ### Starting & stopping Chrome on demand
+
+  ChromicPDF tries its best to clean up after itself by closing all external Chrome processes on
+  shutdown. Unfortunately it is not possible to perform a graceful shutdown when a BEAM instance
+  is killed with the Ctrl+C abort mechanism (see issue [#56](https://github.com/bitcrowd/chromic_pdf/issues/56)).
+
+  In case you habitually end your development server with Ctrl+C, you should consider enabling "On
+  Demand" mode, which effectively disables the session pooling logic of ChromicPDF, and instead
+  launches and stops Chrome instances as needed.
+
+      # config/config.exs
+      config :my_app, :chromic_pdf, on_demand: false
+
+      # config/dev.exs
+      config :my_app, :chromic_pdf, on_demand: true
+
+      # application.ex
+      @chromic_pdf_opts Application.compile_env!(:my_app, :chromic_pdf)
+      defp chromic_pdf_opts, do: @chromic_pdf_opts
+
+  Please note that each print job will have an additional ~0.5s runtime due to the added Chrome
+  boot time cost.
 
   ## How it works
 
