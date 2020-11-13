@@ -10,6 +10,7 @@
 
 ### Added
 
+- Added telemetry events for the PDF generation & PDF/A conversion.
 - "On Demand" mode allows to start & stop Chrome as needed, much like puppeteer does. This helps
   in development to prevent leaving behind zombie processes when the BEAM is aborted with Ctrl+C.
 - New global option `discard_stderr` allows to enable Chrome's stderr logging which is by default

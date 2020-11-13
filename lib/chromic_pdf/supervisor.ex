@@ -135,17 +135,25 @@ defmodule ChromicPDF.Supervisor do
 
       @type return :: :ok | {:ok, binary()} | {:ok, output_function_result()}
 
+      @type telemetry_metadata_option :: {:telemetry_metadata, map()}
+
       @type pdf_option ::
               {:print_to_pdf, map()}
               | {:set_cookie, map()}
               | output_option()
+              | telemetry_metadata_option()
 
       @type pdfa_option ::
               {:pdfa_version, binary()}
               | {:pdfa_def_ext, binary()}
               | {:info, map()}
               | output_option()
-      @type screenshot_option :: {:capture_screenshot, map()} | output_option()
+              | telemetry_metadata_option()
+
+      @type capture_screenshot_option ::
+              {:capture_screenshot, map()}
+              | output_option()
+              | telemetry_metadata_option()
 
       @doc """
       Returns a specification to start this module as part of a supervision tree.
@@ -207,7 +215,7 @@ defmodule ChromicPDF.Supervisor do
           ChromicPDF.print_to_pdf({:url, "file:///example.html"})
 
       One may pass `http` or `https` URLs just like above, only be aware that you will need to
-      enable "online mode" first. See ["Running in online mode"](#module-running-in-online-mode)
+      enable "online mode" first. See "[Running in online mode](#module-running-in-online-mode)"
       for explanation.
 
           ChromicPDF.print_to_pdf({:url, "http:///example.net"})
@@ -235,7 +243,7 @@ defmodule ChromicPDF.Supervisor do
       function. Oftentimes this method is preferable over printing a URL if you intend to render
       PDFs from templates rendered within the application that also hosts ChromicPDF, without the
       need to route the content through an actual HTTP endpoint. Also, this way of passing the
-      HTML source has slightly better performance than a printing a URL.
+      HTML source has slightly better performance than printing a URL.
 
           ChromicPDF.print_to_pdf(
             {:html, "<h1>Hello World!</h1>"}
@@ -317,15 +325,16 @@ defmodule ChromicPDF.Supervisor do
       ### Page size and margins
 
       Chrome will use the provided `pagerWidth` and `paperHeight` dimensions as the PDF paper
-      format. Please not that the `@page` section in the body CSS is not correctly interpreted,
-      see `ChromicPDF.Template` for a discussion.
+      format. Please be aware that the `@page` section in the body CSS is not correctly
+      interpreted, see `ChromicPDF.Template` for a discussion.
 
       ### Header and footer
 
       Chrome's support for native header and footer sections is a little bit finicky. Still, to
       the best of my knowledge, `headerTemplate` and `footerTemplate` are the only
-      well-functioning solutions if you need headers or footers that are repeated on multiple
-      pages even in the presence of body elements stretching across a page break.
+      well-functioning solutions for HTML-to-PDF conversion if you need headers or footers that
+      are repeated on multiple pages even in the presence of body elements stretching across a
+      page break.
 
       In order to make header and footer visible in the first place, you will need to be aware of
       a couple of caveats:
@@ -343,6 +352,8 @@ defmodule ChromicPDF.Supervisor do
 
             #header, #footer { padding: 0 !important; }
 
+      * Header and footer have a default `zoom` level of 1/0.75 so everything appears to be
+        smaller than in the body when the same styles are applied.
       * If header or footer are not displayed even though they should, make sure your HTML is
         valid. Tuning the margins for an hour looking for mistakes there, only to discover that
         you are missing a closing `</style>` tag, can be quite painful.
@@ -385,7 +396,7 @@ defmodule ChromicPDF.Supervisor do
 
       https://chromedevtools.github.io/devtools-protocol/tot/Page#method-captureScreenshot
       """
-      @spec capture_screenshot(url :: source(), opts :: keyword()) :: return()
+      @spec capture_screenshot(url :: source(), opts :: [capture_screenshot_option()]) :: return()
       def capture_screenshot(input, opts \\ []) do
         with_services(__MODULE__, &API.capture_screenshot(&1, input, opts))
       end

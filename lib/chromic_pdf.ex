@@ -122,8 +122,30 @@ defmodule ChromicPDF do
       @chromic_pdf_opts Application.compile_env!(:my_app, :chromic_pdf)
       defp chromic_pdf_opts, do: @chromic_pdf_opts
 
-  Please note that each print job will have an additional ~0.5s runtime due to the added Chrome
-  boot time cost.
+  Be aware that each print job will have an additional ~0.5s runtime due to the added Chrome boot
+  time cost.
+
+  ## Telemetry support
+
+  To provide insights into PDF and PDF/A generation metrics, ChromicPDF executes the following
+  telemetry events:
+
+  * `[:chromic_pdf, :print_to_pdf, :start | :stop | exception]`
+  * `[:chromic_pdf, :capture_screenshot, :start | :stop | :exception]`
+  * `[:chromic_pdf, :convert_to_pdfa, :start | :stop | exception]`
+
+  Please see [`:telemetry.span/3`](https://hexdocs.pm/telemetry/telemetry.html#span-3) for
+  details about their payloads, and [`:telemetry.attach/4`](https://hexdocs.pm/telemetry/telemetry.html#attach-4)
+  for how to attach to them.
+
+  Each of the corresponding functions accepts a `telemetry_metadata` option that is passed to the
+  attached event handler. This can be used to mark events with custom metadata such as the used
+  template.
+
+      ChromicPDF.print_to_pdf(..., telemetry_metadata: %{template: "my example"})
+
+  The `print_to_pdfa` function emits both the `print_to_pdf` and `convert_to_pdfa` event series,
+  in that order.
 
   ## How it works
 

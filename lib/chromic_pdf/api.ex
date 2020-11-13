@@ -17,16 +17,21 @@ defmodule ChromicPDF.API do
   end
 
   def print_to_pdf(services, source, opts) when tuple_size(source) == 2 and is_list(opts) do
-    chrome_export(services, PrintToPDF, source, opts)
+    chrome_export(services, :print_to_pdf, source, opts)
   end
 
   @spec capture_screenshot(ChromicPDF.Supervisor.services(), ChromicPDF.source(), [
-          ChromicPDF.screenshot_option()
+          ChromicPDF.capture_screenshot_option()
         ]) ::
           ChromicPDF.return()
   def capture_screenshot(services, source, opts) when tuple_size(source) == 2 and is_list(opts) do
-    chrome_export(services, CaptureScreenshot, source, opts)
+    chrome_export(services, :capture_screenshot, source, opts)
   end
+
+  @export_protocols %{
+    capture_screenshot: CaptureScreenshot,
+    print_to_pdf: PrintToPDF
+  }
 
   defp chrome_export(services, protocol, source, opts) do
     opts =
@@ -35,9 +40,11 @@ defmodule ChromicPDF.API do
       |> stringify_map_keys()
       |> iolists_to_binary()
 
-    services.browser
-    |> Browser.run_protocol(protocol, opts)
-    |> feed_chrome_data_into_output(opts)
+    with_telemetry(protocol, opts, fn ->
+      services.browser
+      |> Browser.run_protocol(Map.fetch!(@export_protocols, protocol), opts)
+      |> feed_chrome_data_into_output(opts)
+    end)
   end
 
   defp put_source(opts, {:file, source}), do: put_source(opts, {:url, source})
@@ -153,23 +160,34 @@ defmodule ChromicPDF.API do
 
   defp do_convert_to_pdfa(services, pdf_path, opts, tmp_dir) do
     pdfa_path = Path.join(tmp_dir, random_file_name(".pdf"))
-    :ok = GhostscriptPool.convert(services.ghostscript_pool, pdf_path, opts, pdfa_path)
 
-    case Keyword.get(opts, :output) do
-      path when is_binary(path) ->
-        File.cp!(pdfa_path, path)
-        :ok
+    with_telemetry(:convert_to_pdfa, opts, fn ->
+      :ok = GhostscriptPool.convert(services.ghostscript_pool, pdf_path, opts, pdfa_path)
 
-      fun when is_function(fun, 1) ->
-        {:ok, fun.(pdfa_path)}
+      case Keyword.get(opts, :output) do
+        path when is_binary(path) ->
+          File.cp!(pdfa_path, path)
+          :ok
 
-      nil ->
-        data =
-          pdfa_path
-          |> File.read!()
-          |> Base.encode64()
+        fun when is_function(fun, 1) ->
+          {:ok, fun.(pdfa_path)}
 
-        {:ok, data}
-    end
+        nil ->
+          data =
+            pdfa_path
+            |> File.read!()
+            |> Base.encode64()
+
+          {:ok, data}
+      end
+    end)
+  end
+
+  defp with_telemetry(operation, opts, fun) do
+    metadata = Keyword.get(opts, :telemetry_metadata, %{})
+
+    :telemetry.span([:chromic_pdf, operation], metadata, fn ->
+      {fun.(), metadata}
+    end)
   end
 end
