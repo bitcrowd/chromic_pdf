@@ -55,10 +55,10 @@ defmodule ChromicPDF.PDFGenerationTest do
       end)
     end
 
-    test "it does not print PDF from https:// URLs by default" do
-      assert_raise RuntimeError, ~r/net::ERR_INTERNET_DISCONNECTED/, fn ->
-        ChromicPDF.print_to_pdf({:url, "https://example.net"})
-      end
+    test "it prints PDFs from https:// URLs by default" do
+      print_to_pdf({:url, "https://example.net"}, fn text ->
+        assert String.contains?(text, "Example Domain")
+      end)
     end
 
     @tag :pdftotext
@@ -122,17 +122,17 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
   end
 
-  describe "online mode" do
+  describe "offline mode" do
     setup do
-      start_supervised!({ChromicPDF, offline: false})
+      start_supervised!({ChromicPDF, offline: true})
       :ok
     end
 
     @tag :pdftotext
-    test "it prints PDF from https:// URLs when given the offline: false parameter" do
-      print_to_pdf({:url, "https://example.net"}, fn text ->
-        assert String.contains?(text, "Example Domain")
-      end)
+    test "it does not print PDFs from https:// URLs when given the offline: true parameter" do
+      assert_raise RuntimeError, ~r/net::ERR_INTERNET_DISCONNECTED/, fn ->
+        ChromicPDF.print_to_pdf({:url, "https://example.net"})
+      end
     end
   end
 
