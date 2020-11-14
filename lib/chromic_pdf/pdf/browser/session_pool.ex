@@ -74,7 +74,7 @@ defmodule ChromicPDF.Browser.SessionPool do
 
   defp spawn_protocol(args) do
     args
-    |> Keyword.put_new(:offline, true)
+    |> Keyword.put_new(:offline, false)
     |> SpawnSession.new()
   end
 

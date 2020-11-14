@@ -39,7 +39,8 @@ defmodule ChromicPDF.Supervisor do
   defp on_demand_name(chromic), do: Module.concat(chromic, :OnDemand)
 
   @doc false
-  @spec start_link(module(), Keyword.t()) :: Supervisor.on_start() | Agent.on_start()
+  @spec start_link(module(), [ChromicPDF.global_option()]) ::
+          Supervisor.on_start() | Agent.on_start()
   def start_link(chromic, config \\ []) do
     if on_demand?(config) do
       Agent.start_link(
@@ -155,10 +156,21 @@ defmodule ChromicPDF.Supervisor do
               | output_option()
               | telemetry_metadata_option()
 
+      @type pool_option :: {:size, non_neg_integer()}
+
+      @type global_option ::
+              {:offline, boolean()}
+              | {:max_session_uses, non_neg_integer()}
+              | {:session_pool, [pool_option()]}
+              | {:no_sandbox, boolean()}
+              | {:discard_stderr, boolean()}
+              | {:ghostscript_pool, [pool_option()]}
+              | {:on_demand, boolean()}
+
       @doc """
       Returns a specification to start this module as part of a supervision tree.
       """
-      @spec child_spec(keyword()) :: Supervisor.child_spec()
+      @spec child_spec([global_option()]) :: Supervisor.child_spec()
       def child_spec(config) do
         %{
           id: __MODULE__,
@@ -170,7 +182,7 @@ defmodule ChromicPDF.Supervisor do
       @doc """
       Starts ChromicPDF.
       """
-      @spec start_link(Keyword.t()) :: Supervisor.on_start() | Agent.on_start()
+      @spec start_link([global_option()]) :: Supervisor.on_start() | Agent.on_start()
       def start_link(config \\ []), do: ChromicPDF.Supervisor.start_link(__MODULE__, config)
 
       @doc """
@@ -214,11 +226,9 @@ defmodule ChromicPDF.Supervisor do
 
           ChromicPDF.print_to_pdf({:url, "file:///example.html"})
 
-      One may pass `http` or `https` URLs just like above, only be aware that you will need to
-      enable "online mode" first. See "[Running in online mode](#module-running-in-online-mode)"
-      for explanation.
-
           ChromicPDF.print_to_pdf({:url, "http:///example.net"})
+
+          ChromicPDF.print_to_pdf({:url, "https:///example.net"})
 
       #### Cookies
 

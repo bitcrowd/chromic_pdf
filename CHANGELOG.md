@@ -7,6 +7,8 @@
   `Application.compile_env/3`.
 - Dropped `poolboy` in favour of `nimble_pool`. This renders the `max_overflow` poolboy option
   without effect.
+- Made "online mode" the default. Chrome will resolve all URL references unless the global
+  option `offline: false` is set.
 
 ### Added
 

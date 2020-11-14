@@ -70,18 +70,15 @@ defmodule ChromicPDF do
   application is still increased. Running this in a contained application with a small HTTP
   interface creates an additional barrier (and has other benefits).
 
-  ### Running in online mode
+  ### Running in offline mode
 
-  Browser targets will be spawned in "offline mode" by default (using the DevTools command
-  [`Network.emulateNetworkConditions`](https://chromedevtools.github.io/devtools-protocol/tot/Network#method-emulateNetworkConditions).
-  Users are required to take this extra step (basically reading this paragraph) to re-consider
-  whether remote printing is a requirement.
-
-  However, there are a lot of valid use-cases for printing from a URL, particularly from a
-  webserver on localhost. To switch to "online mode", pass the `offline: false` parameter.
+  For some perceived security bonus, browser targets can be spawned in "offline mode" (using the
+  DevTools command [`Network.emulateNetworkConditions`](https://chromedevtools.github.io/devtools-protocol/tot/Network#method-emulateNetworkConditions).
+  This will stop Chrome from resolving any `http://` or `https://` URLs, both from navigation and
+  URLs contained in the HTML body.
 
       def chromic_pdf_opts do
-        [offline: false]
+        [offline: true]
       end
 
   ### Chrome Sandbox
@@ -112,14 +109,20 @@ defmodule ChromicPDF do
   Demand" mode, which effectively disables the session pooling logic of ChromicPDF, and instead
   launches and stops Chrome instances as needed.
 
+      defp chromic_pdf_opts do
+        [on_demand: true]
+      end
+
+  To enable it only for development, load this option from the application environment.
+
       # config/config.exs
-      config :my_app, :chromic_pdf, on_demand: false
+      config :my_app, ChromicPDF, on_demand: false
 
       # config/dev.exs
-      config :my_app, :chromic_pdf, on_demand: true
+      config :my_app, ChromicPDF, on_demand: true
 
       # application.ex
-      @chromic_pdf_opts Application.compile_env!(:my_app, :chromic_pdf)
+      @chromic_pdf_opts Application.compile_env!(:my_app, ChromicPDF)
       defp chromic_pdf_opts, do: @chromic_pdf_opts
 
   Be aware that each print job will have an additional ~0.5s runtime due to the added Chrome boot
