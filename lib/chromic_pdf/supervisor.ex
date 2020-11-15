@@ -42,7 +42,7 @@ defmodule ChromicPDF.Supervisor do
   Returns a specification to start this module as part of a supervision tree.
   """
   @spec child_spec([ChromicPDF.global_option()]) :: Supervisor.child_spec()
-  def child_spec(config) do
+  def child_spec(chromic, config) do
     type =
       if on_demand?(config) do
         :worker
@@ -51,8 +51,8 @@ defmodule ChromicPDF.Supervisor do
       end
 
     %{
-      id: __MODULE__,
-      start: {__MODULE__, :start_link, [config]},
+      id: chromic,
+      start: {chromic, :start_link, [config]},
       type: type
     }
   end
@@ -191,7 +191,7 @@ defmodule ChromicPDF.Supervisor do
       Returns a specification to start this module as part of a supervision tree.
       """
       @spec child_spec([global_option()]) :: Supervisor.child_spec()
-      defdelegate child_spec(config), to: ChromicPDF.Supervisor
+      def child_spec(config), do: ChromicPDF.Supervisor.child_spec(__MODULE__, config)
 
       @doc """
       Starts ChromicPDF.
