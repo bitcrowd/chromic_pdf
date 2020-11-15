@@ -4,7 +4,7 @@ defmodule ChromicPDF.Supervisor do
 
   ## When is this useful?
 
-  * You want to completely separate two or more PDF "queues"
+  * You want to completely separate two or more PDF worker pools
   * You want to give your PDF module a custom API
 
   ## Usage
@@ -38,6 +38,25 @@ defmodule ChromicPDF.Supervisor do
   defp on_demand?(config), do: Keyword.get(config, :on_demand, false)
   defp on_demand_name(chromic), do: Module.concat(chromic, :OnDemand)
 
+  @doc """
+  Returns a specification to start this module as part of a supervision tree.
+  """
+  @spec child_spec([ChromicPDF.global_option()]) :: Supervisor.child_spec() | Agent.child_spec()
+  def child_spec(config) do
+    type =
+      if on_demand?(config) do
+        :worker
+      else
+        :supervisor
+      end
+
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [config]},
+      type: type
+    }
+  end
+
   @doc false
   @spec start_link(module(), [ChromicPDF.global_option()]) ::
           Supervisor.on_start() | Agent.on_start()
@@ -48,6 +67,7 @@ defmodule ChromicPDF.Supervisor do
           config
           |> Keyword.update(:session_pool, [size: 1], &Keyword.put(&1, :size, 1))
           |> Keyword.update(:ghostscript_pool, [size: 1], &Keyword.put(&1, :size, 1))
+          |> Keyword.delete(:on_demand)
         end,
         name: on_demand_name(chromic)
       )
@@ -68,10 +88,10 @@ defmodule ChromicPDF.Supervisor do
   end
 
   @doc """
-  Fetches pids of ChromicPDF's services and passes them to the given callback function.
+  Fetches pids of the supervisor's services and passes them to the given callback function.
 
-  If ChromicPDF has not been started but configured to run in `on_demand` mode, this will start a
-  temporary supervision tree.
+  If the supervisor has not been started but configured to run in `on_demand` mode, this will
+  start a temporary supervision tree.
   """
   @spec with_services(module(), (services() -> any())) :: any()
   def with_services(chromic, fun) do
@@ -170,17 +190,13 @@ defmodule ChromicPDF.Supervisor do
       @doc """
       Returns a specification to start this module as part of a supervision tree.
       """
-      @spec child_spec([global_option()]) :: Supervisor.child_spec()
-      def child_spec(config) do
-        %{
-          id: __MODULE__,
-          start: {__MODULE__, :start_link, [config]},
-          type: :supervisor
-        }
-      end
+      @spec child_spec([global_option()]) :: Supervisor.child_spec() | Agent.child_spec()
+      defdelegate child_spec(config), to: ChromicPDF.Supervisor
 
       @doc """
       Starts ChromicPDF.
+
+      If the config includes the `on_demand: true` flag, this will
       """
       @spec start_link([global_option()]) :: Supervisor.on_start() | Agent.on_start()
       def start_link(config \\ []), do: ChromicPDF.Supervisor.start_link(__MODULE__, config)
