@@ -65,10 +65,10 @@ defmodule ChromicPdf.MixProject do
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.23.0", only: [:test, :dev], runtime: false},
-      {:junit_formatter, "~> 3.0", only: [:test, :integration]},
-      {:mox, "~> 0.5.1", only: [:test]},
-      {:plug, "~> 1.9", only: [:integration]},
-      {:plug_cowboy, "~> 2.1", only: [:integration]}
+      {:junit_formatter, "~> 3.1", only: [:test, :integration]},
+      {:mox, "~> 1.0", only: [:test]},
+      {:plug, "~> 1.11", only: [:integration]},
+      {:plug_cowboy, "~> 2.4", only: [:integration]}
     ]
   end
 
