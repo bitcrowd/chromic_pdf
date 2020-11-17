@@ -4,7 +4,7 @@ defmodule ChromicPDF.ChromeImpl do
   @behaviour ChromicPDF.Chrome
 
   def spawn(opts) do
-    port = Port.open({:spawn, chrome_command(opts)}, [:binary, :nouse_stdio])
+    port = Port.open({:spawn, chrome_command(opts)}, port_opts(opts))
     Port.monitor(port)
 
     {:ok, port}
@@ -16,23 +16,28 @@ defmodule ChromicPDF.ChromeImpl do
     :ok
   end
 
+  # NOTE: The redirection is needed due to obscure behaviour of Ports that use more than 2 FDs.
+  # https://github.com/bitcrowd/chromic_pdf/issues/76
+
   defp chrome_command(opts) do
-    ~s("#{chrome_executable()}" #{no_sandbox(opts)} --headless --disable-gpu --remote-debugging-pipe #{
-      discard_stderr(opts)
-    })
+    [
+      ~s("#{chrome_executable()}"),
+      "--headless --disable-gpu --remote-debugging-pipe"
+    ]
+    |> append_if("--no-sandbox", no_sandbox?(opts))
+    |> append_if("2>/dev/null 3<&0 4>&1", discard_stderr?(opts))
+    |> Enum.join(" ")
   end
 
-  defp no_sandbox(opts) do
-    if Keyword.get(opts, :no_sandbox, false) do
-      "--no-sandbox"
-    end
+  defp port_opts(opts) do
+    append_if([:binary], :nouse_stdio, !discard_stderr?(opts))
   end
 
-  defp discard_stderr(opts) do
-    if Keyword.get(opts, :discard_stderr, true) do
-      "2>/dev/null"
-    end
-  end
+  defp append_if(list, _value, false), do: list
+  defp append_if(list, value, true), do: list ++ [value]
+
+  defp no_sandbox?(opts), do: Keyword.get(opts, :no_sandbox, false)
+  defp discard_stderr?(opts), do: Keyword.get(opts, :discard_stderr, true)
 
   @chrome_paths [
     "chromium-browser",
