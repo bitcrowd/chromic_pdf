@@ -1,3 +1,9 @@
+## Unreleased
+
+### Fixed
+
+- Reverted to file descriptor redirection to mitigate weird Port behaviour (#76).
+
 ## [0.6.0] - 2020-11-16
 
 ### Changed
