@@ -29,15 +29,17 @@ defmodule ChromicPDF do
 
   See `ChromicPDF.print_to_pdf/2` and `ChromicPDF.convert_to_pdfa/2`.
 
-  ## Options
-
-  ### Worker pools
+  ## Worker pools
 
   ChromicPDF spawns two worker pools, the session pool and the ghostscript pool. By default, it
   will create as many sessions (browser tabs) as schedulers are online, and allow the same number
-  of concurrent Ghostscript processes to run. To change these options, you can pass configuration
-  to the supervisor. Please note that these are non-queueing worker pools. If you intend to max
-  them out, you will need a job queue as well.
+  of concurrent Ghostscript processes to run.
+
+  ### Concurrency
+
+  To increase or limit the number of concurrent workers, you can pass pool configuration to the
+  supervisor. Please note that these are non-queueing worker pools. If you intend to max them out,
+  you will need a job queue as well.
 
       defp chromic_pdf_opts do
         [
@@ -89,24 +91,30 @@ defmodule ChromicPDF do
         [no_sandbox: true]
       end
 
-  ## Debugging Chrome errors
+  ## Chrome zombies
 
-  Chrome's stderr logging is silently discarded to not obscure your logfiles. In case you would
-  like to take a peek, add the `discard_stderr: false` option.
+  > Help, a Chrome army tries to take over my memory!
 
-      defp chromic_pdf_opts do
-        [discard_stderr: false]
-      end
+  ChromicPDF tries its best to gracefully close the external Chrome process when its supervisor
+  is terminated. Unfortunately, when the BEAM is not shutdown gracefully, Chrome processes will
+  keep running.  While in a containerized production environment this is unlikely to be of
+  concern, in development it can lead to unpleasant performance degradation of your operation
+  system.
 
-  ## Starting & stopping Chrome on demand
+  In particular, the BEAM is not shutdown properly…
 
-  ChromicPDF tries its best to clean up after itself by closing external Chrome processes on
-  shutdown. Unfortunately it is not possible to perform a graceful shutdown when a BEAM instance
-  is killed with the Ctrl+C abort mechanism (see issue [#56](https://github.com/bitcrowd/chromic_pdf/issues/56)).
+  * when you exit your application or `iex` console with the Ctrl+C abort mechanism (see issue [#56](https://github.com/bitcrowd/chromic_pdf/issues/56)),
+  * and when you run your tests. No, after an ExUnit run your application's supervisor is
+    not terminated cleanly.
+
+  There are a few ways to mitigate this issue.
+
+  ### "On Demand" mode
 
   In case you habitually end your development server with Ctrl+C, you should consider enabling "On
   Demand" mode which disables the session pool, and instead starts and stops Chrome instances as
-  needed.
+  needed. If multiple PDF operations are requested simultaneously, multiple Chrome processes will
+  be launched (each with a pool size of 1, disregarding the pool configuration).
 
       defp chromic_pdf_opts do
         [on_demand: true]
@@ -126,8 +134,31 @@ defmodule ChromicPDF do
         @chromic_pdf_opts ++ [... other opts ...]
       end
 
-  Be aware that each print job will have an increased runtime (plus about 0.5s) due to the added
-  Chrome boot time cost.
+  ### Terminating your supervisor after your test suite
+
+  You can enable "On Demand" mode for your tests, as well. However, please be aware that each
+  test that prints a PDF will have an increased runtime (plus about 0.5s) due to the added Chrome
+  boot time cost. Luckily, ExUnit provides a [method](https://hexdocs.pm/ex_unit/ExUnit.html#after_suite/1)
+  to run code at the end of your test suite.
+
+      # test/test_helper.exs
+      ExUnit.after_suite(fn _ -> Supervisor.stop(MyApp.Supervisor) end)
+      ExUnit.start()
+
+  ### Only start ChromicPDF in production
+
+  The easiest way to prevent Chrome from spawning in development is to only run ChromicPDF in
+  the `prod` environment. However, obviously you won't be able to print PDFs in development or
+  test then.
+
+  ## Debugging Chrome errors
+
+  Chrome's stderr logging is silently discarded to not obscure your logfiles. In case you would
+  like to take a peek, add the `discard_stderr: false` option.
+
+      defp chromic_pdf_opts do
+        [discard_stderr: false]
+      end
 
   ## Telemetry support
 

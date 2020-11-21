@@ -196,7 +196,10 @@ defmodule ChromicPDF.Supervisor do
       @doc """
       Starts ChromicPDF.
 
-      If the config includes the `on_demand: true` flag, this will
+      If the given config includes the `on_demand: true` flag, this will instead spawn an
+      Agent process that holds this configuration until a PDF operation is triggered which
+      will then launch a supervisor temporarily, process the operation, and proceed to perform
+      a graceful shutdown.
       """
       @spec start_link([global_option()]) :: Supervisor.on_start() | Agent.on_start()
       def start_link(config \\ []), do: ChromicPDF.Supervisor.start_link(__MODULE__, config)
