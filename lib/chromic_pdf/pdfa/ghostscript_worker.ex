@@ -114,8 +114,4 @@ defmodule ChromicPDF.GhostscriptWorker do
   end
 
   defp cast_info_value(other), do: other
-
-  defp priv_asset(filename) do
-    Path.join([Application.app_dir(:chromic_pdf), "priv", filename])
-  end
 end

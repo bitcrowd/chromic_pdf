@@ -5,7 +5,7 @@ defmodule ChromicPDF.Protocol do
 
   # A protocol is a sequence of JsonRPC calls and responses/notifications.
   #
-  # * It is created with a client request.
+  # * It is created for each client request.
   # * It's goal is to fulfill the client request.
   # * A protocol's `steps` queue is a list of functions. When it is empty, the protocol is done.
   # * Besides, a protocol has a `state` map of arbitrary values.
@@ -16,6 +16,17 @@ defmodule ChromicPDF.Protocol do
   @type state :: map()
   @type error :: {:error, term()}
   @type step :: call_step() | await_step() | output_step()
+
+  # A protocol knows three types of steps: calls, awaits, and output.
+  # * The call step is a protocol call to send to the browser. Multiple call steps in sequence
+  #   are executed sequentially until the next await step is found.
+  # * Await steps are steps that try to match on messages received from the browser. When a
+  #   message is matched, the await step is removed from the queue. Multiple await steps in
+  #   sequence are matched **out of order** as messages from the browser are often received out
+  #   of order as well, from different OS processes.
+  # * The output step is a simple function executed at the end of a protocol to send the protocol
+  #   result back to the client (using the `result_fun`), applying a mapper function before. If
+  #   no output step is defined in a protocol, the client is not sent a reply.
 
   @type call_fun :: (state(), dispatch() -> state() | error())
   @type call_step :: {:call, call_fun()}
@@ -81,11 +92,22 @@ defmodule ChromicPDF.Protocol do
     |> advance(dispatch)
   end
 
-  defp test(%__MODULE__{steps: [{:await, fun} | rest], state: state} = protocol, msg) do
-    case fun.(state, msg) do
-      :no_match -> protocol
-      {:match, state} -> %{protocol | steps: rest, state: state}
+  defp test(%__MODULE__{steps: steps, state: state} = protocol, msg) do
+    {awaits, rest} = Enum.split_while(steps, fn {type, _fun} -> type == :await end)
+
+    case do_test(awaits, [], state, msg) do
       {:error, error} -> %{protocol | steps: [], state: {:error, error}}
+      {new_head, new_state} -> %{protocol | steps: new_head ++ rest, state: new_state}
+    end
+  end
+
+  defp do_test([], acc, state, _msg), do: {acc, state}
+
+  defp do_test([{:await, fun} | rest], acc, state, msg) do
+    case fun.(state, msg) do
+      :no_match -> do_test(rest, acc ++ [{:await, fun}], state, msg)
+      {:match, new_state} -> {acc ++ rest, new_state}
+      {:error, error} -> {:error, error}
     end
   end
 
