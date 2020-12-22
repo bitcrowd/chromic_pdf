@@ -1,3 +1,10 @@
+## Unreleased
+
+### Fixed
+
+- When sending HTML to Chrome with `{:html, <content>}`, wait for the `Page.loadEventFired`
+  notification to allow external resources (images, scripts, ...) to be fetched. (#80)
+
 ## [0.6.1] - 2020-11-17
 
 ### Fixed

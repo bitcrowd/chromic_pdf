@@ -1,6 +1,7 @@
 defmodule ChromicPDF.PrintToPDF do
   @moduledoc false
 
+  import ChromicPDF.SpawnSession, only: [blank_url: 0]
   import ChromicPDF.ProtocolMacros
   alias ChromicPDF.Protocol
 
@@ -15,6 +16,7 @@ defmodule ChromicPDF.PrintToPDF do
       await_response(:frame_tree, [{["frameTree", "frame", "id"], "frameId"}])
       call(:set_content, "Page.setDocumentContent", [:html, "frameId"], %{})
       await_response(:content_set, [])
+      await_notification(:page_load_event, "Page.loadEventFired", [], [])
     end
 
     if_option {:source_type, :url} do
@@ -36,9 +38,6 @@ defmodule ChromicPDF.PrintToPDF do
     call(:print_to_pdf, "Page.printToPDF", &Map.get(&1, :print_to_pdf, %{}), %{})
     await_response(:printed, ["data"])
 
-    call(:blank, "Page.navigate", [], %{"url" => "about:blank"})
-    await_response(:blanked, ["frameId"])
-
     call(:reset_history, "Page.resetNavigationHistory", [], %{})
     await_response(:history_reset, [])
 
@@ -46,6 +45,10 @@ defmodule ChromicPDF.PrintToPDF do
       call(:clear_cookies, "Network.clearBrowserCookies", [], %{})
       await_response(:cleared, [])
     end
+
+    call(:blank, "Page.navigate", [], %{"url" => blank_url()})
+    await_response(:blanked, ["frameId"])
+    await_notification(:fsl_after_blank, "Page.frameStoppedLoading", ["frameId"], [])
 
     output("data")
   end

@@ -3,6 +3,8 @@ defmodule ChromicPDF.PDFGenerationTest do
   import ChromicPDF.Utils, only: [system_cmd!: 2]
 
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)
+  @test_image Path.expand("../fixtures/image_with_text.svg", __ENV__.file)
+
   @output Path.expand("../test.pdf", __ENV__.file)
   @test_server_port Application.compile_env!(:chromic_pdf, :test_server_port)
 
@@ -52,6 +54,15 @@ defmodule ChromicPDF.PDFGenerationTest do
     test "it prints PDF from HTML content" do
       print_to_pdf({:html, File.read!(@test_html)}, fn text ->
         assert String.contains?(text, "Hello ChromicPDF!")
+      end)
+    end
+
+    @tag :pdftotext
+    test "it waits for external resources when printing HTML content" do
+      html = ~s(<img src="file://#{@test_image}" />)
+
+      print_to_pdf({:html, html}, fn text ->
+        assert String.contains?(text, "some text from an external svg")
       end)
     end
 

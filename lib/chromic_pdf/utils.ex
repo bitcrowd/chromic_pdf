@@ -71,4 +71,9 @@ defmodule ChromicPDF.Utils do
     |> Enum.find(fn {mod, _, _, _} -> mod == module end)
     |> elem(1)
   end
+
+  @spec priv_asset(binary()) :: binary()
+  def priv_asset(filename) do
+    Path.join([Application.app_dir(:chromic_pdf), "priv", filename])
+  end
 end

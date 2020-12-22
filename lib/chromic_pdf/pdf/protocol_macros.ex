@@ -64,7 +64,6 @@ defmodule ChromicPDF.ProtocolMacros do
         )
       end
 
-      defp skip_branch([], acc, _opts), do: acc
       defp skip_branch([:end | rest], acc, opts), do: do_build_steps(rest, acc, opts)
       defp skip_branch([_skipped | rest], acc, opts), do: skip_branch(rest, acc, opts)
     end
