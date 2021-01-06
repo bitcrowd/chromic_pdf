@@ -9,12 +9,14 @@ defmodule ChromicPDF.Browser.SessionPool do
 
   @cores System.schedulers_online()
   @default_pool_size Application.compile_env(:chromic_pdf, :default_pool_size, div(@cores, 2))
+  @default_timeout 5000
   @default_max_session_uses 1000
 
   @type pool_state :: %{
           browser: pid(),
           spawn_protocol: Protocol.t(),
-          max_session_uses: non_neg_integer()
+          max_session_uses: non_neg_integer(),
+          timeout: timeout()
         }
 
   @type worker_state :: %{
@@ -47,12 +49,16 @@ defmodule ChromicPDF.Browser.SessionPool do
 
   @spec run_protocol(pid(), module(), keyword()) :: {:ok, any()} | {:error, term()}
   def run_protocol(pid, protocol_mod, params) do
-    NimblePool.checkout!(pid, :checkout, fn _from, {channel, %{session_id: session_id}} ->
-      protocol = protocol_mod.new(session_id, params)
-      result = Channel.run_protocol(channel, protocol)
+    NimblePool.checkout!(
+      pid,
+      :checkout,
+      fn _, {channel, %{session_id: session_id}, timeout} ->
+        protocol = protocol_mod.new(session_id, params)
+        result = Channel.run_protocol(channel, protocol, timeout)
 
-      {result, :ok}
-    end)
+        {result, :ok}
+      end
+    )
   end
 
   # ------------ Callbacks -----------
@@ -64,8 +70,13 @@ defmodule ChromicPDF.Browser.SessionPool do
      %{
        browser: browser,
        spawn_protocol: spawn_protocol(args),
-       max_session_uses: max_session_uses(args)
+       max_session_uses: max_session_uses(args),
+       timeout: timeout(args)
      }}
+  end
+
+  defp timeout(args) do
+    get_in(args, [:session_pool, :timeout]) || @default_timeout
   end
 
   defp max_session_uses(args) do
@@ -88,7 +99,7 @@ defmodule ChromicPDF.Browser.SessionPool do
     {:ok, %{"sessionId" => sid, "targetId" => tid}} =
       browser
       |> Browser.channel()
-      |> Channel.run_protocol(spawn_protocol)
+      |> Channel.run_protocol(spawn_protocol, @default_timeout)
 
     %{session_id: sid, target_id: tid, uses: 0}
   end
@@ -96,7 +107,7 @@ defmodule ChromicPDF.Browser.SessionPool do
   @impl NimblePool
   def handle_checkout(:checkout, _from, session, pool_state) do
     session = increment_uses_count(session)
-    client_state = {Browser.channel(pool_state.browser), session}
+    client_state = {Browser.channel(pool_state.browser), session, pool_state.timeout}
     {:ok, client_state, session, pool_state}
   end
 
@@ -119,7 +130,7 @@ defmodule ChromicPDF.Browser.SessionPool do
       {:ok, true} =
         pool_state.browser
         |> Browser.channel()
-        |> Channel.run_protocol(CloseTarget.new(targetId: session.target_id))
+        |> Channel.run_protocol(CloseTarget.new(targetId: session.target_id), @default_timeout)
     end)
 
     {:ok, pool_state}

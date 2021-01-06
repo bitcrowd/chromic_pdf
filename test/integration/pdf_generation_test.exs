@@ -188,4 +188,17 @@ defmodule ChromicPDF.PDFGenerationTest do
       end)
     end
   end
+
+  describe "session pool timeout" do
+    setup do
+      start_supervised!({ChromicPDF, session_pool: [timeout: 1]})
+      :ok
+    end
+
+    test "can be configured and generates a nice error messages" do
+      assert_raise RuntimeError, ~r/Timeout in Channel.run_protocol/, fn ->
+        print_to_pdf(fn _output -> :ok end)
+      end
+    end
+  end
 end
