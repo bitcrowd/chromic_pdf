@@ -16,9 +16,24 @@ defmodule ChromicPDF.Browser.Channel do
     GenServer.start_link(__MODULE__, args)
   end
 
-  @spec run_protocol(pid(), Protocol.t()) :: {:ok, any()} | {:error, term()}
-  def run_protocol(pid, %Protocol{} = protocol) do
-    GenServer.call(pid, {:run_protocol, protocol})
+  @spec run_protocol(pid(), Protocol.t(), timeout()) :: {:ok, any()} | {:error, term()}
+  def run_protocol(pid, %Protocol{} = protocol, timeout) do
+    GenServer.call(pid, {:run_protocol, protocol}, timeout)
+  catch
+    :exit, {:timeout, {GenServer, :call, [_pid, {:run_protocol, _protocol}, _timeout]}} ->
+      raise("""
+      Timeout in Channel.run_protocol/3!
+
+      The underlying GenServer.call/3 exited with a timeout. This happens when the browser was
+      not able to complete the current operation (= PDF print job) within the configured
+      #{timeout} milliseconds.
+
+      If you are printing large PDFs and expect long processing times, please consult the
+      documentation for the `timeout` option of the session pool.
+
+      If you are *not* printing large PDFs but your print jobs still time out, this is likely a
+      bug in ChromicPDF. Please open an issue on the issue tracker.
+      """)
   end
 
   # ----------- Callbacks ------------

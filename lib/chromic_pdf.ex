@@ -27,36 +27,8 @@ defmodule ChromicPDF do
 
       ChromicPDF.print_to_pdf({:url, "file:///example.html"}, output: "output.pdf")
 
-  See `ChromicPDF.print_to_pdf/2` and `ChromicPDF.convert_to_pdfa/2`.
-
-  ## Worker pools
-
-  ChromicPDF spawns two worker pools, the session pool and the ghostscript pool. By default, it
-  will create as many sessions (browser tabs) as schedulers are online, and allow the same number
-  of concurrent Ghostscript processes to run.
-
-  ### Concurrency
-
-  To increase or limit the number of concurrent workers, you can pass pool configuration to the
-  supervisor. Please note that these are non-queueing worker pools. If you intend to max them out,
-  you will need a job queue as well.
-
-      defp chromic_pdf_opts do
-        [
-          session_pool: [size: 3]
-          ghostscript_pool: [size: 10]
-        ]
-      end
-
-  ### Automatic session restarts to avoid memory drain
-
-  By default, ChromicPDF will restart sessions within the Chrome process after 1000 operations.
-  This helps to prevent infinite growth in Chrome's memory consumption. The "max age" of a session
-  can be configured with the `:max_session_uses` option.
-
-      defp chromic_pdf_opts do
-        [max_session_uses: 1000]
-      end
+  PDF printing comes with a ton of options. Please see `ChromicPDF.print_to_pdf/2` and
+  `ChromicPDF.convert_to_pdfa/2` for details.
 
   ## Security Considerations
 
@@ -89,6 +61,47 @@ defmodule ChromicPDF do
 
       defp chromic_pdf_opts do
         [no_sandbox: true]
+      end
+
+  ## Worker pools
+
+  ChromicPDF spawns two worker pools, the session pool and the ghostscript pool. By default, it
+  will create as many sessions (browser tabs) as schedulers are online, and allow the same number
+  of concurrent Ghostscript processes to run.
+
+  ### Concurrency
+
+  To increase or limit the number of concurrent workers, you can pass pool configuration to the
+  supervisor. Please note that these are non-queueing worker pools. If you intend to max them out,
+  you will need a job queue as well.
+
+      defp chromic_pdf_opts do
+        [
+          session_pool: [size: 3]
+          ghostscript_pool: [size: 10]
+        ]
+      end
+
+  ### Operation timeouts
+
+  By default, ChromicPDF allows the print process to take 5 seconds to finish. In case you are
+  printing large PDFs and run into timeouts, these can be configured configured by passing the
+  `timeout` option to the session pool.
+
+      defp chromic_pdf_opts do
+        [
+          session_pool: [timeout: 10_000]   # in milliseconds
+        ]
+      end
+
+  ### Automatic session restarts to avoid memory drain
+
+  By default, ChromicPDF will restart sessions within the Chrome process after 1000 operations.
+  This helps to prevent infinite growth in Chrome's memory consumption. The "max age" of a session
+  can be configured with the `:max_session_uses` option.
+
+      defp chromic_pdf_opts do
+        [max_session_uses: 1000]
       end
 
   ## Chrome zombies

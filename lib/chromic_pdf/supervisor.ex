@@ -176,15 +176,16 @@ defmodule ChromicPDF.Supervisor do
               | output_option()
               | telemetry_metadata_option()
 
-      @type pool_option :: {:size, non_neg_integer()}
+      @type session_pool_option :: {:size, non_neg_integer()} | {:timeout, timeout()}
+      @type ghostscript_pool_option :: {:size, non_neg_integer()}
 
       @type global_option ::
               {:offline, boolean()}
               | {:max_session_uses, non_neg_integer()}
-              | {:session_pool, [pool_option()]}
+              | {:session_pool, [session_pool_option()]}
               | {:no_sandbox, boolean()}
               | {:discard_stderr, boolean()}
-              | {:ghostscript_pool, [pool_option()]}
+              | {:ghostscript_pool, [ghostscript_pool_option()]}
               | {:on_demand, boolean()}
 
       @doc """

@@ -1,3 +1,9 @@
+## Unreleased
+
+### Added
+
+- New global `timeout` option for session pool allows to configure timeout of print processes.
+
 ## [0.6.2] - 2020-12-28
 
 ### Fixed
