@@ -215,7 +215,7 @@ defmodule ChromicPDF.Supervisor do
       @spec start_link([global_option()]) :: Supervisor.on_start() | Agent.on_start()
       def start_link(config \\ []), do: ChromicPDF.Supervisor.start_link(__MODULE__, config)
 
-      @doc """
+      @doc ~S'''
       Prints a PDF.
 
       This call blocks until the PDF has been created.
@@ -353,7 +353,42 @@ defmodule ChromicPDF.Supervisor do
           ChromicPDF.print_to_pdf(
             {:url, "file:///example.html"},
             print_to_pdf: %{
-              pageRanges: "1-2"
+              # Margins are in given inches
+              marginTop: 0.393701,
+              marginLeft: 0.787402,
+              marginRight: 0.787402,
+              marginBottom: 1.1811,
+
+              # Print header and footer (on each page).
+              # This will print the default templates if none are given.
+              displayHeaderFooter: true,
+
+              # Even on empty string.
+              # To disable header or footer, pass an empty element.
+              headerTemplate: "<span></span>",
+
+              # Example footer template.
+              # They are completely unstyled by default and have a font-size of zero,
+              # so don't despair if they don't show up at first.
+              # There's a lot of documentation online about how to style them properly,
+              # this is just a basic example. Also, take a look at the documentation for the
+              # ChromicPDF.Template module.
+              # The <span> classes shown below are interpolated by Chrome.
+              footerTemplate: """
+              <style>
+                p {
+                  color: #333;
+                  font-size: 10pt;
+                  text-align: right;
+                  margin: 0 0.787402in;
+                  width: 100%;
+                  z-index: 1000;
+                }
+              </style>
+              <p>
+              Page <span class="pageNumber"></span> of <span class="totalPages"></span>
+              </p>
+              """
             }
           )
 
@@ -371,10 +406,9 @@ defmodule ChromicPDF.Supervisor do
       ### Header and footer
 
       Chrome's support for native header and footer sections is a little bit finicky. Still, to
-      the best of my knowledge, `headerTemplate` and `footerTemplate` are the only
-      well-functioning solutions for HTML-to-PDF conversion if you need headers or footers that
-      are repeated on multiple pages even in the presence of body elements stretching across a
-      page break.
+      the best of my knowledge, Chrome is currently the only well-functioning solution for
+      HTML-to-PDF conversion if you need headers or footers that are repeated on multiple pages
+      even in the presence of body elements stretching across a page break.
 
       In order to make header and footer visible in the first place, you will need to be aware of
       a couple of caveats:
@@ -398,8 +432,8 @@ defmodule ChromicPDF.Supervisor do
         valid. Tuning the margins for an hour looking for mistakes there, only to discover that
         you are missing a closing `</style>` tag, can be quite painful.
       * Javascript is not interpreted.
-      * Background colors are not applied, unless you include set `-webkit-print-color-adjust: exact`
-        in the CSS.
+      * Background colors are not applied unless you include `-webkit-print-color-adjust: exact`
+        in your stylesheet.
 
       See [`print_header_footer_template.html`](https://cs.chromium.org/chromium/src/components/printing/resources/print_header_footer_template_page.html)
       from the Chromium sources to see how these values are interpreted.
@@ -448,7 +482,7 @@ defmodule ChromicPDF.Supervisor do
       If the attribute already exists on the element the PDF, generation will fail with a timeout. This could
       happen if the attribute is set too quickly, before ChromicPDF has the chance to observe the element.
       As a workaround you can use `setTimeout` with a small delay.
-      """
+      '''
       @spec print_to_pdf(
               input :: source() | source_and_options(),
               opts :: [pdf_option()]

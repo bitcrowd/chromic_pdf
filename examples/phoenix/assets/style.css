@@ -1,0 +1,22 @@
+img {
+  width: 400px;
+  height: 200px;
+}
+
+table {
+  border-spacing: 0;
+  display: block;
+  overflow-x: auto;
+  width: 100%;
+}
+
+td, th {
+  border-bottom: .1rem solid grey;
+  padding: 1.2rem 1.5rem;
+  &:first-child { padding-left: 0 }
+  &:last-child { padding-right: 0 }
+}
+
+.container {
+  margin: 1rem;
+}

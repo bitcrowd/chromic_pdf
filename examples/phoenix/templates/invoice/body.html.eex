@@ -1,0 +1,28 @@
+<%= render_asset("style.css") %>
+
+<div class="container">
+  <%= render_asset("logo.png") %>
+
+  <h1>Invoice</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <td>Item</td>
+        <td>Price</td>
+      </tr>
+    </thead>
+    <tbody>
+    <%= for item <- @invoice_items do %>
+      <tr>
+        <td><%= item.description %></td>
+        <td><%= item.price %></td>
+      </tr>
+    <% end %>
+      <tr>
+        <td><strong>Total</string></td>
+        <td><%= sum(@invoice_items) %></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
