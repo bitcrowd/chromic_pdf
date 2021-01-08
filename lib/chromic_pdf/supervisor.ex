@@ -158,11 +158,14 @@ defmodule ChromicPDF.Supervisor do
 
       @type telemetry_metadata_option :: {:telemetry_metadata, map()}
 
+      @type wait_for_option :: {:wait_for, map()}
+
       @type pdf_option ::
               {:print_to_pdf, map()}
               | {:set_cookie, map()}
               | output_option()
               | telemetry_metadata_option()
+              | wait_for_option()
 
       @type pdfa_option ::
               {:pdfa_version, binary()}
@@ -170,6 +173,7 @@ defmodule ChromicPDF.Supervisor do
               | {:info, map()}
               | output_option()
               | telemetry_metadata_option()
+              | wait_for_option()
 
       @type capture_screenshot_option ::
               {:capture_screenshot, map()}
@@ -393,6 +397,24 @@ defmodule ChromicPDF.Supervisor do
 
       See [`print_header_footer_template.html`](https://cs.chromium.org/chromium/src/components/printing/resources/print_header_footer_template_page.html)
       from the Chromium sources to see how these values are interpreted.
+
+      ### Wait for dynamic content
+
+      You can wait for an attribute value to be set in a given element to enable dynamic content be ready.
+      This is inteded for special circumstances: it is recommended that the HTML is as static as possible.
+
+      The following example waits for the element ID `element-id` attribute `ready-to-print` have value `true`
+      before printing the page:
+
+          wait_for = %{
+            selector: "#element-id",
+            attribute: "ready-to-print",
+            value: "true"
+          }
+
+          ChromicPDF.print_to_pdf({:url, "http:///example.net"}, wait_for: wait_for)
+
+      The normal timeouts apply.
       """
       @spec print_to_pdf(
               input :: source() | source_and_options(),

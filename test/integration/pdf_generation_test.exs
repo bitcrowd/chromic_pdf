@@ -136,9 +136,7 @@ defmodule ChromicPDF.PDFGenerationTest do
     @tag :pdftotext
     test "it waits until defined selectors have given attribute" do
       params = [
-        wait_for: [
-          %{selector: "#print-ready", attribute: "ready-to-print"}
-        ]
+        wait_for: %{selector: "#print-ready", attribute: "ready-to-print", value: "true"}
       ]
 
       print_to_pdf({:url, "file://#{@test_dynamic_html}"}, params, fn text ->
