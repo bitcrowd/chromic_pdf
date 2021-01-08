@@ -3,6 +3,7 @@ defmodule ChromicPDF.PDFGenerationTest do
   import ChromicPDF.Utils, only: [system_cmd!: 2]
 
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)
+  @test_dynamic_html Path.expand("../fixtures/test_dynamic.html", __ENV__.file)
   @test_image Path.expand("../fixtures/image_with_text.svg", __ENV__.file)
 
   @output Path.expand("../test.pdf", __ENV__.file)
@@ -130,6 +131,19 @@ defmodule ChromicPDF.PDFGenerationTest do
       receive do
         path -> refute File.exists?(path)
       end
+    end
+
+    @tag :pdftotext
+    test "it waits until defined selectors have given attribute" do
+      params = [
+        wait_for: [
+          %{selector: "#print-ready", attribute: "ready-to-print"}
+        ]
+      ]
+
+      print_to_pdf({:url, "file://#{@test_dynamic_html}"}, params, fn text ->
+        assert String.contains?(text, "Dynamic content from Javascript")
+      end)
     end
   end
 
