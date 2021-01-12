@@ -158,7 +158,13 @@ defmodule ChromicPDF.Supervisor do
 
       @type telemetry_metadata_option :: {:telemetry_metadata, map()}
 
-      @type wait_for_option :: {:wait_for, map()}
+      @type wait_for_option ::
+              {:wait_for,
+               %{
+                 required(:selector) => String.t(),
+                 required(:attribute) => String.t(),
+                 optional(:value) => String.t()
+               }}
 
       @type pdf_option ::
               {:print_to_pdf, map()}
