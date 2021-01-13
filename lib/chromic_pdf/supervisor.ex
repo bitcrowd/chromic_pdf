@@ -411,8 +411,7 @@ defmodule ChromicPDF.Supervisor do
 
           wait_for = %{
             selector: "#element-id",
-            attribute: "ready-to-print",
-            value: "true"
+            attribute: "ready-to-print"
           }
 
           ChromicPDF.print_to_pdf({:url, "http:///example.net"}, wait_for: wait_for)
