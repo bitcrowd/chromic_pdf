@@ -434,17 +434,14 @@ defmodule ChromicPDF.Supervisor do
       ```html
       <!-- Example element that gets dynamic content -->
       <div id="dynamic"></div>
-      <!-- Marker element that gets the attribute. Can be same as the dynamic element. -->
-      <div id="print-ready"></div>
 
       <script>
         function loadDynamicContent() {
           // Call any JS libraries/frameworks to set the dynamic content.
-          const dynamic_element = document.getElementById('dynamic');
-          dynamic_element.innerText = 'This is filled by JS';
+          const element = document.getElementById('dynamic');
+          element.innerText = 'This is filled by JS';
 
           // When ready, set the attribute on the element you're watching:
-          const element = document.getElementById('print-ready');
           element.setAttribute('ready-to-print', '');
         }
 
@@ -456,22 +453,7 @@ defmodule ChromicPDF.Supervisor do
 
       If the attribute already exists on the element the PDF generation will fail with a timeout. This could
       happen if the attribute is set before `ChromicPDF` has the chance to observe the element. As a workaround
-      you can use `setTimeout` with a small delay. Tune the delay so that it works in your environment.
-
-      ```html
-      <div id="print-ready" />
-
-      <script>
-        window.onload = () => {
-          // Simulate slow content load with 500 ms timeout.
-          setTimeout(() => {
-            const element = document.getElementById('print-ready');
-            element.innerText = "Dynamic content from Javascript";
-            element.setAttribute('ready-to-print', '');
-          }, 500);
-        }
-      </script>
-      ```
+      you can use `setTimeout` with a small delay.
       """
       @spec print_to_pdf(
               input :: source() | source_and_options(),
