@@ -6,7 +6,7 @@
 
 <body>
   <div id="dynamic"></div>
-  <div id="print-readyö"></div>
+  <div id="print-ready"></div>
 
   <script>
     function loadDynamicContent() {
@@ -15,8 +15,8 @@
       dynamic_element.innerText = "Dynamic content from Javascript";
 
       // When ready, set the attribute:
-      const element = document.getElementById('print-readyö');
-      element.setAttribute('ready-to-printö', '');
+      const element = document.getElementById('print-ready');
+      element.setAttribute('ready-to-print', '');
     }
 
     setTimeout(() => loadDynamicContent(), 500);
