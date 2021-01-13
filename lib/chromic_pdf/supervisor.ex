@@ -424,7 +424,7 @@ defmodule ChromicPDF.Supervisor do
 
           params = [
             wait_for: %{
-              selector: "#print-ready",
+              selector: "#dynamic",
               attribute: "ready-to-print"
             }
           ]
