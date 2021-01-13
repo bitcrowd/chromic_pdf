@@ -33,30 +33,30 @@ defmodule ChromicPDF.PrintToPDF do
       end
 
       await_notification(:frame_stopped_loading, "Page.frameStoppedLoading", ["frameId"], [])
+    end
 
-      if_option :wait_for do
-        call(:get_document, "DOM.getDocument", [], %{})
-        await_response(:get_document_response, [{["root", "nodeId"], "rootNodeId"}])
+    if_option :wait_for do
+      call(:get_document, "DOM.getDocument", [], %{})
+      await_response(:get_document_response, [{["root", "nodeId"], "rootNodeId"}])
 
-        call(
-          :query_selector,
-          "DOM.querySelector",
-          [{"nodeId", "rootNodeId"}, {"selector", [:wait_for, :selector]}],
-          %{}
-        )
+      call(
+        :query_selector,
+        "DOM.querySelector",
+        [{"nodeId", "rootNodeId"}, {"selector", [:wait_for, :selector]}],
+        %{}
+      )
 
-        await_response(:query_selector_response, [{["nodeId"], "selectorNodeId"}])
+      await_response(:query_selector_response, [{["nodeId"], "selectorNodeId"}])
 
-        await_notification(
-          :attribute_modified,
-          "DOM.attributeModified",
-          [
-            {["nodeId"], "selectorNodeId"},
-            {["name"], [:wait_for, :attribute]}
-          ],
-          []
-        )
-      end
+      await_notification(
+        :attribute_modified,
+        "DOM.attributeModified",
+        [
+          {["nodeId"], "selectorNodeId"},
+          {["name"], [:wait_for, :attribute]}
+        ],
+        []
+      )
     end
 
     call(:print_to_pdf, "Page.printToPDF", &Map.get(&1, :print_to_pdf, %{}), %{})

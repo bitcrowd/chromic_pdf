@@ -138,12 +138,23 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     @tag :pdftotext
-    test "it waits until defined selectors have given attribute" do
+    test "it waits until defined selectors have given attribute when printing from `:url`" do
       params = [
         wait_for: %{selector: "#print-ready", attribute: "ready-to-print"}
       ]
 
       print_to_pdf({:url, "file://#{@test_dynamic_html}"}, params, fn text ->
+        assert String.contains?(text, "Dynamic content from Javascript")
+      end)
+    end
+
+    @tag :pdftotext
+    test "it waits until defined selectors have given attribute when printing from `:html`" do
+      params = [
+        wait_for: %{selector: "#print-ready", attribute: "ready-to-print"}
+      ]
+
+      print_to_pdf({:html, File.read!(@test_dynamic_html)}, params, fn text ->
         assert String.contains?(text, "Dynamic content from Javascript")
       end)
     end
