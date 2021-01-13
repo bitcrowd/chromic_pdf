@@ -161,8 +161,8 @@ defmodule ChromicPDF.Supervisor do
       @type wait_for_option ::
               {:wait_for,
                %{
-                 required(:selector) => String.t(),
-                 required(:attribute) => String.t()
+                 required(:selector) => binary(),
+                 required(:attribute) => binary()
                }}
 
       @type pdf_option ::
