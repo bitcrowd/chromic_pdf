@@ -1,0 +1,15 @@
+<html>
+
+<body>
+  <p id="print-ready"></p>
+
+  <script>
+    setTimeout(() => {
+      const element = document.getElementById('print-ready');
+      element.innerText = "Dynamic content from Javascript";
+      element.setAttribute('ready-to-print', '');
+    }, 1);
+  </script>
+</body>
+
+</html>

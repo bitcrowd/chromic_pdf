@@ -4,6 +4,10 @@ defmodule ChromicPDF.PDFGenerationTest do
 
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)
   @test_dynamic_html Path.expand("../fixtures/test_dynamic.html", __ENV__.file)
+  @test_dynamic_pre_existing_html Path.expand(
+                                    "../fixtures/test_dynamic_pre-existing.html",
+                                    __ENV__.file
+                                  )
   @test_image Path.expand("../fixtures/image_with_text.svg", __ENV__.file)
 
   @output Path.expand("../test.pdf", __ENV__.file)
@@ -142,6 +146,19 @@ defmodule ChromicPDF.PDFGenerationTest do
       print_to_pdf({:url, "file://#{@test_dynamic_html}"}, params, fn text ->
         assert String.contains?(text, "Dynamic content from Javascript")
       end)
+    end
+
+    test "it raises RuntimeError if defined selector already has the given attribute" do
+      params = [
+        wait_for: %{selector: "#print-ready", attribute: "ready-to-print"}
+      ]
+
+      assert_raise(
+        RuntimeError,
+        fn ->
+          ChromicPDF.print_to_pdf({:url, "file://#{@test_dynamic_pre_existing_html}"}, params)
+        end
+      )
     end
   end
 
