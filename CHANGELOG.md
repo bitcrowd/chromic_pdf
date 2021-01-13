@@ -2,6 +2,7 @@
 
 ### Added
 
+- Option `wait_for` to wait for dynamic content using element attribute.
 - New global `timeout` option for session pool allows to configure timeout of print processes.
 
 ## [0.6.2] - 2020-12-28
