@@ -52,8 +52,7 @@ defmodule ChromicPDF.PrintToPDF do
           "DOM.attributeModified",
           [
             {["nodeId"], "selectorNodeId"},
-            {["name"], [:wait_for, :attribute]},
-            {["value"], [:wait_for, :value]}
+            {["name"], [:wait_for, :attribute]}
           ],
           []
         )
