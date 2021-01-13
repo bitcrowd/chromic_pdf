@@ -406,7 +406,7 @@ defmodule ChromicPDF.Supervisor do
 
       If your HTML fetches dynamic content via JavaScript, you can declare the content as "ready" by setting an attribute on a DOM element. You can wait for this attribute with the `wait_for` option.
 
-      The following example waits for the DOM element with ID `#element-id` to receive the attribute `ready-to-print` with value `true`.
+      The following example waits for the DOM element with ID `#element-id` to receive the attribute `ready-to-print`
       before printing the page:
 
           wait_for = %{
