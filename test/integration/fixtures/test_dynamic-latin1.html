@@ -1,12 +1,12 @@
 <html>
 
 <head>
-  <meta charset="utf-8" />
+  <meta charset="ISO-8859" />
 </head>
 
 <body>
   <div id="dynamic"></div>
-  <div id="print-readyÃ¶"></div>
+  <div id="print-readyö"></div>
 
   <script>
     function loadDynamicContent() {
@@ -15,8 +15,8 @@
       dynamic_element.innerText = "Dynamic content from Javascript";
 
       // When ready, set the attribute:
-      const element = document.getElementById('print-readyÃ¶');
-      element.setAttribute('ready-to-printÃ¶', '');
+      const element = document.getElementById('print-readyö');
+      element.setAttribute('ready-to-printö', '');
     }
 
     setTimeout(() => loadDynamicContent(), 500);

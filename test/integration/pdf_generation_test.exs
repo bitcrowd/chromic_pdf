@@ -4,6 +4,7 @@ defmodule ChromicPDF.PDFGenerationTest do
 
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)
   @test_dynamic_html Path.expand("../fixtures/test_dynamic.html", __ENV__.file)
+  @test_dynamic_latin1_html Path.expand("../fixtures/test_dynamic-latin1.html", __ENV__.file)
   @test_dynamic_pre_existing_html Path.expand(
                                     "../fixtures/test_dynamic_pre-existing.html",
                                     __ENV__.file
@@ -137,10 +138,11 @@ defmodule ChromicPDF.PDFGenerationTest do
       end
     end
 
+    # The wait_for tests intentionally use umlauts in selectors and attributes.
     @tag :pdftotext
     test "it waits until defined selectors have given attribute when printing from `:url`" do
       params = [
-        wait_for: %{selector: "#print-ready", attribute: "ready-to-print"}
+        wait_for: %{selector: "#print-readyö", attribute: "ready-to-printö"}
       ]
 
       print_to_pdf({:url, "file://#{@test_dynamic_html}"}, params, fn text ->
@@ -149,9 +151,20 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     @tag :pdftotext
+    test "it waits until defined selectors have given attribute when printing from `:url` with ISO-8859 (latin1) encoding" do
+      params = [
+        wait_for: %{selector: "#print-readyö", attribute: "ready-to-printö"}
+      ]
+
+      print_to_pdf({:url, "file://#{@test_dynamic_latin1_html}"}, params, fn text ->
+        assert String.contains?(text, "Dynamic content from Javascript")
+      end)
+    end
+
+    @tag :pdftotext
     test "it waits until defined selectors have given attribute when printing from `:html`" do
       params = [
-        wait_for: %{selector: "#print-ready", attribute: "ready-to-print"}
+        wait_for: %{selector: "#print-readyö", attribute: "ready-to-printö"}
       ]
 
       print_to_pdf({:html, File.read!(@test_dynamic_html)}, params, fn text ->
@@ -161,7 +174,7 @@ defmodule ChromicPDF.PDFGenerationTest do
 
     test "it raises RuntimeError if defined selector already has the given attribute" do
       params = [
-        wait_for: %{selector: "#print-ready", attribute: "ready-to-print"}
+        wait_for: %{selector: "#print-readyö", attribute: "ready-to-printö"}
       ]
 
       assert_raise(
