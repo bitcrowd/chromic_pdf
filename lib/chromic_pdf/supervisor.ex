@@ -406,11 +406,11 @@ defmodule ChromicPDF.Supervisor do
 
       If your HTML fetches dynamic content via JavaScript, you can declare the content as "ready" by setting an attribute on a DOM element. You can wait for this attribute with the `wait_for` option.
 
-      The following example waits for the DOM element with ID `#element-id` to receive the attribute `ready-to-print`
+      The following example waits for the DOM element with ID `#my-element` to receive the attribute `ready-to-print`
       before printing the page:
 
           wait_for = %{
-            selector: "#element-id",
+            selector: "#my-element",
             attribute: "ready-to-print"
           }
 
@@ -420,25 +420,17 @@ defmodule ChromicPDF.Supervisor do
 
       #### Example HTML
 
-      The snippet below sets the element once the page has been loaded with this configuration:
-
-          params = [
-            wait_for: %{
-              selector: "#dynamic",
-              attribute: "ready-to-print"
-            }
-          ]
-
-          ChromicPDF.print_to_pdf({:url, "http:///example.net"}, params)
+      The snippet below sets the element once the page has been loaded:
 
       ```html
       <!-- Example element that gets dynamic content -->
-      <div id="dynamic"></div>
+      <div id="my-element"></div>
 
       <script>
         function loadDynamicContent() {
-          // Call any JS libraries/frameworks to set the dynamic content.
-          const element = document.getElementById('dynamic');
+          const element = document.getElementById('my-element');
+
+          // Dynamic content initialization.
           element.innerText = 'This is filled by JS';
 
           // When ready, set the attribute on the element you're watching:
@@ -451,9 +443,9 @@ defmodule ChromicPDF.Supervisor do
 
       #### Caveats
 
-      If the attribute already exists on the element the PDF generation will fail with a timeout. This could
-      happen if the attribute is set before `ChromicPDF` has the chance to observe the element. As a workaround
-      you can use `setTimeout` with a small delay.
+      If the attribute already exists on the element the PDF, generation will fail with a timeout. This could
+      happen if the attribute is set too quickly, before ChromicPDF has the chance to observe the element.
+      As a workaround you can use `setTimeout` with a small delay.
       """
       @spec print_to_pdf(
               input :: source() | source_and_options(),
