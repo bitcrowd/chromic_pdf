@@ -112,7 +112,15 @@ defmodule ChromicPDF.ProtocolMacros do
   end
 
   def fetch_params_for_call(state, keys, defaults) when is_list(keys) do
-    Enum.into(keys, defaults, &{&1, Map.fetch!(state, &1)})
+    Enum.into(keys, defaults, &fetch_param_for_call(state, &1))
+  end
+
+  defp fetch_param_for_call(state, {name, key_path}) do
+    {name, get_in_state!(state, key_path)}
+  end
+
+  defp fetch_param_for_call(state, key) do
+    fetch_param_for_call(state, {key, key})
   end
 
   defmacro await_response(name, put_keys, do: block) do
@@ -191,7 +199,7 @@ defmodule ChromicPDF.ProtocolMacros do
   end
 
   def notification_matches?(state, msg, {msg_path, key}) do
-    get_in(msg, ["params" | msg_path]) == Map.fetch!(state, key)
+    get_in(msg, ["params" | msg_path]) == get_in_state!(state, key)
   end
 
   def notification_matches?(state, msg, key), do: notification_matches?(state, msg, {[key], key})
@@ -207,6 +215,16 @@ defmodule ChromicPDF.ProtocolMacros do
     quote do
       @steps {:output, :output, 1}
       def output(state), do: Map.take(state, unquote(keys))
+    end
+  end
+
+  defp get_in_state!(state, key) do
+    case get_in(state, List.wrap(key)) do
+      nil ->
+        raise KeyError, key: key, term: state
+
+      value ->
+        value
     end
   end
 end

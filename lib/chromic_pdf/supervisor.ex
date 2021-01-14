@@ -158,11 +158,19 @@ defmodule ChromicPDF.Supervisor do
 
       @type telemetry_metadata_option :: {:telemetry_metadata, map()}
 
+      @type wait_for_option ::
+              {:wait_for,
+               %{
+                 required(:selector) => binary(),
+                 required(:attribute) => binary()
+               }}
+
       @type pdf_option ::
               {:print_to_pdf, map()}
               | {:set_cookie, map()}
               | output_option()
               | telemetry_metadata_option()
+              | wait_for_option()
 
       @type pdfa_option ::
               {:pdfa_version, binary()}
@@ -393,6 +401,59 @@ defmodule ChromicPDF.Supervisor do
 
       See [`print_header_footer_template.html`](https://cs.chromium.org/chromium/src/components/printing/resources/print_header_footer_template_page.html)
       from the Chromium sources to see how these values are interpreted.
+
+      ### Wait for dynamic content
+
+      If your HTML fetches dynamic content via JavaScript, you can declare the content as "ready" by setting an attribute on a DOM element. You can wait for this attribute with the `wait_for` option.
+
+      The following example waits for the DOM element with ID `#element-id` to receive the attribute `ready-to-print`
+      before printing the page:
+
+          wait_for = %{
+            selector: "#element-id",
+            attribute: "ready-to-print"
+          }
+
+          ChromicPDF.print_to_pdf({:url, "http:///example.net"}, wait_for: wait_for)
+
+      The normal timeouts apply.
+
+      #### Example HTML
+
+      The snippet below sets the element once the page has been loaded with this configuration:
+
+          params = [
+            wait_for: %{
+              selector: "#dynamic",
+              attribute: "ready-to-print"
+            }
+          ]
+
+          ChromicPDF.print_to_pdf({:url, "http:///example.net"}, params)
+
+      ```html
+      <!-- Example element that gets dynamic content -->
+      <div id="dynamic"></div>
+
+      <script>
+        function loadDynamicContent() {
+          // Call any JS libraries/frameworks to set the dynamic content.
+          const element = document.getElementById('dynamic');
+          element.innerText = 'This is filled by JS';
+
+          // When ready, set the attribute on the element you're watching:
+          element.setAttribute('ready-to-print', '');
+        }
+
+        loadDynamicContent();
+      </script>
+      ```
+
+      #### Caveats
+
+      If the attribute already exists on the element the PDF generation will fail with a timeout. This could
+      happen if the attribute is set before `ChromicPDF` has the chance to observe the element. As a workaround
+      you can use `setTimeout` with a small delay.
       """
       @spec print_to_pdf(
               input :: source() | source_and_options(),
