@@ -44,6 +44,14 @@ defmodule ChromicPDF.SpawnSession do
       )
     end
 
+    if_option {:ignore_certificate_errors, true} do
+      call(:ignore_certificate_errors, "Security.setIgnoreCertificateErrors", [], %{
+        "ignore" => true
+      })
+
+      await_response(:certificate_errors_ignored, [])
+    end
+
     call(:enable_page, "Page.enable", [], %{})
     await_response(:page_enabled, [])
 

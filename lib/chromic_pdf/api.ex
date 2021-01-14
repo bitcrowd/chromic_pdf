@@ -2,7 +2,7 @@ defmodule ChromicPDF.API do
   @moduledoc false
 
   import ChromicPDF.Utils
-  alias ChromicPDF.{Browser, CaptureScreenshot, GhostscriptPool, PrintToPDF}
+  alias ChromicPDF.{Browser, CaptureScreenshot, ChromeError, GhostscriptPool, PrintToPDF}
 
   @spec print_to_pdf(
           ChromicPDF.Supervisor.services(),
@@ -91,19 +91,8 @@ defmodule ChromicPDF.API do
     end)
   end
 
-  defp feed_chrome_data_into_output({:error, "net::ERR_INTERNET_DISCONNECTED"}, _opts) do
-    raise("""
-    net::ERR_INTERNET_DISCONNECTED
-
-    This indicates you are trying to navigate to a remote URL without having enabled the "online
-    mode". Please start ChromicPDF with the `offline: false` parameter.
-
-        {ChromicPDF, offline: false}
-    """)
-  end
-
   defp feed_chrome_data_into_output({:error, error}, _opts) do
-    raise(error)
+    raise ChromeError, code: error
   end
 
   defp feed_chrome_data_into_output({:ok, data}, opts) do
