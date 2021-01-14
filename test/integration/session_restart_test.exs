@@ -1,6 +1,6 @@
 defmodule ChromicPDF.SessionRestartTest do
   use ExUnit.Case, async: false
-  import ChromicPDF.OSHelper
+  import ChromicPDF.{Assertions, OSHelper}
 
   describe "sessions automatically restart after a number of operations" do
     setup do
@@ -21,8 +21,11 @@ defmodule ChromicPDF.SessionRestartTest do
 
       # After the second print operation, we expect the Session to have restarted its target
       # process, so exactly one pid should have changed.
-      pids_now = chrome_renderer_pids()
-      assert length(pids_before) == length(pids_now)
+      pids_now =
+        assert_eventually(&chrome_renderer_pids/0, fn pids_now ->
+          length(pids_before) == length(pids_now)
+        end)
+
       assert assert(length(pids_before -- pids_now)) == 1
       assert assert(length(pids_now -- pids_before)) == 1
     end
