@@ -174,7 +174,9 @@ defmodule ChromicPDF.PDFGenerationTest do
 
     @tag :pdftotext
     test "it does not print PDFs from https:// URLs when given the offline: true parameter" do
-      assert_raise ChromicPDF.ChromeError, ~r/net::ERR_INTERNET_DISCONNECTED/, fn ->
+      msg_re = ~r/net::ERR_INTERNET_DISCONNECTED.*You are trying/s
+
+      assert_raise ChromicPDF.ChromeError, msg_re, fn ->
         ChromicPDF.print_to_pdf({:url, "https://example.net"})
       end
     end
@@ -218,7 +220,9 @@ defmodule ChromicPDF.PDFGenerationTest do
     @tag :pdftotext
     @tag :disable_logger
     test "it fails on self-signed certificates with a nice error message", %{port: port} do
-      assert_raise ChromicPDF.ChromeError, ~r/net::ERR_CERT_AUTHORITY_INVALID/, fn ->
+      msg_re = ~r/net::ERR_CERT_AUTHORITY_INVALID.*You are trying/s
+
+      assert_raise ChromicPDF.ChromeError, msg_re, fn ->
         ChromicPDF.print_to_pdf({:url, "https://localhost:#{port}/hello"})
       end
     end
@@ -248,7 +252,9 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     test "can be configured and generates a nice error messages" do
-      assert_raise RuntimeError, ~r/Timeout in Channel.run_protocol/, fn ->
+      msg_re = ~r/Timeout in Channel.run_protocol/
+
+      assert_raise RuntimeError, msg_re, fn ->
         print_to_pdf(fn _output -> :ok end)
       end
     end
