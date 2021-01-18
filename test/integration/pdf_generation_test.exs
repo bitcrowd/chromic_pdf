@@ -9,6 +9,15 @@ defmodule ChromicPDF.PDFGenerationTest do
 
   @output Path.expand("../test.pdf", __ENV__.file)
 
+  setup context do
+    if {:disable_logger, true} in context do
+      Logger.remove_backend(:console)
+      on_exit(fn -> Logger.add_backend(:console) end)
+    end
+
+    :ok
+  end
+
   defp print_to_pdf(cb) do
     print_to_pdf({:url, "file://#{@test_html}"}, [], cb)
   end
@@ -207,6 +216,7 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     @tag :pdftotext
+    @tag :disable_logger
     test "it fails on self-signed certificates with a nice error message", %{port: port} do
       assert_raise ChromicPDF.ChromeError, ~r/net::ERR_CERT_AUTHORITY_INVALID/, fn ->
         ChromicPDF.print_to_pdf({:url, "https://localhost:#{port}/hello"})
@@ -223,6 +233,7 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     @tag :pdftotext
+    @tag :disable_logger
     test "allows to bypass Chrome's certificate verification", %{port: port} do
       print_to_pdf({:url, "https://localhost:#{port}/hello"}, fn text ->
         assert String.contains?(text, "Hello from TestServer")
