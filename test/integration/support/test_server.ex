@@ -3,12 +3,15 @@ defmodule ChromicPDF.TestServer do
 
   use Plug.Router
 
-  @port 44_285
+  @ports %{
+    http: 44_285,
+    https: 44_286
+  }
 
   @cowboy_opts [
-    http: [port: @port],
+    http: [port: @ports[:http]],
     https: [
-      port: @port,
+      port: @ports[:https],
       keyfile: Path.expand("../../fixtures/cert_key.pem", __ENV__.file),
       certfile: Path.expand("../../fixtures/cert.pem", __ENV__.file)
     ]
@@ -26,7 +29,7 @@ defmodule ChromicPDF.TestServer do
     send_resp(conn, 200, inspect(conn.req_cookies))
   end
 
-  def port, do: @port
+  def port(scheme), do: Map.fetch!(@ports, scheme)
 
   def cowboy(scheme) do
     {Plug.Cowboy, scheme: scheme, plug: __MODULE__, options: @cowboy_opts[scheme]}

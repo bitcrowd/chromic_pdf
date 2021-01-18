@@ -182,7 +182,7 @@ defmodule ChromicPDF.PDFGenerationTest do
       start_supervised!({ChromicPDF, offline: false})
       start_supervised!(TestServer.cowboy(:http))
 
-      %{port: TestServer.port()}
+      %{port: TestServer.port(:http)}
     end
 
     test "cookies can be set thru print_to_pdf/2 and are cleared afterwards", %{port: port} do
@@ -203,7 +203,7 @@ defmodule ChromicPDF.PDFGenerationTest do
       start_supervised!(ChromicPDF)
       start_supervised!(TestServer.cowboy(:https))
 
-      %{port: TestServer.port()}
+      %{port: TestServer.port(:https)}
     end
 
     @tag :pdftotext
@@ -219,7 +219,7 @@ defmodule ChromicPDF.PDFGenerationTest do
       start_supervised!({ChromicPDF, ignore_certificate_errors: true})
       start_supervised!(TestServer.cowboy(:https))
 
-      %{port: TestServer.port()}
+      %{port: TestServer.port(:https)}
     end
 
     @tag :pdftotext
