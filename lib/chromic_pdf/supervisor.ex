@@ -193,6 +193,7 @@ defmodule ChromicPDF.Supervisor do
               | {:session_pool, [session_pool_option()]}
               | {:no_sandbox, boolean()}
               | {:discard_stderr, boolean()}
+              | {:ignore_certificate_errors, boolean()}
               | {:ghostscript_pool, [ghostscript_pool_option()]}
               | {:on_demand, boolean()}
 

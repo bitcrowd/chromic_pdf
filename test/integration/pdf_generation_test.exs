@@ -1,13 +1,22 @@
 defmodule ChromicPDF.PDFGenerationTest do
   use ExUnit.Case, async: false
   import ChromicPDF.Utils, only: [system_cmd!: 2]
+  alias ChromicPDF.TestServer
 
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)
   @test_dynamic_html Path.expand("../fixtures/test_dynamic.html", __ENV__.file)
   @test_image Path.expand("../fixtures/image_with_text.svg", __ENV__.file)
 
   @output Path.expand("../test.pdf", __ENV__.file)
-  @test_server_port Application.compile_env!(:chromic_pdf, :test_server_port)
+
+  setup context do
+    if {:disable_logger, true} in context do
+      Logger.remove_backend(:console)
+      on_exit(fn -> Logger.add_backend(:console) end)
+    end
+
+    :ok
+  end
 
   defp print_to_pdf(cb) do
     print_to_pdf({:url, "file://#{@test_html}"}, [], cb)
@@ -165,7 +174,9 @@ defmodule ChromicPDF.PDFGenerationTest do
 
     @tag :pdftotext
     test "it does not print PDFs from https:// URLs when given the offline: true parameter" do
-      assert_raise RuntimeError, ~r/net::ERR_INTERNET_DISCONNECTED/, fn ->
+      msg_re = ~r/net::ERR_INTERNET_DISCONNECTED.*You are trying/s
+
+      assert_raise ChromicPDF.ChromeError, msg_re, fn ->
         ChromicPDF.print_to_pdf({:url, "https://example.net"})
       end
     end
@@ -178,30 +189,15 @@ defmodule ChromicPDF.PDFGenerationTest do
       domain: "localhost"
     }
 
-    defmodule CookieEcho do
-      use Plug.Router
-
-      plug(:fetch_cookies)
-      plug(:match)
-      plug(:dispatch)
-
-      get "/" do
-        send_resp(conn, 200, inspect(conn.req_cookies))
-      end
-    end
-
     setup do
       start_supervised!({ChromicPDF, offline: false})
+      start_supervised!(TestServer.cowboy(:http))
 
-      start_supervised!(
-        {Plug.Cowboy, scheme: :http, plug: CookieEcho, options: [port: @test_server_port]}
-      )
-
-      :ok
+      %{port: TestServer.port(:http)}
     end
 
-    test "cookies can be set thru print_to_pdf/2 and are cleared afterwards" do
-      input = {:url, "http://localhost:#{@test_server_port}/"}
+    test "cookies can be set thru print_to_pdf/2 and are cleared afterwards", %{port: port} do
+      input = {:url, "http://localhost:#{port}/cookie_echo"}
 
       print_to_pdf(input, [set_cookie: @cookie], fn text ->
         assert text =~ ~s(%{"foo" => "bar"})
@@ -213,6 +209,42 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
   end
 
+  describe "certificate error handling" do
+    setup do
+      start_supervised!(ChromicPDF)
+      start_supervised!(TestServer.cowboy(:https))
+
+      %{port: TestServer.port(:https)}
+    end
+
+    @tag :pdftotext
+    @tag :disable_logger
+    test "it fails on self-signed certificates with a nice error message", %{port: port} do
+      msg_re = ~r/net::ERR_CERT_AUTHORITY_INVALID.*You are trying/s
+
+      assert_raise ChromicPDF.ChromeError, msg_re, fn ->
+        ChromicPDF.print_to_pdf({:url, "https://localhost:#{port}/hello"})
+      end
+    end
+  end
+
+  describe ":ignore_certificate_errors option" do
+    setup do
+      start_supervised!({ChromicPDF, ignore_certificate_errors: true})
+      start_supervised!(TestServer.cowboy(:https))
+
+      %{port: TestServer.port(:https)}
+    end
+
+    @tag :pdftotext
+    @tag :disable_logger
+    test "allows to bypass Chrome's certificate verification", %{port: port} do
+      print_to_pdf({:url, "https://localhost:#{port}/hello"}, fn text ->
+        assert String.contains?(text, "Hello from TestServer")
+      end)
+    end
+  end
+
   describe "session pool timeout" do
     setup do
       start_supervised!({ChromicPDF, session_pool: [timeout: 1]})
@@ -220,7 +252,9 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     test "can be configured and generates a nice error messages" do
-      assert_raise RuntimeError, ~r/Timeout in Channel.run_protocol/, fn ->
+      msg_re = ~r/Timeout in Channel.run_protocol/
+
+      assert_raise RuntimeError, msg_re, fn ->
         print_to_pdf(fn _output -> :ok end)
       end
     end

@@ -1,7 +1,5 @@
 import Config
 
-config :chromic_pdf, test_server_port: 44285
-
 if Mix.env() == :test do
   config :chromic_pdf, chrome: ChromicPDF.ChromeMock
 end

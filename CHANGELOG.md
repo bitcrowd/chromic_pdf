@@ -2,8 +2,9 @@
 
 ### Added
 
-- - Added option `wait_for` to wait for DOM element attribute to be set dynamically. (@jarimatti)
+- Added option `wait_for` to wait for DOM element attribute to be set dynamically. (@jarimatti)
 - New global `timeout` option for session pool allows to configure timeout of print processes.
+- New global `ignore_certificate_errors` option allows to bypass SSL certificate verification.
 
 ## [0.6.2] - 2020-12-28
 

@@ -63,6 +63,21 @@ defmodule ChromicPDF do
         [no_sandbox: true]
       end
 
+  ### SSL connections
+
+  In you are fetching your print source from a `https://` URL, as usual Chrome verifies the
+  remote host's SSL certificate when establishing the secure connection, and errors out of
+  navigation if the certificate has expired or is not signed by a known certificate authority
+  (i.e. no self-signed certificates).
+
+  For production systems, this security check is essential and should not be circumvented.
+  However, if for some reason you need to bypass certificate verification in development or test,
+  you can do this with the `:ignore_certificate_errors` option.
+
+      defp chromic_pdf_opts do
+        [ignore_certificate_errors: true]
+      end
+
   ## Worker pools
 
   ChromicPDF spawns two worker pools, the session pool and the ghostscript pool. By default, it
