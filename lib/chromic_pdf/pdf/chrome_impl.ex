@@ -25,6 +25,7 @@ defmodule ChromicPDF.ChromeImpl do
       "--headless --disable-gpu --remote-debugging-pipe"
     ]
     |> append_if("--no-sandbox", no_sandbox?(opts))
+    |> append_if(to_string(opts[:chrome_args]), !!opts[:chrome_args])
     |> append_if("2>/dev/null 3<&0 4>&1", discard_stderr?(opts))
     |> Enum.join(" ")
   end

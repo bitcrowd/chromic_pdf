@@ -179,7 +179,17 @@ defmodule ChromicPDF do
   the `prod` environment. However, obviously you won't be able to print PDFs in development or
   test then.
 
-  ## Debugging Chrome errors
+  ## Chrome Options
+
+  ### Custom command line switches
+
+  The `:chrome_args` option allows to pass arbitrary options to the Chrome/Chromium executable.
+
+      defp chromic_pdf_opts do
+        [chrome_args: "--font-render-hinting=none"]
+      end
+
+  ### Debugging Chrome errors
 
   Chrome's stderr logging is silently discarded to not obscure your logfiles. In case you would
   like to take a peek, add the `discard_stderr: false` option.
