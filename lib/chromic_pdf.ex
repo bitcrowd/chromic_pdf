@@ -241,7 +241,7 @@ defmodule ChromicPDF do
     utility.
   * Since it is required to embed a color scheme into PDF/A files, ChromicPDF ships with a copy
     of the royalty-free [`eciRGB_V2`](http://www.eci.org/) scheme by the European Color
-    Initiative. If you need to be able a different color scheme, please open an issue.
+    Initiative. If you need to be able to use a different color scheme, please open an issue.
   """
 
   use ChromicPDF.Supervisor
