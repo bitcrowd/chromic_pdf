@@ -10,14 +10,7 @@ defmodule ChromicPDF.GetTargets do
     output("targetInfos")
   end
 
-  @initial_wait_time 100
-
-  def baseline do
-    Process.sleep(@initial_wait_time)
-    now()
-  end
-
-  def now do
+  def run do
     {:ok, target_infos} =
       ChromicPDF.Supervisor.with_services(ChromicPDF, fn services ->
         ChromicPDF.Browser.run_protocol(services.browser, __MODULE__, %{})

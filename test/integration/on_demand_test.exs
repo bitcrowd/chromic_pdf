@@ -10,15 +10,20 @@ defmodule ChromicPDF.OnDemandTest do
   end
 
   describe "when on_demand is false" do
+    @pool_size 1
+
     setup do
-      start_supervised(ChromicPDF)
+      start_supervised({ChromicPDF, session_pool: [size: @pool_size]})
       :ok
     end
 
     test "Chrome is spawned eagerly" do
-      targets_before = GetTargets.baseline()
+      targets_before =
+        assert_eventually(&GetTargets.run/0, fn targets ->
+          length(targets) == @pool_size
+        end)
 
-      assert_continuously(&GetTargets.now/0, fn targets_now ->
+      assert_continuously(&GetTargets.run/0, fn targets_now ->
         assert targets_now == targets_before
       end)
     end
@@ -31,12 +36,12 @@ defmodule ChromicPDF.OnDemandTest do
     end
 
     test "Chrome is spawned dynamically" do
-      targets_before = GetTargets.now()
-      refute GetTargets.now() == targets_before
-      targets_before = GetTargets.now()
-      refute GetTargets.now() == targets_before
-      targets_before = GetTargets.now()
-      refute GetTargets.now() == targets_before
+      targets_before = GetTargets.run()
+      refute GetTargets.run() == targets_before
+      targets_before = GetTargets.run()
+      refute GetTargets.run() == targets_before
+      targets_before = GetTargets.run()
+      refute GetTargets.run() == targets_before
     end
   end
 end

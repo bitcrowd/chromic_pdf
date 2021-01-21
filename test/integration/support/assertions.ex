@@ -14,7 +14,8 @@ defmodule ChromicPDF.Assertions do
   end
 
   def assert_eventually(fetch_fun, check_fun) do
-    assert do_assert_eventually(fetch_fun, check_fun) == :ok
+    assert {:ok, data} = do_assert_eventually(fetch_fun, check_fun)
+    data
   end
 
   defp do_assert_eventually(fetch_fun, check_fun) do
@@ -22,7 +23,7 @@ defmodule ChromicPDF.Assertions do
       data = fetch_fun.()
 
       if check_fun.(data) do
-        {:halt, :ok}
+        {:halt, {:ok, data}}
       else
         Process.sleep(@delay)
         {:cont, acc}
