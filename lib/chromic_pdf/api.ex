@@ -7,9 +7,7 @@ defmodule ChromicPDF.API do
   @spec print_to_pdf(
           ChromicPDF.Supervisor.services(),
           ChromicPDF.source() | ChromicPDF.source_and_options(),
-          [
-            ChromicPDF.pdf_option()
-          ]
+          [ChromicPDF.pdf_option()]
         ) :: ChromicPDF.return()
   def print_to_pdf(services, %{source: source, opts: opts}, overrides)
       when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
