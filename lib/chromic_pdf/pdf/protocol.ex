@@ -40,6 +40,10 @@ defmodule ChromicPDF.Protocol do
   @type result :: {:ok, any()} | {:error, term()}
   @type result_fun :: (result() -> any())
 
+  @callback increment_session_use_count?() :: boolean()
+  @callback new(keyword()) :: __MODULE__.t()
+  @callback new(JsonRPC.session_id(), keyword()) :: __MODULE__.t()
+
   @type t :: %__MODULE__{
           steps: [step()],
           state: state(),

@@ -1,6 +1,7 @@
 defmodule ChromicPDF.OnDemandTest do
   use ExUnit.Case, async: false
-  import ChromicPDF.OSHelper
+  import ChromicPDF.Assertions
+  alias ChromicPDF.GetTargets
 
   test "on_demand is disabled by default" do
     assert_raise RuntimeError, ~r/ChromicPDF isn't running and no :on_demand config/, fn ->
@@ -8,26 +9,39 @@ defmodule ChromicPDF.OnDemandTest do
     end
   end
 
-  test "Chrome is spawned eagerly when on_demand is false" do
-    pids_before = chrome_renderer_pids()
+  describe "when on_demand is false" do
+    @pool_size 1
 
-    {:ok, _pid} = start_supervised({ChromicPDF, session_pool: [size: 1]})
+    setup do
+      start_supervised({ChromicPDF, session_pool: [size: @pool_size]})
+      :ok
+    end
 
-    pids_now = chrome_renderer_pids()
-    assert length(pids_now) - length(pids_before) == 1
+    test "Chrome is spawned eagerly" do
+      targets_before =
+        assert_eventually(&GetTargets.run/0, fn targets ->
+          length(targets) == @pool_size
+        end)
+
+      assert_continuously(&GetTargets.run/0, fn targets_now ->
+        assert targets_now == targets_before
+      end)
+    end
   end
 
-  test "Chrome is spawned dynamically when on_demand is true" do
-    pids_before = chrome_renderer_pids()
+  describe "when on_demand is true" do
+    setup do
+      start_supervised({ChromicPDF, on_demand: true})
+      :ok
+    end
 
-    {:ok, _pid} = start_supervised({ChromicPDF, on_demand: true})
-
-    pids_now = chrome_renderer_pids()
-    assert length(pids_now) == length(pids_before)
-
-    {:ok, _blob} = ChromicPDF.print_to_pdf({:html, ""})
-
-    pids_now = chrome_renderer_pids()
-    assert length(pids_now) == length(pids_before)
+    test "Chrome is spawned dynamically" do
+      targets_before = GetTargets.run()
+      refute GetTargets.run() == targets_before
+      targets_before = GetTargets.run()
+      refute GetTargets.run() == targets_before
+      targets_before = GetTargets.run()
+      refute GetTargets.run() == targets_before
+    end
   end
 end

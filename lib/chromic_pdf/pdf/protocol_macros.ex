@@ -2,16 +2,23 @@ defmodule ChromicPDF.ProtocolMacros do
   @moduledoc false
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
-  defmacro steps(do: block) do
+  defmacro steps(opts \\ [], do: block) do
+    increment_session_use_count = Keyword.get(opts, :increment_session_use_count, true)
+
     quote do
       alias ChromicPDF.Connection.JsonRPC
       alias ChromicPDF.Protocol
+
+      @behaviour Protocol
 
       Module.register_attribute(__MODULE__, :steps, accumulate: true)
 
       unquote(block)
 
-      @spec new(keyword()) :: Protocol.t()
+      @impl Protocol
+      def increment_session_use_count?, do: unquote(increment_session_use_count)
+
+      @impl Protocol
       def new(opts \\ []) do
         Protocol.new(
           build_steps(opts),
@@ -19,7 +26,7 @@ defmodule ChromicPDF.ProtocolMacros do
         )
       end
 
-      @spec new(JsonRPC.session_id(), keyword()) :: Protocol.t()
+      @impl Protocol
       def new(session_id, opts) do
         Protocol.new(
           build_steps(opts),
