@@ -49,7 +49,8 @@ defmodule ChromicPdf.MixProject do
     ]
   end
 
-  defp elixirc_paths(:integration), do: ["lib", "test/integration/support"]
+  defp elixirc_paths(:dev), do: ["examples", "lib"]
+  defp elixirc_paths(:integration), do: ["examples", "lib", "test/integration/support"]
   defp elixirc_paths(:test), do: ["lib", "test/unit/support"]
   defp elixirc_paths(_env), do: ["lib"]
 
@@ -67,7 +68,9 @@ defmodule ChromicPdf.MixProject do
       {:ex_doc, "~> 0.23.0", only: [:test, :dev], runtime: false},
       {:junit_formatter, "~> 3.1", only: [:test, :integration]},
       {:mox, "~> 1.0", only: [:test]},
-      {:plug, "~> 1.11", only: [:integration]},
+      {:phoenix, "~> 1.5", only: [:dev, :integration]},
+      {:phoenix_html, "~> 2.14", only: [:dev, :integration]},
+      {:plug, "~> 1.11", only: [:dev, :integration]},
       {:plug_cowboy, "~> 2.4", only: [:integration]}
     ]
   end

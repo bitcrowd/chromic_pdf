@@ -16,7 +16,7 @@ ChromicPDF is a HTML-to-PDF renderer for Elixir, based on headless Chrome.
 ## Requirements
 
 * Chromium or Chrome
-* Ghostscript (for PDF/A support)
+* Ghostscript (optional, for PDF/A support)
 
 ## Installation
 
@@ -50,91 +50,37 @@ end
 
 ### Main API
 
-```elixir
-ChromicPDF.print_to_pdfa(
-  # URL of local file to print
-  {:url, "file:///example.html"},
-
-  # Parameters to the PDF renderer, specifically for Chromium's printToPDF function,
-  # see https://chromedevtools.github.io/devtools-protocol/tot/Page#method-printToPDF
-  print_to_pdf: %{
-    # Margins are in given inches
-    marginTop: 0.393701,
-    marginLeft: 0.787402,
-    marginRight: 0.787402,
-    marginBottom: 1.1811,
-
-    # Print header and footer (on each page).
-    # This will print the default templates if none are given.
-    displayHeaderFooter: true,
-
-    # Even on empty string.
-    # To disable header or footer, pass an empty element.
-    headerTemplate: "<span></span>",
-
-    # Example footer template.
-    # They are completely unstyled by default and have a font-size of zero,
-    # so don't despair if they don't show up at first.
-    # There's a lot of documentation online about how to style them properly,
-    # this is just a basic example. The <span> classes shown below are
-    # interpolated by Chrome, see the printToPDF documentation.
-    footerTemplate: """
-    <style>
-      p {
-        color: #333;
-        font-size: 10pt;
-        text-align: right;
-        margin: 0 0.787402in;
-        width: 100%;
-        z-index: 1000;
-      }
-    </style>
-    <p>
-    Page <span class="pageNumber"></span> of <span class="totalPages"></span>
-    </p>
-    """
-  },
-
-  # Parameters for the PDF/A converter.
-  info: %{
-    title: "Example",
-    author: "Jane Doe",
-    creator: "ChromicPDF"
-  },
-  pdfa_version: "3",
-
-  # Output path.
-  output: "test.pdf"
-)
-```
-
-### Sample boilerplate for a template
-
-This example shows how one could use `Phoenix.View` to move HTML markup into template
-files and `ChromicPDF.Template` for basic page formatting.
+Here's how you generate a PDF from an external URL and store it in the local filesystem.
 
 ```elixir
-defmodule MyApp.InvoiceView do
-  use Phoenix.View,
-    root: "lib/my_app/path/to/pdf_templates",
-    namespace: MyApp
-
-  def print_to_pdf(assigns) do
-    [content: content(assigns)]
-    |> ChromicPDF.Template.source_and_options()
-    |> ChromicPDF.print_to_pdf()
-  end
-
-  @style File.read!("../path/to/assets/css/invoice.css")
-
-  defp content(assigns) do
-    [
-      @style,
-      Phoenix.HTML.safe_to_string(render("content.html", assigns))
-    ]
-  end
-end
+# Prints a local HTML file to PDF.
+ChromicPDF.print_to_pdf({:url, "https://example.net"}, output: "example.pdf")
 ```
+
+The next example shows how to print a local HTML file to PDF/A, as well as the use of a callback
+function that receives the generated PDF as path to a temporary file.
+
+```elixir
+ChromicPDF.print_to_pdfa({:url, "file:///example.html"}, output: fn pdf ->
+  # Send pdf via mail, upload to S3, ...
+end)
+```
+
+### Template API
+
+[ChromicPDF.Template](https://hexdocs.pm/chromic_pdf/ChromicPDF.Template.html) contains
+additional functionality that makes styling of PDF documents easier and overall provides a more
+convenient API. See the documentation for details.
+
+```elixir
+[content: "<p>Hello Template</p>"]
+|> ChromicPDF.Template.source_and_options()
+|> ChromicPDF.print_to_pdf()
+```
+
+### Examples
+
+* For a more complete example of how to integrate ChromicPDF in a Phoenix application, see [examples/phoenix].
 
 ## Development
 
