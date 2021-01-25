@@ -1,10 +1,8 @@
 defmodule ChromicPDF.PDFAGenerationTest do
   use ExUnit.Case, async: false
   import ChromicPDF.Utils, only: [system_cmd!: 2]
-  require EEx
 
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)
-  @output Path.expand("../test.pdf", __ENV__.file)
 
   setup do
     {:ok, _pid} = start_supervised(ChromicPDF)
@@ -13,12 +11,8 @@ defmodule ChromicPDF.PDFAGenerationTest do
 
   describe "PDF/A conversion" do
     defp print_to_pdfa(opts \\ [], cb) do
-      opts = Keyword.put(opts, :output, @output)
-      assert ChromicPDF.print_to_pdfa({:url, "file://#{@test_html}"}, opts) == :ok
-      assert File.exists?(@output)
-      cb.(@output)
-    after
-      File.rm_rf!(@output)
+      opts = Keyword.put(opts, :output, cb)
+      assert {:ok, _} = ChromicPDF.print_to_pdfa({:url, "file://#{@test_html}"}, opts)
     end
 
     @tag :verapdf
@@ -88,36 +82,6 @@ defmodule ChromicPDF.PDFAGenerationTest do
       print_to_pdfa(pdfa_opts, fn file ->
         output = system_cmd!("pdfinfo", [file])
         assert String.contains?(output, "Title:          OverriddenTitle")
-      end)
-    end
-
-    @zugferd_invoice_xml Path.expand("../fixtures/zugferd-invoice.xml", __ENV__.file)
-    @embed_xml_ps_eex Path.expand("../fixtures/embed_xml.ps.eex", __ENV__.file)
-
-    @external_resource @embed_xml_ps_eex
-
-    EEx.function_from_file(:defp, :render_embed_xml_ps, @embed_xml_ps_eex, [:assigns])
-
-    @tag :zuv
-    test "it can generate ZUGFeRD-compliant invoices" do
-      embed_xml_ps =
-        render_embed_xml_ps(
-          zugferd_xml: @zugferd_invoice_xml,
-          zugferd_xml_file_date: ChromicPDF.Utils.to_postscript_date(DateTime.utc_now())
-        )
-
-      pdfa_opts = [
-        pdfa_def_ext: embed_xml_ps
-      ]
-
-      print_to_pdfa(pdfa_opts, fn file ->
-        output =
-          system_cmd!(
-            "java",
-            ["-jar", System.fetch_env!("ZUV_JAR"), "--action", "validate", "-f", file]
-          )
-
-        assert String.contains?(output, ~S(validationReports compliant="1"))
       end)
     end
   end

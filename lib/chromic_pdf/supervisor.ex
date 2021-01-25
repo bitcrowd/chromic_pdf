@@ -158,6 +158,18 @@ defmodule ChromicPDF.Supervisor do
 
       @type telemetry_metadata_option :: {:telemetry_metadata, map()}
 
+      @type info_option ::
+              {:info,
+               %{
+                 optional(:title) => binary(),
+                 optional(:author) => binary(),
+                 optional(:subject) => binary(),
+                 optional(:keywords) => binary(),
+                 optional(:creator) => binary(),
+                 optional(:creation_date) => binary(),
+                 optional(:mod_date) => binary()
+               }}
+
       @type wait_for_option ::
               {:wait_for,
                %{
@@ -168,6 +180,7 @@ defmodule ChromicPDF.Supervisor do
       @type pdf_option ::
               {:print_to_pdf, map()}
               | {:set_cookie, map()}
+              | info_option()
               | output_option()
               | telemetry_metadata_option()
               | wait_for_option()
@@ -175,7 +188,7 @@ defmodule ChromicPDF.Supervisor do
       @type pdfa_option ::
               {:pdfa_version, binary()}
               | {:pdfa_def_ext, binary()}
-              | {:info, map()}
+              | info_option()
               | output_option()
               | telemetry_metadata_option()
 
@@ -571,8 +584,7 @@ defmodule ChromicPDF.Supervisor do
       ## Adding more PostScript to the conversion
 
       The `pdfa_def_ext` option can be used to feed more PostScript code into the final conversion
-      step. This can be useful to add additional features to the generated PDF-A file, for
-      instance a ZUGFeRD invoice.
+      step.
 
           ChromicPDF.convert_to_pdfa(
             "some_pdf_file.pdf",
