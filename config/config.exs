@@ -5,7 +5,7 @@ if Mix.env() == :test do
 end
 
 if Mix.env() in [:test, :integration, :dev] do
-  config :chromic_pdf, default_pool_size: 1
+  config :chromic_pdf, dev_pool_size: 1
 end
 
 if Mix.env() in [:integration, :dev] do

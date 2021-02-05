@@ -1,3 +1,11 @@
+## Unreleased
+
+### Fixed
+
+- To determine the session pool / ghostscript pool size, if not specified in the options, we now
+  fetch the number of schedulers at runtime, not compile time. Makes more sense. We also set a
+  minimum of 1 in case there is only 1 scheduler online.
+
 ## [0.7.0] - 2021-01-25
 
 ### Added
