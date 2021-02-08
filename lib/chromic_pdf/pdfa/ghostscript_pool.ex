@@ -3,10 +3,8 @@ defmodule ChromicPDF.GhostscriptPool do
 
   @behaviour NimblePool
 
+  import ChromicPDF.Utils, only: [default_pool_size: 0]
   alias ChromicPDF.GhostscriptWorker
-
-  @cores System.schedulers_online()
-  @default_pool_size Application.compile_env(:chromic_pdf, :default_pool_size, div(@cores, 2))
 
   # ------------- API ----------------
 
@@ -27,7 +25,7 @@ defmodule ChromicPDF.GhostscriptPool do
   end
 
   defp pool_size(args) do
-    get_in(args, [:ghostscript_pool, :size]) || @default_pool_size
+    get_in(args, [:ghostscript_pool, :size]) || default_pool_size()
   end
 
   # Converts a PDF to PDF-A/2 using Ghostscript.

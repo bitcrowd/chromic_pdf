@@ -3,12 +3,11 @@ defmodule ChromicPDF.Browser.SessionPool do
 
   @behaviour NimblePool
 
+  import ChromicPDF.Utils, only: [default_pool_size: 0]
   alias ChromicPDF.Browser
   alias ChromicPDF.Browser.Channel
   alias ChromicPDF.{CloseTarget, Protocol, SpawnSession}
 
-  @cores System.schedulers_online()
-  @default_pool_size Application.compile_env(:chromic_pdf, :default_pool_size, div(@cores, 2))
   @default_timeout 5000
   @default_max_session_uses 1000
 
@@ -44,7 +43,7 @@ defmodule ChromicPDF.Browser.SessionPool do
   end
 
   defp pool_size(args) do
-    get_in(args, [:session_pool, :size]) || @default_pool_size
+    get_in(args, [:session_pool, :size]) || default_pool_size()
   end
 
   @spec run_protocol(pid(), module(), keyword()) :: {:ok, any()} | {:error, term()}

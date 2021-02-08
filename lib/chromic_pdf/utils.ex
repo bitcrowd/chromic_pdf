@@ -1,6 +1,7 @@
 defmodule ChromicPDF.Utils do
   @moduledoc false
 
+  @dev_pool_size Application.compile_env(:chromic_pdf, :dev_pool_size)
   @chars String.codepoints("abcdefghijklmnopqrstuvwxyz0123456789")
 
   @spec random_file_name(binary()) :: binary()
@@ -75,5 +76,13 @@ defmodule ChromicPDF.Utils do
   @spec priv_asset(binary()) :: binary()
   def priv_asset(filename) do
     Path.join([Application.app_dir(:chromic_pdf), "priv", filename])
+  end
+
+  @spec default_pool_size() :: non_neg_integer()
+
+  if @dev_pool_size do
+    def default_pool_size, do: @dev_pool_size
+  else
+    def default_pool_size, do: max(div(System.schedulers_online(), 2), 1)
   end
 end
