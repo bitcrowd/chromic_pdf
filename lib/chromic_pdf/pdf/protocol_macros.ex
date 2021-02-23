@@ -123,7 +123,7 @@ defmodule ChromicPDF.ProtocolMacros do
   end
 
   defp fetch_param_for_call(state, {name, key_path}) do
-    {name, get_in_state!(state, key_path)}
+    {name, get_in!(state, key_path)}
   end
 
   defp fetch_param_for_call(state, key) do
@@ -199,14 +199,14 @@ defmodule ChromicPDF.ProtocolMacros do
       put_keys,
       state,
       fn
-        {path, key} -> {key, get_in(msg, [payload_key | path])}
-        key -> {key, get_in(msg, [payload_key, key])}
+        {path, key} -> {key, get_in!(msg, [payload_key | path])}
+        key -> {key, get_in!(msg, [payload_key, key])}
       end
     )
   end
 
   def notification_matches?(state, msg, {msg_path, key}) do
-    get_in(msg, ["params" | msg_path]) == get_in_state!(state, key)
+    get_in(msg, ["params" | msg_path]) == get_in!(state, key)
   end
 
   def notification_matches?(state, msg, key), do: notification_matches?(state, msg, {[key], key})
@@ -225,13 +225,12 @@ defmodule ChromicPDF.ProtocolMacros do
     end
   end
 
-  defp get_in_state!(state, key) do
-    case get_in(state, List.wrap(key)) do
-      nil ->
-        raise KeyError, key: key, term: state
+  defp get_in!(map, keys) do
+    accessor =
+      keys
+      |> List.wrap()
+      |> Enum.map(&Access.key!(&1))
 
-      value ->
-        value
-    end
+    get_in(map, accessor)
   end
 end
