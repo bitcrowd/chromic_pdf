@@ -1,3 +1,9 @@
+## Unreleased
+
+### Fixed
+
+- Enforced telemetry version 0.4.2 (fixes #108)
+
 ## [0.7.1] - 2021-02-08
 
 ### Fixed
