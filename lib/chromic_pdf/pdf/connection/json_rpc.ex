@@ -12,9 +12,31 @@ defmodule ChromicPDF.Connection.JsonRPC do
   @type browser_call :: {method(), params()}
   @type session_call :: {session_id(), method(), params()}
 
+  if Application.compile_env(:chromic_pdf, :debug_protocol) do
+    defmodule JasonWithDebugLogging do
+      @moduledoc false
+      require Logger
+
+      def encode!(data) do
+        Logger.debug("[ChromicPDF] msg out: #{inspect(data)}")
+        Jason.encode!(data)
+      end
+
+      def decode!(msg) do
+        data = Jason.decode!(msg)
+        Logger.debug("[ChromicPDF] msg in: #{inspect(data)}")
+        data
+      end
+    end
+
+    @jason JasonWithDebugLogging
+  else
+    @jason Jason
+  end
+
   @spec encode(call(), call_id()) :: binary()
   def encode({method, params}, call_id) do
-    Jason.encode!(%{
+    @jason.encode!(%{
       "method" => method,
       "params" => params,
       "id" => call_id
@@ -22,7 +44,7 @@ defmodule ChromicPDF.Connection.JsonRPC do
   end
 
   def encode({session_id, method, params}, call_id) do
-    Jason.encode!(%{
+    @jason.encode!(%{
       "sessionId" => session_id,
       "method" => method,
       "params" => params,
@@ -31,7 +53,7 @@ defmodule ChromicPDF.Connection.JsonRPC do
   end
 
   @spec decode(binary()) :: message()
-  def decode(data), do: Jason.decode!(data)
+  def decode(data), do: @jason.decode!(data)
 
   @spec is_response?(message(), call_id()) :: boolean()
   def is_response?(msg, call_id) do
