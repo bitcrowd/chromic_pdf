@@ -142,7 +142,37 @@ defmodule ChromicPDF.PDFGenerationTest do
       end
     end
 
-    # The wait_for tests intentionally use umlauts in selectors and attributes.
+    @script """
+    document.querySelector('h1').innerHTML = 'hello from script';
+    """
+
+    @tag :pdftotext
+    test "it can evaluate scripts when printing from :url" do
+      params = [evaluate: %{expression: @script}]
+
+      print_to_pdf({:url, "file://#{@test_html}"}, params, fn text ->
+        assert String.contains?(text, "hello from script")
+      end)
+    end
+
+    @tag :pdftotext
+    test "it can evaluate scripts when printing from `:html`" do
+      params = [evaluate: %{expression: @script}]
+
+      print_to_pdf({:html, File.read!(@test_html)}, params, fn text ->
+        assert String.contains?(text, "hello from script")
+      end)
+    end
+
+    @tag :pdftotext
+    test "it raises (somewhat) sensible errors for script exceptions" do
+      params = [evaluate: %{expression: "}invalid syntax"}]
+
+      assert_raise ChromicPDF.ChromeError, ~r/SyntaxError: Unexpected token '}'/, fn ->
+        ChromicPDF.print_to_pdf({:url, "https://example.net"}, params)
+      end
+    end
+
     @tag :pdftotext
     test "it waits until defined selectors have given attribute when printing from `:url`" do
       params = [
