@@ -179,14 +179,16 @@ defmodule ChromicPDF.Supervisor do
                  required(:attribute) => binary()
                }}
 
-      @type pdf_option ::
-              {:print_to_pdf, map()}
-              | {:set_cookie, map()}
-              | info_option()
-              | output_option()
-              | telemetry_metadata_option()
+      @type navigate_option ::
+              {:set_cookie, map()}
               | evaluate_option()
               | wait_for_option()
+
+      @type pdf_option ::
+              {:print_to_pdf, map()}
+              | navigate_option()
+              | output_option()
+              | telemetry_metadata_option()
 
       @type pdfa_option ::
               {:pdfa_version, binary()}
@@ -197,6 +199,7 @@ defmodule ChromicPDF.Supervisor do
 
       @type capture_screenshot_option ::
               {:capture_screenshot, map()}
+              | navigate_option()
               | output_option()
               | telemetry_metadata_option()
 
@@ -505,7 +508,8 @@ defmodule ChromicPDF.Supervisor do
 
       ## Options
 
-      Options can be passed by passing a map to the `:capture_screenshot` key.
+      Options to the [`Page.captureScrenshot`](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-captureScreenshot)
+      call can be passed by passing a map to the `:capture_screenshot` option.
 
           ChromicPDF.capture_screenshot(
             {:url, "file:///example.html"},
@@ -514,9 +518,7 @@ defmodule ChromicPDF.Supervisor do
             }
           )
 
-      Please see docs for details:
-
-      https://chromedevtools.github.io/devtools-protocol/tot/Page#method-captureScreenshot
+      For navigational options (source, cookies, evaluating scripts) see `print_to_pdf/2`.
       """
       @spec capture_screenshot(url :: source(), opts :: [capture_screenshot_option()]) :: return()
       def capture_screenshot(input, opts \\ []) do
