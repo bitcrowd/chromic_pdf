@@ -2,6 +2,7 @@ defmodule ChromicPDF.API do
   @moduledoc false
 
   import ChromicPDF.Utils
+  require EEx
   alias ChromicPDF.{Browser, CaptureScreenshot, ChromeError, GhostscriptPool, PrintToPDF}
 
   @spec print_to_pdf(
@@ -35,6 +36,7 @@ defmodule ChromicPDF.API do
     opts =
       opts
       |> put_source(source)
+      |> replace_wait_for_with_evaluate()
       |> stringify_map_keys()
       |> iolists_to_binary()
 
@@ -58,6 +60,39 @@ defmodule ChromicPDF.API do
     opts
     |> Keyword.put_new(:source_type, source_type)
     |> Keyword.put_new(source_type, source)
+  end
+
+  EEx.function_from_string(
+    :defp,
+    :render_wait_for_script,
+    """
+    const waitForAttribute = async (selector, attribute) => {
+      while (!document.querySelector(selector).hasAttribute(attribute)) {
+        await new Promise(resolve => requestAnimationFrame(resolve));
+      }
+    };
+
+    waitForAttribute('<%= selector %>', '<%= attribute %>');
+    """,
+    [:selector, :attribute]
+  )
+
+  defp replace_wait_for_with_evaluate(opts) do
+    opts
+    |> Keyword.pop(:wait_for)
+    |> do_replace_wait_for_with_evaluate()
+  end
+
+  defp do_replace_wait_for_with_evaluate({nil, opts}), do: opts
+
+  defp do_replace_wait_for_with_evaluate({%{selector: selector, attribute: attribute}, opts}) do
+    if Keyword.has_key?(opts, :evaluate) do
+      raise("wait_for option cannot be combined with evaluate option")
+    end
+
+    expression = render_wait_for_script(selector, attribute)
+
+    Keyword.put(opts, :evaluate, %{expression: expression})
   end
 
   @map_options [:print_to_pdf, :capture_screenshot]

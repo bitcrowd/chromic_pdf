@@ -1,3 +1,14 @@
+## Unreleased
+
+### Added
+
+- Added `evaluate` option to run client-side scripts before printing.
+
+### Changed
+
+- Reimplemented `wait_for` option based on a JS script and the `evaluate` option to overcome
+  race condition issues of original solution. Behaviour remains the same.
+
 ## [0.7.2] - 2021-02-26
 
 ### Fixed
