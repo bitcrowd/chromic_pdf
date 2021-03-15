@@ -3,6 +3,7 @@
 ### Added
 
 - Added `evaluate` option to run client-side scripts before printing.
+- Added a few options (`evaluate`, `set_cookie`, `wait_for`) to `capture_screenshot/2`.
 
 ### Changed
 

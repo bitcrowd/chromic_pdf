@@ -38,7 +38,6 @@ defmodule ChromicPDF.ProtocolMacros do
         @steps
         |> Enum.reverse()
         |> do_build_steps([], opts)
-        |> Enum.reverse()
       end
 
       defp do_build_steps([], acc, _opts), do: acc
@@ -63,10 +62,14 @@ defmodule ChromicPDF.ProtocolMacros do
         end
       end
 
+      defp do_build_steps([{:include_protocol, protocol_mod} | rest], acc, opts) do
+        do_build_steps(rest, acc ++ protocol_mod.new(opts).steps, opts)
+      end
+
       defp do_build_steps([{type, name, arity} | rest], acc, opts) do
         do_build_steps(
           rest,
-          [{type, Function.capture(__MODULE__, name, arity)} | acc],
+          acc ++ [{type, Function.capture(__MODULE__, name, arity)}],
           opts
         )
       end
@@ -89,6 +92,12 @@ defmodule ChromicPDF.ProtocolMacros do
       @steps {:if_option, unquote(test_key)}
       unquote(block)
       @steps :end
+    end
+  end
+
+  defmacro include_protocol(protocol_mod) do
+    quote do
+      @steps {:include_protocol, unquote(protocol_mod)}
     end
   end
 

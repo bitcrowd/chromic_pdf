@@ -1,14 +1,9 @@
 defmodule ChromicPDF.SpawnSession do
   @moduledoc false
 
-  import ChromicPDF.Utils, only: [priv_asset: 1]
   import ChromicPDF.ProtocolMacros
 
   @version Mix.Project.config()[:version]
-
-  def blank_url do
-    "file://#{priv_asset("blank.html")}"
-  end
 
   steps do
     call(:create_browser_context, "Target.createBrowserContext", [], %{"disposeOnDetach" => true})
@@ -55,9 +50,7 @@ defmodule ChromicPDF.SpawnSession do
     call(:enable_page, "Page.enable", [], %{})
     await_response(:page_enabled, [])
 
-    call(:blank, "Page.navigate", [], %{"url" => blank_url()})
-    await_response(:blanked, ["frameId"])
-    await_notification(:fsl_after_blank, "Page.frameStoppedLoading", ["frameId"], [])
+    include_protocol(ChromicPDF.ResetTarget)
 
     output(["targetId", "sessionId"])
   end
