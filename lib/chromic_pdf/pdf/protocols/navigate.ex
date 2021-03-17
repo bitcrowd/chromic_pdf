@@ -43,8 +43,8 @@ defmodule ChromicPDF.Navigate do
           nil ->
             :ok
 
-          %{"exception" => %{"description" => error}} ->
-            {:error, "[evaluate] #{error}"}
+          error ->
+            {:error, {:evaluate, error}}
         end
       end
     end
