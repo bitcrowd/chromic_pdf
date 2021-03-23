@@ -80,7 +80,7 @@ convenient API. See the documentation for details.
 
 ### Examples
 
-* For a more complete example of how to integrate ChromicPDF in a Phoenix application, see [examples/phoenix].
+* For a more complete example of how to integrate ChromicPDF in a Phoenix application, see [examples/phoenix](examples/phoenix).
 
 ## Development
 
