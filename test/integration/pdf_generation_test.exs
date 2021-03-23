@@ -165,10 +165,37 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     @tag :pdftotext
-    test "it raises (somewhat) sensible errors for script exceptions" do
-      params = [evaluate: %{expression: "}invalid syntax"}]
+    test "it raises nicely formatted errors for script exceptions" do
+      params = [
+        evaluate: %{
+          expression: """
+          function foo() {
+            throw new Error("boom");
+          }
+          foo();
+          """
+        }
+      ]
 
-      assert_raise ChromicPDF.ChromeError, ~r/SyntaxError: Unexpected token '}'/, fn ->
+      expected_msg = """
+      Exception in :evaluate expression
+
+      Exception:
+
+            Error: boom
+                at foo (<anonymous>:2:9)
+                at <anonymous>:4:1
+
+      Evaluated expression:
+
+            function foo() {
+      !!!     throw new Error(\"boom\");
+            }
+            foo();
+
+      """
+
+      assert_raise ChromicPDF.ChromeError, expected_msg, fn ->
         ChromicPDF.print_to_pdf({:url, "https://example.net"}, params)
       end
     end
