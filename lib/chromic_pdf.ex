@@ -54,10 +54,25 @@ defmodule ChromicPDF do
         [offline: true]
       end
 
-  ### Chrome Sandbox
+  ### Chrome Sandbox in Docker containers
 
-  By default, ChromicPDF will run Chrome targets in a sandboxed OS process. If you absolutely
-  must run Chrome as root, you can turn of its sandbox by passing the `no_sandbox: true` option.
+  By default, ChromicPDF will allow Chrome to make use of its own ["sandbox" process jail](https://chromium.googlesource.com/chromium/src/+/master/docs/design/sandbox.md).
+  The sandbox tries to limit system resource access of the renderer processes to the minimum
+  resources they require to perform their task.
+
+  However, in Docker containers running Linux images (e.g. images based on Alpine), and which
+  are configured to run their main job as a non-root user, this causes Chrome to crash on startup
+  as it requires root privileges to enter the sandbox.
+
+  The error output (`discard_stderr: false` option) looks as follows:
+
+      Failed to move to new namespace: PID namespaces supported, Network namespace supported,
+      but failed: errno = Operation not permitted
+
+  The best way to resolve this issue is to configure your Docker container to use seccomp rules
+  that grant Chrome access to the relevant system calls. See the excellent [Zenika/alpine-chrome](https://github.com/Zenika/alpine-chrome#-the-best-with-seccomp) repository for details on how to make this work.
+
+  Alternatively, you may choose to disable Chrome's sandbox with the `no_sandbox` option.
 
       defp chromic_pdf_opts do
         [no_sandbox: true]

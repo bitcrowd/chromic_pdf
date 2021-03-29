@@ -9,6 +9,7 @@ defmodule ChromicPDF.ConnectionTest do
 
   defp new_state do
     %{
+      port: @port,
       parent_pid: self(),
       tokenizer: [],
       dispatcher: %ChromicPDF.Connection.Dispatcher{
@@ -35,10 +36,10 @@ defmodule ChromicPDF.ConnectionTest do
 
     test "it suicides when Chrome is terminated externally", %{state: state} do
       assert handle_info({:EXIT, @port, :normal}, state) ==
-               {:stop, :connection_terminated, state}
+               {:stop, :connection_lost, state}
 
       assert handle_info({:EXIT, @port, :other_reason}, state) ==
-               {:stop, :connection_terminated, state}
+               {:stop, :connection_lost, state}
     end
   end
 

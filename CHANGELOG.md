@@ -1,3 +1,10 @@
+## Unreleased
+
+### Changed
+
+- Improved error message when Chrome dies at startup.
+- Improved docs on the `no_sandbox` option.
+
 ## [1.0.0] - 2021-03-23
 
 ### Added
