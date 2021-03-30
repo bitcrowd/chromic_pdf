@@ -2,11 +2,12 @@ defmodule ChromicPDF.Connection do
   @moduledoc false
 
   use GenServer
-  alias ChromicPDF.Connection.{Dispatcher, JsonRPC, Tokenizer}
+  alias ChromicPDF.Connection.{ConnectionLostError, Dispatcher, JsonRPC, Tokenizer}
 
   @chrome Application.compile_env(:chromic_pdf, :chrome, ChromicPDF.ChromeImpl)
 
   @type state :: %{
+          port: port(),
           parent_pid: pid(),
           tokenizer: Tokenizer.t(),
           dispatcher: Dispatcher.t()
@@ -24,6 +25,11 @@ defmodule ChromicPDF.Connection do
     GenServer.call(pid, {:dispatch_call, msg})
   end
 
+  @spec port_info(pid) :: keyword()
+  def port_info(pid) do
+    GenServer.call(pid, :port_info)
+  end
+
   # ------------ Server --------------
 
   @impl GenServer
@@ -33,6 +39,7 @@ defmodule ChromicPDF.Connection do
     Process.flag(:trap_exit, true)
 
     state = %{
+      port: port,
       parent_pid: parent_pid,
       tokenizer: Tokenizer.init(),
       dispatcher: Dispatcher.init(port)
@@ -52,6 +59,10 @@ defmodule ChromicPDF.Connection do
     {reply, dispatcher} = Dispatcher.dispatch(state.dispatcher, call)
 
     {:reply, reply, %{state | dispatcher: dispatcher}}
+  end
+
+  def handle_call(:port_info, _from, %{port: port} = state) do
+    {:reply, Port.info(port), state}
   end
 
   @impl GenServer
@@ -75,12 +86,25 @@ defmodule ChromicPDF.Connection do
   # EXIT signal from port process since we trap signals.
   def handle_info({:EXIT, _port, _reason}, state) do
     # Chrome has crashed or was terminated externally.
-    {:stop, :connection_terminated, state}
+    {:stop, :connection_lost, state}
   end
 
   @impl GenServer
   def terminate(:normal, _state), do: :ok
-  def terminate(:connection_terminated, _state), do: :ok
+
+  def terminate(:connection_lost, _state) do
+    raise(ConnectionLostError, """
+    Chrome has stopped or was terminated by an external program.
+
+    If this happened while you were printing a PDF, this may be a problem with Chrome itelf.
+    If this happens at startup and you are running inside a Docker container with a Linux-based
+    image, please see the "Chrome Sandbox in Docker containers" section of the documentation.
+
+    Either way, to see Chrome's error output, configure ChromicPDF with the option
+
+        discard_stderr: false
+    """)
+  end
 
   def terminate(:shutdown, state) do
     # Graceful shutdown: Dispatch the Browser.close call to Chrome which will cause it to detach
