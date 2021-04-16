@@ -29,6 +29,12 @@ defmodule ChromicPDF.ConnectionTest do
       expect(ChromeMock, :spawn, fn ^opts -> {:ok, @port} end)
       assert init({self(), opts}) == {:ok, new_state()}
     end
+
+    test "it spawns custom Chrome executeable and initializes its state" do
+      opts = [discard_stderr: false, no_sandbox: true, chrome_executeable: "/cutom/chrome", chrome_args: "--foo"]
+      expect(ChromeMock, :spawn, fn ^opts -> {:ok, @port} end)
+      assert init({self(), opts}) == {:ok, new_state()}
+    end
   end
 
   describe "external process supervision" do
