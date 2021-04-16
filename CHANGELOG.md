@@ -1,4 +1,4 @@
-## Unreleased
+## [1.1.0] - 2021-04-16
 
 ### Changed
 
@@ -6,7 +6,8 @@
 - Improved docs on the `no_sandbox` option.
 
 ### Added
-- Added `chrome_executable` option to allow specification of a custom chrome executable. 
+
+- Added `chrome_executable` option to allow specifying path to chrome executable.
 
 ## [1.0.0] - 2021-03-23
 
