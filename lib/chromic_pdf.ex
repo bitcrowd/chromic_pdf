@@ -204,6 +204,12 @@ defmodule ChromicPDF do
         [chrome_args: "--font-render-hinting=none"]
       end
 
+  The `:chrome_executable` option allows to specify a custom Chrome/Chromium executable.
+
+      defp chromic_pdf_opts do
+        [chrome_executable: "/usr/bin/google-chrome-beta"]
+      end
+
   ### Debugging Chrome errors
 
   Chrome's stderr logging is silently discarded to not obscure your logfiles. In case you would
