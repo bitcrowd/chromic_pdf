@@ -50,7 +50,7 @@ defmodule ChromicPDF.Connection do
 
   defp spawn_chrome(opts) do
     opts
-    |> Keyword.take([:chrome_args, :discard_stderr, :no_sandbox, :chrome_executeable])
+    |> Keyword.take([:chrome_args, :discard_stderr, :no_sandbox, :chrome_executable])
     |> @chrome.spawn()
   end
 

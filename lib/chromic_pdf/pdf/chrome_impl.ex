@@ -21,7 +21,7 @@ defmodule ChromicPDF.ChromeImpl do
 
   defp chrome_command(opts) do
     [
-      ~s("#{chrome_executable(opts[:chrome_executeable])}"),
+      ~s("#{chrome_executable(opts[:chrome_executable])}"),
       "--headless --disable-gpu --remote-debugging-pipe"
     ]
     |> append_if("--no-sandbox", no_sandbox?(opts))
@@ -56,7 +56,7 @@ defmodule ChromicPDF.ChromeImpl do
     executable || raise "could not find executable from #{inspect(@chrome_paths)}"
   end
 
-  defp chrome_executable(executeable) when is_binary(executeable) do
-    System.find_executable(executeable) || raise "could not find chrome executeable #{executeable}"
+  defp chrome_executable(executable) when is_binary(executable) do
+    System.find_executable(executable) || raise "could not find chrome executable #{executable}"
   end
 end

@@ -213,6 +213,7 @@ defmodule ChromicPDF.Supervisor do
               | {:no_sandbox, boolean()}
               | {:discard_stderr, boolean()}
               | {:chrome_args, binary()}
+              | {:chrome_executable, binary()}
               | {:ignore_certificate_errors, boolean()}
               | {:ghostscript_pool, [ghostscript_pool_option()]}
               | {:on_demand, boolean()}

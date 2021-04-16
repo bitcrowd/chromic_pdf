@@ -5,6 +5,9 @@
 - Improved error message when Chrome dies at startup.
 - Improved docs on the `no_sandbox` option.
 
+### Added
+- Added `chrome_executable` option to allow specification of a custom chrome executable. 
+
 ## [1.0.0] - 2021-03-23
 
 ### Added
