@@ -44,7 +44,8 @@ defmodule ChromicPDF.ChromeImpl do
     "chromium-browser",
     "chromium",
     "google-chrome",
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium"
   ]
 
   defp chrome_executable(nil) do
