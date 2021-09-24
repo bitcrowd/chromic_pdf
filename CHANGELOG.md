@@ -1,3 +1,10 @@
+## [1.1.1] - 2021-09-24
+
+### Added
+
+- Relaxed telemetry dependency to avoid blocking dependency update (@leandrocp)
+- Add chromium path on macOS when installed via homebrew (@shamanime)
+
 ## [1.1.0] - 2021-04-16
 
 ### Changed
