@@ -1,6 +1,7 @@
 defmodule ChromicPdf.MixProject do
   use Mix.Project
 
+  @source_url "https://github.com/bitcrowd/chromic_pdf"
   @version "1.1.1"
 
   def project do
@@ -19,18 +20,22 @@ defmodule ChromicPdf.MixProject do
 
       # hex.pm
       package: package(),
-      description: "Fast HTML-2-PDF/A renderer based on Chrome & Ghostscript",
 
       # hexdocs.pm
       name: "ChromicPDF",
-      source_url: "https://github.com/bitcrowd/chromic_pdf",
-      homepage_url: "https://github.com/bitcrowd/chromic_pdf",
+      source_url: @source_url,
+      homepage_url: @source_url,
       docs: [
-        main: "ChromicPDF",
-        extras: ["README.md", "CHANGELOG.md": [title: "Changelog"]],
+        extras: [
+          "CHANGELOG.md": [title: "Changelog"],
+          "LICENSE": [title: "License"],
+          "README.md": [title: "Overview"],
+        ],
+        main: "readme",
+        source_url: @source_url,
         source_ref: "v#{@version}",
-        source_url: "https://github.com/bitcrowd/chromic_pdf",
-        formatters: ["html"]
+        formatters: ["html"],
+        assets: "assets"
       ]
     ]
   end
@@ -43,9 +48,13 @@ defmodule ChromicPdf.MixProject do
 
   defp package do
     [
+      description: "Fast HTML-2-PDF/A renderer based on Chrome & Ghostscript",
       maintainers: ["@bitcrowd"],
       licenses: ["Apache-2.0"],
-      links: %{github: "https://github.com/bitcrowd/chromic_pdf"}
+      links: %{
+        Changelog: "https://hexdocs.pm/chromic_pdf/changelog.html",
+        GitHub: @source_url
+      }
     ]
   end
 
@@ -65,7 +74,7 @@ defmodule ChromicPdf.MixProject do
       {:telemetry, "~> 0.4 or ~> 1.0"},
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.24.1", only: [:test, :dev], runtime: false},
+      {:ex_doc, ">= 0.0.0", only: [:test, :dev], runtime: false},
       {:junit_formatter, "~> 3.1", only: [:test, :integration]},
       {:mox, "~> 1.0", only: [:test]},
       {:phoenix, "~> 1.5", only: [:dev, :integration]},

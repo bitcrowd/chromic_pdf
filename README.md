@@ -1,9 +1,13 @@
-![](images/logo.svg)
+![](assets/logo.svg)
 
-[![Hex pm](http://img.shields.io/hexpm/v/chromic_pdf.svg?style=flat)](https://hex.pm/packages/chromic_pdf)
-[![Hex docs](http://img.shields.io/badge/hex.pm-docs-green.svg?style=flat)](https://hexdocs.pm/chromic_pdf/ChromicPDF.html)
-[![License](https://img.shields.io/hexpm/l/chromic_pdf?style=flat)](https://www.apache.org/licenses/LICENSE-2.0)
 [![CircleCI](https://circleci.com/gh/bitcrowd/chromic_pdf.svg?style=shield)](https://circleci.com/gh/bitcrowd/chromic_pdf)
+[![Module Version](https://img.shields.io/hexpm/v/chromic_pdf.svg)](https://hex.pm/packages/chromic_pdf)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/chromic_pdf/)
+[![Total Download](https://img.shields.io/hexpm/dt/chromic_pdf.svg)](https://hex.pm/packages/chromic_pdf)
+[![License](https://img.shields.io/hexpm/l/chromic_pdf.svg)](https://github.com/bitcrowd/chromic_pdf/blob/master/LICENSE)
+[![Last Updated](https://img.shields.io/github/last-commit/bitcrowd/chromic_pdf.svg)](https://github.com/bitcrowd/chromic_pdf/commits/master)
+
+
 
 ChromicPDF is a HTML-to-PDF renderer for Elixir, based on headless Chrome.
 
@@ -89,3 +93,17 @@ For running the full suite of integration tests, please install and have in your
 * [`verapdf`](https://verapdf.org/)
 * For `pdfinfo` and `pdftotext`, you need `poppler-utils` (most Linux distributions) or [Xpdf](https://www.xpdfreader.com/) (OSX)
 * For the odd ZUGFeRD test in [`zugferd_test.exs`](https://github.com/bitcrowd/chromic_pdf/tree/main/test/integration/zugferd_test.exs), you need to download [ZUV](https://github.com/ZUGFeRD/ZUV) and set the `$ZUV_JAR` environment variable.
+
+## Copyright and License
+
+Copyright (c) 2019 Bitcrowd GmbH
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

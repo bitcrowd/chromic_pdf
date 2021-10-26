@@ -37,7 +37,7 @@ defmodule PhoenixExample do
     end
   end
 
-  defp path_to_asset("logo.png"), do: "images/social.png"
+  defp path_to_asset("logo.png"), do: "assets/social.png"
   defp path_to_asset(filename), do: Path.join("examples/phoenix/assets", filename)
 
   def render_asset(assets, filename) do
