@@ -28,7 +28,7 @@ defmodule ChromicPdf.MixProject do
       docs: [
         extras: [
           "CHANGELOG.md": [title: "Changelog"],
-          "LICENSE": [title: "License"],
+          LICENSE: [title: "License"],
           "README.md": [title: "Overview"]
         ],
         main: "readme",
