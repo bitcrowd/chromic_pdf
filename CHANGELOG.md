@@ -1,3 +1,9 @@
+## [1.1.2] - 2021-10-27
+
+### Fixed
+
+- Documentation updates (@kianmeng)
+
 ## [1.1.1] - 2021-09-24
 
 ### Added

@@ -98,4 +98,4 @@ For running the full suite of integration tests, please install and have in your
 
 Copyright (c) 2019–2021 Bitcrowd GmbH
 
-Licensed under the Apache License, Version 2.0 (the "License"), see [LICENSE](LICENSE) file for details.
+Licensed under the Apache License 2.0. See [LICENSE](LICENSE) file for details.
