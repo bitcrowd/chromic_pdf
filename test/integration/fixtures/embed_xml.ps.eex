@@ -8,7 +8,7 @@
 % to be a human-computer interface).  Unfortunately, a lot of developers need to
 % fulfill requirements like "ZUGFeRD-compliant PDF invoices", but do not have a
 % clue about PostScript (and should not have, for that matter).
-% Consequentially, snippets like this one (2015 by Reinhard Nißl) spread on the
+% Consequently, snippets like this one (2015 by Reinhard Nißl) spread on the
 % internet almost like a disease, with small mutations here and there, but essentially
 % handed down from generation to generation as some sort of arcane knowledge.
 % Possibly this comment will also survive for a while.
