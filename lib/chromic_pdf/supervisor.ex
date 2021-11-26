@@ -433,6 +433,10 @@ defmodule ChromicPDF.Supervisor do
       In order to make header and footer visible in the first place, you will need to be aware of
       a couple of caveats:
 
+      * You can not use any external (`http://` or `https://`) resources in the header or footer,
+        not even per absolute URL. You need to inline all your CSS and convert your images to
+        data-URLs.
+      * Javascript is not interpreted either.
       * HTML for header and footer is interpreted in a new page context which means no body
         styles will be applied. In fact, even default browser styles are not present, so all
         content will have a default `font-size` of zero, and so on.
@@ -451,7 +455,6 @@ defmodule ChromicPDF.Supervisor do
       * If header or footer are not displayed even though they should, make sure your HTML is
         valid. Tuning the margins for an hour looking for mistakes there, only to discover that
         you are missing a closing `</style>` tag, can be quite painful.
-      * Javascript is not interpreted.
       * Background colors are not applied unless you include `-webkit-print-color-adjust: exact`
         in your stylesheet.
 
