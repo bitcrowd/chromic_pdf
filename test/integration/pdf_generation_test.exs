@@ -1,5 +1,6 @@
 defmodule ChromicPDF.PDFGenerationTest do
   use ExUnit.Case, async: false
+  import ExUnit.CaptureLog
   import ChromicPDF.Utils, only: [system_cmd!: 2]
   alias ChromicPDF.TestServer
 
@@ -309,11 +310,31 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     test "can be configured and generates a nice error messages" do
-      msg_re = ~r/Timeout in Channel.run_protocol/
-
-      assert_raise RuntimeError, msg_re, fn ->
+      assert_raise RuntimeError, ~r/Timeout in Channel.run_protocol/, fn ->
         print_to_pdf(fn _output -> :ok end)
       end
+    end
+  end
+
+  describe "error handling of crashing targets" do
+    setup do
+      start_supervised!({ChromicPDF, session_pool: [timeout: 300]})
+      :ok
+    end
+
+    test "it logs an error on Inspector.targetCrashed before it times out" do
+      params = [
+        print_to_pdf: %{
+          displayHeaderFooter: true,
+          headerTemplate: ~s(<link rel="stylesheet" href="http://example.net/css" />)
+        }
+      ]
+
+      assert capture_log(fn ->
+               assert_raise RuntimeError, fn ->
+                 ChromicPDF.print_to_pdf({:html, ""}, params)
+               end
+             end) =~ "received an 'Inspector.targetCrashed' message"
     end
   end
 end

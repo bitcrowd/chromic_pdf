@@ -1,6 +1,7 @@
 defmodule ChromicPDF.Protocol do
   @moduledoc false
 
+  require Logger
   alias ChromicPDF.Connection.JsonRPC
 
   # A protocol is a sequence of JsonRPC calls and responses/notifications.
@@ -91,6 +92,8 @@ defmodule ChromicPDF.Protocol do
 
   @spec run(__MODULE__.t(), JsonRPC.message(), dispatch()) :: __MODULE__.t()
   def run(protocol, msg, dispatch) do
+    warn_on_inspector_crash!(msg)
+
     protocol
     |> test(msg)
     |> advance(dispatch)
@@ -118,4 +121,18 @@ defmodule ChromicPDF.Protocol do
   @spec finished?(__MODULE__.t()) :: boolean()
   def finished?(%__MODULE__{steps: []}), do: true
   def finished?(%__MODULE__{}), do: false
+
+  defp warn_on_inspector_crash!(msg) do
+    if match?(%{"method" => "Inspector.targetCrashed"}, msg) do
+      Logger.error("""
+      ChromicPDF received an 'Inspector.targetCrashed' message.
+
+      This means an active Chrome tab has died and your current operation is going to time out.
+
+      Known causes:
+
+      1) External URLs in `<link>` tags in the header/footer templates cause Chrome to crash.
+      """)
+    end
+  end
 end

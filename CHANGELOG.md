@@ -1,3 +1,10 @@
+## Unreleased
+
+### Added
+
+- Improved docs on header/footer templates saying that external URLs don't work.
+- Added a logger call when we receive the `Inspector.targetCrashed` message, so users can tell that their Chrome target has died for some reason.
+
 ## [1.1.2] - 2021-10-27
 
 ### Fixed
