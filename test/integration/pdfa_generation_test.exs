@@ -63,13 +63,13 @@ defmodule ChromicPDF.PDFAGenerationTest do
       print_to_pdfa([info: @info_opts], fn file ->
         output = system_cmd!("pdfinfo", [file])
 
-        assert String.contains?(output, "Author:         TestAuthor")
-        assert String.contains?(output, "Title:          TestTitle")
-        assert String.contains?(output, "Subject:        TestSubject")
-        assert String.contains?(output, "Keywords:       TestKeywords")
-        assert String.contains?(output, "Creator:        TestCreator")
-        assert String.contains?(output, "CreationDate:   Sun Sep  9 01:46:40 2001")
-        assert String.contains?(output, "ModDate:        Wed May 18 03:33:20 2033")
+        assert output =~ ~r/Author:\s+TestAuthor/
+        assert output =~ ~r/Title:\s+TestTitle/
+        assert output =~ ~r/Subject:\s+TestSubject/
+        assert output =~ ~r/Keywords:\s+TestKeywords/
+        assert output =~ ~r/Creator:\s+TestCreator/
+        assert output =~ ~r/CreationDate:\s+Sun Sep  9/
+        assert output =~ ~r/ModDate:\s+Wed May 18/
       end)
     end
 
@@ -81,7 +81,7 @@ defmodule ChromicPDF.PDFAGenerationTest do
 
       print_to_pdfa(pdfa_opts, fn file ->
         output = system_cmd!("pdfinfo", [file])
-        assert String.contains?(output, "Title:          OverriddenTitle")
+        assert output =~ ~r/Title:\s+OverriddenTitle/
       end)
     end
   end
