@@ -16,15 +16,21 @@ defmodule ChromicPDF.Protocol do
 
   @type state :: map()
   @type error :: {:error, term()}
-  @type step :: call_step() | await_step() | output_step()
+  @type step :: call_step() | await_step() | output_step() | label_step() | jump_step()
 
-  # A protocol knows three types of steps: calls, awaits, and output.
+  # A protocol knows different types of steps (= instructions): calls, awaits, jumps, and output.
+  #
+  # Besides it can have labels in its list of steps, which are used to jump to specific positions
+  # in the steps and is otherwise ignored.
+  #
   # * The call step is a protocol call to send to the browser. Multiple call steps in sequence
   #   are executed sequentially until the next await step is found.
   # * Await steps are steps that try to match on messages received from the browser. When a
   #   message is matched, the await step is removed from the queue. Multiple await steps in
   #   sequence are matched **out of order** as messages from the browser are often received out
   #   of order as well, from different OS processes.
+  # * The jump step evaluates a condition based on the state and, if the conditions holds, jumps to
+  #   a predefined label.
   # * The output step is a simple function executed at the end of a protocol to send the protocol
   #   result back to the client (using the `result_fun`), applying a mapper function before. If
   #   no output step is defined in a protocol, the client is not sent a reply.
@@ -34,6 +40,12 @@ defmodule ChromicPDF.Protocol do
 
   @type await_fun :: (state(), message() -> :no_match | {:match, state()} | error())
   @type await_step :: {:await, await_fun()}
+
+  @type label :: any()
+  @type label_step :: {:label, label()}
+
+  @type jump_fun :: (state() -> :no_jump | {:jump, label()})
+  @type jump_step :: {:jump, jump_fun()}
 
   @type output_fun :: (state() -> any())
   @type output_step :: {:output, output_fun()}
@@ -47,17 +59,19 @@ defmodule ChromicPDF.Protocol do
 
   @type t :: %__MODULE__{
           steps: [step()],
+          steps_initial: [step()],
           state: state(),
           result_fun: result_fun() | nil
         }
 
-  @enforce_keys [:steps, :state, :result_fun]
-  defstruct [:steps, :state, :result_fun]
+  @enforce_keys [:steps, :steps_initial, :state, :result_fun]
+  defstruct [:steps, :steps_initial, :state, :result_fun]
 
   @spec new([step()], state()) :: __MODULE__.t()
   def new(steps, initial_state \\ %{}) do
     %__MODULE__{
       steps: steps,
+      steps_initial: steps,
       state: initial_state,
       result_fun: nil
     }
@@ -75,6 +89,25 @@ defmodule ChromicPDF.Protocol do
 
   defp advance(%__MODULE__{steps: []} = protocol, _dispatch), do: protocol
   defp advance(%__MODULE__{steps: [{:await, _fun} | _rest]} = protocol, _dispatch), do: protocol
+
+  defp advance(%__MODULE__{steps: [{:label, _name} | rest]} = protocol, dispatch) do
+    advance(%{protocol | steps: rest}, dispatch)
+  end
+
+  defp advance(%__MODULE__{steps: [{:jump, fun} | rest], state: state} = protocol, dispatch) do
+    new_steps =
+      case fun.(state) do
+        {:jump, label} ->
+          protocol.steps_initial
+          |> Enum.drop_while(fn step -> !match?({:label, ^label}, step) end)
+          |> Enum.drop(1)
+
+        :no_jump ->
+          rest
+      end
+
+    advance(%{protocol | steps: new_steps}, dispatch)
+  end
 
   defp advance(%__MODULE__{steps: [{:call, fun} | rest], state: state} = protocol, dispatch) do
     state = fun.(state, dispatch)

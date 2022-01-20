@@ -66,6 +66,10 @@ defmodule ChromicPDF.ProtocolMacros do
         do_build_steps(rest, acc ++ protocol_mod.new(opts).steps, opts)
       end
 
+      defp do_build_steps([{:label, name} | rest], acc, opts) do
+        do_build_steps(rest, acc ++ [{:label, name}], opts)
+      end
+
       defp do_build_steps([{type, name, arity} | rest], acc, opts) do
         do_build_steps(
           rest,
@@ -119,6 +123,25 @@ defmodule ChromicPDF.ProtocolMacros do
           end
 
         Map.put(state, :last_call_id, call_id)
+      end
+    end
+  end
+
+  defmacro label(name) do
+    quote do
+      @steps {:label, unquote(name)}
+    end
+  end
+
+  defmacro jump(name, condition_from_state, label) do
+    quote do
+      @steps {:jump, unquote(name), 1}
+      def unquote(name)(state) do
+        if unquote(condition_from_state).(state) do
+          {:jump, unquote(label)}
+        else
+          :no_jump
+        end
       end
     end
   end
