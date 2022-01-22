@@ -154,6 +154,9 @@ defmodule ChromicPDF.Supervisor do
       @type output_function :: (blob() -> output_function_result())
       @type output_option :: {:output, binary()} | {:output, output_function()}
 
+      @type stream_function_result :: any()
+      @type stream_function :: (blob() -> stream_function_result())
+
       @type return :: :ok | {:ok, binary()} | {:ok, output_function_result()}
 
       @type telemetry_metadata_option :: {:telemetry_metadata, map()}
@@ -187,20 +190,17 @@ defmodule ChromicPDF.Supervisor do
       @type pdf_option ::
               {:print_to_pdf, map()}
               | navigate_option()
-              | output_option()
               | telemetry_metadata_option()
 
       @type pdfa_option ::
               {:pdfa_version, binary()}
               | {:pdfa_def_ext, binary()}
               | info_option()
-              | output_option()
               | telemetry_metadata_option()
 
       @type capture_screenshot_option ::
               {:capture_screenshot, map()}
               | navigate_option()
-              | output_option()
               | telemetry_metadata_option()
 
       @type session_pool_option :: {:size, non_neg_integer()} | {:timeout, timeout()}
@@ -495,10 +495,46 @@ defmodule ChromicPDF.Supervisor do
       '''
       @spec print_to_pdf(
               input :: source() | source_and_options(),
-              opts :: [pdf_option()]
+              opts :: [pdf_option() | output_option()]
             ) :: return()
       def print_to_pdf(input, opts \\ []) do
         with_services(__MODULE__, &API.print_to_pdf(&1, input, opts))
+      end
+
+      @doc """
+      Prints a PDF and returns a Stream.
+
+      This function sets the `transferMode` option of `printToPDF` to `ReturnAsStream` and
+      encapsulate the returned stream handle in an Elixir `Stream`.
+
+      ## Example
+
+          ChromicPDF.print_to_pdf_as_stream({:url, "file:///example.html"}, fn stream ->
+            filename = "example.pdf"
+
+            conn =
+              conn
+              |> put_resp_content_type("application/pdf")
+              |> put_resp_header("content-disposition", ~s[attachment; filename="example.pdf"])
+              |> send_chunked(conn, conn.status || 200)
+
+            Enum.reduce_while(stream, conn, fn chunk, conn ->
+              case Conn.chunk(conn, Base.decode64!(chunk)) do
+                {:ok, conn} ->
+                  {:cont, conn}
+
+                {:error, :closed} ->
+                  {:halt, conn}
+              end
+            end)
+      """
+      @spec print_to_pdf_as_stream(
+              input :: source() | source_and_options(),
+              fun :: stream_function(),
+              opts :: [pdf_option()]
+            ) :: {:ok, stream_function_result()}
+      def print_to_pdf_as_stream(input, stream_fun, opts \\ []) do
+        with_services(__MODULE__, &API.print_to_pdf_as_stream(&1, input, stream_fun, opts))
       end
 
       @doc """
@@ -524,7 +560,10 @@ defmodule ChromicPDF.Supervisor do
 
       For navigational options (source, cookies, evaluating scripts) see `print_to_pdf/2`.
       """
-      @spec capture_screenshot(url :: source(), opts :: [capture_screenshot_option()]) :: return()
+      @spec capture_screenshot(
+              url :: source(),
+              opts :: [capture_screenshot_option() | output_option()]
+            ) :: return()
       def capture_screenshot(input, opts \\ []) do
         with_services(__MODULE__, &API.capture_screenshot(&1, input, opts))
       end
@@ -587,7 +626,8 @@ defmodule ChromicPDF.Supervisor do
             pdfa_def_ext: "[/Title (OverriddenTitle) /DOCINFO pdfmark",
           )
       """
-      @spec convert_to_pdfa(pdf_path :: path(), opts :: [pdfa_option()]) :: return()
+      @spec convert_to_pdfa(pdf_path :: path(), opts :: [pdfa_option() | output_option()]) ::
+              return()
       def convert_to_pdfa(pdf_path, opts \\ []) do
         with_services(__MODULE__, &API.convert_to_pdfa(&1, pdf_path, opts))
       end
@@ -603,7 +643,7 @@ defmodule ChromicPDF.Supervisor do
       """
       @spec print_to_pdfa(
               input :: source() | source_and_options(),
-              opts :: [pdf_option() | pdfa_option()]
+              opts :: [pdf_option() | pdfa_option() | output_option()]
             ) :: return()
       def print_to_pdfa(input, opts \\ []) do
         with_services(__MODULE__, &API.print_to_pdfa(&1, input, opts))

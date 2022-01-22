@@ -5,12 +5,23 @@ defmodule ChromicPDF.PDFOptions do
   require EEx
   alias ChromicPDF.ChromeError
 
-  def prepare_export_options(source, opts) do
+  def prepare_export_options(protocol, source, opts) do
+    validate_options!(protocol, source, opts)
+
     opts
     |> put_source(source)
     |> replace_wait_for_with_evaluate()
     |> stringify_map_keys()
     |> iolists_to_binary()
+  end
+
+  defp validate_options!(:print_to_pdf_as_stream, _source, opts) do
+    if Keyword.get(opts, :output) do
+      raise(":output option is not supported for print_to_pdf_as_stream/2")
+    end
+  end
+
+  defp validate_options!(_protocol, _source, _opts) do
   end
 
   defp put_source(opts, {:file, source}), do: put_source(opts, {:url, source})

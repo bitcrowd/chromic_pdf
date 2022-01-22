@@ -7,19 +7,23 @@ defmodule ChromicPDF.API do
   alias ChromicPDF.{
     Browser,
     CaptureScreenshot,
+    CloseStream,
     GhostscriptPool,
     PDFOptions,
     PDFAOptions,
-    PrintToPDF
+    PrintToPDF,
+    PrintToPDFAsStream,
+    ReadFromStream
   }
 
   @spec print_to_pdf(
           ChromicPDF.Supervisor.services(),
           ChromicPDF.source() | ChromicPDF.source_and_options(),
-          [ChromicPDF.pdf_option()]
+          [ChromicPDF.pdf_option() | ChromicPDF.output_option()]
         ) :: ChromicPDF.return()
   def print_to_pdf(services, %{source: source, opts: opts}, overrides)
       when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
+    print_to_pdf(services, source, Keyword.merge(opts, overrides))
     print_to_pdf(services, source, Keyword.merge(opts, overrides))
   end
 
@@ -27,8 +31,52 @@ defmodule ChromicPDF.API do
     chrome_export(services, :print_to_pdf, source, opts)
   end
 
+  @spec print_to_pdf_as_stream(
+          ChromicPDF.Supervisor.services(),
+          input :: ChromicPDF.source() | ChromicPDF.source_and_options(),
+          fun :: ChromicPDF.stream_function(),
+          opts :: [ChromicPDF.pdf_option()]
+        ) :: {:ok, ChromicPDF.stream_function_result()}
+  def print_to_pdf_as_stream(services, %{source: source, opts: opts}, stream_fun, overrides)
+      when tuple_size(source) == 2 and is_list(opts) and is_function(stream_fun) and
+             is_list(overrides) do
+    print_to_pdf_as_stream(services, source, stream_fun, Keyword.merge(opts, overrides))
+  end
+
+  def print_to_pdf_as_stream(services, source, stream_fun, opts)
+      when tuple_size(source) == 2 and is_function(stream_fun) and is_list(opts) do
+    %{browser: browser} = services
+
+    opts = PDFOptions.prepare_export_options(:print_to_pdf_as_stream, source, opts)
+
+    Browser.checkout_session(browser, fn session ->
+      stream =
+        Stream.resource(
+          fn ->
+            {:ok, handle} = Browser.run_protocol(browser, session, PrintToPDFAsStream, opts)
+
+            %{"handle" => handle}
+          end,
+          fn stream ->
+            case Browser.run_protocol(browser, session, ReadFromStream, stream) do
+              {:ok, %{"data" => data, "eof" => false}} ->
+                {[data], stream}
+
+              {:ok, %{"data" => "", "eof" => true}} ->
+                {:halt, stream}
+            end
+          end,
+          fn stream ->
+            {:ok, _} = Browser.run_protocol(browser, session, CloseStream, stream)
+          end
+        )
+
+      {:ok, stream_fun.(stream)}
+    end)
+  end
+
   @spec capture_screenshot(ChromicPDF.Supervisor.services(), ChromicPDF.source(), [
-          ChromicPDF.capture_screenshot_option()
+          ChromicPDF.capture_screenshot_option() | ChromicPDF.output_option()
         ]) ::
           ChromicPDF.return()
   def capture_screenshot(services, source, opts) when tuple_size(source) == 2 and is_list(opts) do
@@ -40,18 +88,21 @@ defmodule ChromicPDF.API do
     print_to_pdf: PrintToPDF
   }
 
-  defp chrome_export(services, protocol, source, opts) do
-    opts = PDFOptions.prepare_export_options(source, opts)
+  defp chrome_export(services, protocol, source, opts)
+       when tuple_size(source) == 2 and is_list(opts) do
+    opts = PDFOptions.prepare_export_options(protocol, source, opts)
 
     with_telemetry(protocol, opts, fn ->
-      services.browser
-      |> Browser.run_protocol(Map.fetch!(@export_protocols, protocol), opts)
-      |> PDFOptions.feed_chrome_data_into_output(opts)
+      Browser.checkout_session(services.browser, fn session ->
+        services.browser
+        |> Browser.run_protocol(session, Map.fetch!(@export_protocols, protocol), opts)
+        |> PDFOptions.feed_chrome_data_into_output(opts)
+      end)
     end)
   end
 
   @spec convert_to_pdfa(ChromicPDF.Supervisor.services(), ChromicPDF.path(), [
-          ChromicPDF.pdfa_option()
+          ChromicPDF.pdfa_option() | ChromicPDF.output_option()
         ]) ::
           ChromicPDF.return()
   def convert_to_pdfa(services, pdf_path, opts) when is_binary(pdf_path) and is_list(opts) do
@@ -64,7 +115,7 @@ defmodule ChromicPDF.API do
           ChromicPDF.Supervisor.services(),
           ChromicPDF.source() | ChromicPDF.source_and_options(),
           [
-            ChromicPDF.pdf_option() | ChromicPDF.pdfa_option()
+            ChromicPDF.pdf_option() | ChromicPDF.pdfa_option() | ChromicPDF.output_option()
           ]
         ) ::
           ChromicPDF.return()

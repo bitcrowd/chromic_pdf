@@ -18,11 +18,33 @@ defmodule ChromicPDF.Browser do
   @spec session_pool(pid()) :: pid()
   def session_pool(supervisor), do: find_supervisor_child(supervisor, SessionPool)
 
-  @spec run_protocol(pid(), module(), keyword()) :: {:ok, any()} | {:error, term()}
-  def run_protocol(supervisor, protocol, params) do
+  @spec spawn_session(pid()) :: Channel.session()
+  def spawn_session(supervisor) do
+    supervisor
+    |> channel()
+    |> Channel.spawn_session()
+  end
+
+  @spec close_session(pid(), Channel.session()) :: :ok
+  def close_session(supervisor, session) do
+    supervisor
+    |> channel()
+    |> Channel.close_session(session)
+  end
+
+  @spec run_protocol(pid(), Channel.session(), module(), keyword()) ::
+          {:ok, any()} | {:error, term()}
+  def run_protocol(supervisor, session, protocol, params) do
+    supervisor
+    |> channel()
+    |> Channel.run_protocol(session, protocol, params)
+  end
+
+  @spec checkout_session(pid(), (Channel.session() -> any())) :: any()
+  def checkout_session(supervisor, callback) do
     supervisor
     |> session_pool()
-    |> SessionPool.run_protocol(protocol, params)
+    |> SessionPool.checkout!(callback)
   end
 
   # ------------ Callbacks -----------
