@@ -7,6 +7,7 @@ defmodule ChromicPDF.PDFOptions do
 
   def prepare_export_options(source, opts) do
     opts
+    |> Keyword.put_new(:stream, false)
     |> put_source(source)
     |> replace_wait_for_with_evaluate()
     |> stringify_map_keys()
@@ -96,6 +97,9 @@ defmodule ChromicPDF.PDFOptions do
 
   def feed_chrome_data_into_output({:ok, data}, opts) do
     case Keyword.get(opts, :output) do
+      pid when is_pid(pid) ->
+        :ok
+
       path when is_binary(path) ->
         File.write!(path, Base.decode64!(data))
         :ok
