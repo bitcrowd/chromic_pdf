@@ -49,8 +49,6 @@ defmodule ChromicPDF.Template do
           | :legal
           | :tabloid
 
-  @type orientation :: :portrait | :landscape
-
   @type style_option ::
           {:size, paper_size()}
           | {:header_height, binary()}
@@ -60,7 +58,7 @@ defmodule ChromicPDF.Template do
           | {:footer_font_size, binary()}
           | {:footer_zoom, binary()}
           | {:webkit_print_color_adjust, binary()}
-          | {:orientation, orientation()}
+          | {:landscape, boolean()}
 
   @paper_sizes_in_inch %{
     a0: {33.1, 46.8},
@@ -170,9 +168,9 @@ defmodule ChromicPDF.Template do
     header = Keyword.get(opts, :header, "")
     footer = Keyword.get(opts, :footer, "")
     styles = do_styles(opts)
-    orientation = Keyword.get(opts, :orientation, :portrait)
+    landscape = Keyword.get(opts, :landscape, false)
 
-    {width, height} = get_paper_size_and_maybe_rotate(opts, orientation)
+    {width, height} = get_paper_size(opts, landscape)
 
     %{
       source: {:html, html_concat(styles, content)},
@@ -182,7 +180,8 @@ defmodule ChromicPDF.Template do
           headerTemplate: html_concat(styles, header),
           footerTemplate: html_concat(styles, footer),
           paperWidth: width,
-          paperHeight: height
+          paperHeight: height,
+          landscape: landscape
         }
       ]
     }
@@ -259,8 +258,8 @@ defmodule ChromicPDF.Template do
   def styles(opts \\ []), do: do_styles(opts)
 
   defp do_styles(opts) do
-    orientation = Keyword.get(opts, :orientation, :portrait)
-    {width, height} = get_paper_size_and_maybe_rotate(opts, orientation)
+    landscape = Keyword.get(opts, :landscape, false)
+    {width, height} = get_paper_size(opts, landscape)
 
     assigns = [
       width: "#{width}in",
@@ -280,8 +279,8 @@ defmodule ChromicPDF.Template do
   EEx.function_from_string(:defp, :render_styles, @styles, [:assigns])
 
   # Inverts the paper size if landscape orientation.
-  defp maybe_rotate_paper(size, :portrait) when tuple_size(size) === 2, do: size
-  defp maybe_rotate_paper({w, h}, :landscape), do: {h, w}
+  defp maybe_rotate_paper(size, false) when tuple_size(size) === 2, do: size
+  defp maybe_rotate_paper({w, h}, true), do: {h, w}
 
   # Fetches paper size from opts, translates from config or uses given {width, height} tuple.
   defp get_paper_size(manual) when tuple_size(manual) === 2, do: manual
@@ -298,8 +297,8 @@ defmodule ChromicPDF.Template do
   end
 
   # Return the paper size and maybe rotates according to the orientation.
-  defp get_paper_size_and_maybe_rotate(paper, orientation) do
+  defp get_paper_size(paper, landscape) do
     get_paper_size(paper)
-    |> maybe_rotate_paper(orientation)
+    |> maybe_rotate_paper(landscape)
   end
 end
