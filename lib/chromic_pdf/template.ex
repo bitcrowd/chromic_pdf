@@ -310,9 +310,6 @@ defmodule ChromicPDF.Template do
   defp maybe_assign_style_size(
     assigns,
     %{:size => {width, height}, :format => :nil}
-  ) do
-    assigns
-    |> Enum.into(width: "#{width}in", height: "#{height}in")
-  end
+  ), do: assigns ++ [width: "#{width}in", height: "#{height}in"]
   defp maybe_assign_style_size(assigns, _page_size), do: assigns
 end
