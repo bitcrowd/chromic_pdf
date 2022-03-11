@@ -163,7 +163,7 @@ defmodule ChromicPDF.Template do
     styles = do_styles(opts)
     orientation = Keyword.get(opts, :orientation, :portrait)
 
-    paper = get_paper(opts, orientation)
+    paper = get_paper_and_maybe_rotate(opts, orientation)
 
     %{
       source: {:html, html_concat(styles, content)},
@@ -253,7 +253,7 @@ defmodule ChromicPDF.Template do
 
   defp do_styles(opts) do
     orientation = Keyword.get(opts, :orientation, :portrait)
-    paper = get_paper(opts, orientation)
+    paper = get_paper_and_maybe_rotate(opts, orientation)
 
     assigns = [
       header_height: Keyword.get(opts, :header_height, "0"),
@@ -271,23 +271,6 @@ defmodule ChromicPDF.Template do
 
   EEx.function_from_string(:defp, :render_styles, @styles, [:assigns])
 
-  # Fetches paper size from opts, translates from config or uses given {width, height} tuple.
-  defp get_paper(manual, orientation) when tuple_size(manual) === 2 do
-    %{size: manual, format: :nil}
-    |> maybe_rotate_paper(orientation)
-  end
-  defp get_paper(name, orientation) when is_atom(name) do
-    @paper_sizes_in_inch
-    |> Map.get(name, @default_paper)
-    |> maybe_rotate_paper(orientation)
-  end
-  defp get_paper(opts, orientation) when is_list(opts) do
-    opts
-    |> Keyword.get(:size, @default_paper_size)
-    |> get_paper(orientation)
-    |> maybe_rotate_paper(orientation)
-  end
-
   defp maybe_rotate_paper(:nil, orientation) do
     @default_paper_size
     |> maybe_rotate_paper(orientation)
@@ -296,6 +279,25 @@ defmodule ChromicPDF.Template do
   defp maybe_rotate_paper(%{:size => {w, h}} = paper, :landscape) do
     paper
     |> Map.replace(:size, {h, w})
+  end
+
+  # Fetches paper size from opts, translates from config or uses given {width, height} tuple.
+  defp get_paper(manual) when tuple_size(manual) === 2 do
+    %{size: manual, format: :nil}
+  end
+  defp get_paper(name) when is_atom(name) do
+    @paper_sizes_in_inch
+    |> Map.get(name, @default_paper)
+  end
+  defp get_paper(opts) when is_list(opts) do
+    opts
+    |> Keyword.get(:size, @default_paper_size)
+    |> get_paper()
+  end
+
+  defp get_paper_and_maybe_rotate(paper, orientation) do
+    get_paper(paper)
+    |> maybe_rotate_paper(orientation)
   end
 
   defp put_size_or_format(
