@@ -163,18 +163,19 @@ defmodule ChromicPDF.Template do
     styles = do_styles(opts)
     orientation = Keyword.get(opts, :orientation, :portrait)
 
-    paper = get_paper_and_maybe_rotate(opts, orientation)
+    %{:size => {width, height}} = get_paper_and_maybe_rotate(opts, orientation)
 
     %{
       source: {:html, html_concat(styles, content)},
       opts: [
         print_to_pdf: %{
+          paperWidth: width,
+          paperHeight: height,
           displayHeaderFooter: true,
           headerTemplate: html_concat(styles, header),
           footerTemplate: html_concat(styles, footer),
           landscape: orientation === :landscape,
         }
-        |> put_size_or_format(paper)
       ]
     }
   end
@@ -199,10 +200,8 @@ defmodule ChromicPDF.Template do
     }
 
     @page {
-      <%= if @width !== :nil and @height !== :nil do %>
-        width: <%= @width %>;
-        height: <%= @height %>;
-      <% end %>
+      width: <%= @width %>;
+      height: <%= @height %>;
       margin: <%= @header_height %> 0 <%= @footer_height %>;
     }
 
@@ -253,9 +252,11 @@ defmodule ChromicPDF.Template do
 
   defp do_styles(opts) do
     orientation = Keyword.get(opts, :orientation, :portrait)
-    paper = get_paper_and_maybe_rotate(opts, orientation)
+    %{:size => {width, height}} = get_paper_and_maybe_rotate(opts, orientation)
 
     assigns = [
+      width: "#{width}in",
+      height: "#{height}in",
       header_height: Keyword.get(opts, :header_height, "0"),
       header_font_size: Keyword.get(opts, :header_font_size, "10pt"),
       footer_height: Keyword.get(opts, :footer_height, "0"),
@@ -264,7 +265,6 @@ defmodule ChromicPDF.Template do
       footer_zoom: Keyword.get(opts, :footer_zoom, "0.75"),
       webkit_print_color_adjust: Keyword.get(opts, :webkit_print_color_adjust, "exact")
     ]
-    |> maybe_assign_style_size(paper)
 
     render_styles(assigns)
   end
@@ -299,23 +299,4 @@ defmodule ChromicPDF.Template do
     get_paper(paper)
     |> maybe_rotate_paper(orientation)
   end
-
-  defp put_size_or_format(
-    print_to_pdf_opts,
-    %{:size => {width, height}, :format => :nil}
-  ) do
-    print_to_pdf_opts
-    |> Map.merge(%{paperWidth: width, paperHeight: height})
-  end
-  defp put_size_or_format(print_to_pdf_opts, %{:format => format}) do
-    print_to_pdf_opts
-    |> Map.put(:format, format)
-  end
-
-  defp maybe_assign_style_size(
-    assigns, %{:size => {width, height}, :format => :nil}
-  ), do: assigns ++ [width: "#{width}in", height: "#{height}in"]
-  defp maybe_assign_style_size(
-    assigns, _paper
-  ), do: assigns ++ [width: :nil, height: :nil]
 end
