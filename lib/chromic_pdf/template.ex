@@ -253,7 +253,7 @@ defmodule ChromicPDF.Template do
 
   defp do_styles(opts) do
     orientation = Keyword.get(opts, :orientation, :portrait)
-    page_size = get_paper_size(opts, orientation)
+    paper_size = get_paper_size(opts, orientation)
 
     assigns = [
       header_height: Keyword.get(opts, :header_height, "0"),
@@ -264,7 +264,7 @@ defmodule ChromicPDF.Template do
       footer_zoom: Keyword.get(opts, :footer_zoom, "0.75"),
       webkit_print_color_adjust: Keyword.get(opts, :webkit_print_color_adjust, "exact")
     ]
-    |> maybe_assign_size(page_size)
+    |> maybe_assign_style_size(paper_size)
 
     render_styles(assigns)
   end
@@ -290,8 +290,8 @@ defmodule ChromicPDF.Template do
     |> maybe_rotate_page(orientation)
   end
   defp maybe_rotate_page(size, :portrait), do: size
-  defp maybe_rotate_page(%{:size => {w, h}} = page_size, :landscape) do
-    page_size
+  defp maybe_rotate_page(%{:size => {w, h}} = paper_size, :landscape) do
+    paper_size
     |> Map.replace(:size, {h, w})
   end
 
@@ -307,12 +307,12 @@ defmodule ChromicPDF.Template do
     |> Map.put(:format, format)
   end
 
-  defp maybe_assign_size(
+  defp maybe_assign_style_size(
     assigns,
     %{:size => {width, height}, :format => :nil}
   ) do
     assigns
     |> Enum.into(width: "#{width}in", height: "#{height}in")
   end
-  defp maybe_assign_size(assigns, _page_size), do: assigns
+  defp maybe_assign_style_size(assigns, _page_size), do: assigns
 end
