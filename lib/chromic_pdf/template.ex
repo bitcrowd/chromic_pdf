@@ -269,7 +269,7 @@ defmodule ChromicPDF.Template do
 
   # Fetches paper size from opts, translates from config or uses given {width, height} tuple.
   defp get_paper_size(manual, _orientation) when tuple_size(manual) == 2,
-    do: %{:size => manual, :format => :nil}
+    do: %{size: manual, format: :nil}
   defp get_paper_size(name, orientation) when is_atom(name) do
     @paper_sizes_in_inch
     |> Map.fetch!(name)
