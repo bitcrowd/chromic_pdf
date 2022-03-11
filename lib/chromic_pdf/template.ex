@@ -178,11 +178,11 @@ defmodule ChromicPDF.Template do
       source: {:html, html_concat(styles, content)},
       opts: [
         print_to_pdf: %{
-          paperWidth: width,
-          paperHeight: height,
           displayHeaderFooter: true,
           headerTemplate: html_concat(styles, header),
           footerTemplate: html_concat(styles, footer),
+          paperWidth: width,
+          paperHeight: height
         }
       ]
     }
