@@ -199,7 +199,7 @@ defmodule ChromicPDF.Template do
     }
 
     @page {
-      <%= if @with !== :nil and @height !== :nil do %>
+      <%= if @width !== :nil and @height !== :nil do %>
         width: <%= @width %>;
         height: <%= @height %>;
       <% end %>
