@@ -40,6 +40,11 @@ defmodule ChromicPDF.Template do
           | :a3
           | :a4
           | :a5
+          | :a6
+          | :a7
+          | :a8
+          | :a9
+          | :a10
           | :us_letter
           | :legal
           | :tabloid
@@ -64,6 +69,11 @@ defmodule ChromicPDF.Template do
     a3: {11.7, 16.5},
     a4: {8.3, 11.7},
     a5: {5.8, 8.3},
+    a6: {4.1, 5.8},
+    a7: {2.9, 4.1},
+    a8: {2.0, 2.9},
+    a9: {1.5, 2.0},
+    a10: {1.0, 1.5},
     us_letter: {8.5, 11.0},
     legal: {8.5, 14.0},
     tabloid: {11.0, 17.0},
