@@ -40,12 +40,9 @@ defmodule ChromicPDF.Template do
           | :a3
           | :a4
           | :a5
-          | :a6
-          | :a7
-          | :a8
-          | :a9
-          | :a10
           | :us_letter
+          | :legal
+          | :tabloid
 
   @type orientation :: :portrait | :landscape
 
@@ -61,18 +58,15 @@ defmodule ChromicPDF.Template do
           | {:orientation, orientation()}
 
   @paper_sizes_in_inch %{
-    a0: {33.1, 46.8},
-    a1: {23.4, 33.1},
-    a2: {16.5, 23.4},
-    a3: {11.7, 16.5},
-    a4: {8.3, 11.7},
-    a5: {5.8, 8.3},
-    a6: {4.1, 5.8},
-    a7: {2.9, 4.1},
-    a8: {2.0, 2.9},
-    a9: {1.5, 2.0},
-    a10: {1.0, 1.5},
-    us_letter: {8.5, 11.0}
+    a0: %{size: {33.1, 46.8}, format: "A0"},
+    a1: %{size: {23.4, 33.1}, format: "A1"},
+    a2: %{size: {16.5, 23.4}, format: "A2"},
+    a3: %{size: {11.7, 16.5}, format: "A3"},
+    a4: %{size: {8.3, 11.7}, format: "A4"},
+    a5: %{size: {5.8, 8.3}, format: "A5"},
+    us_letter: %{size: {8.5, 11.0}, format: "Letter"},
+    legal: %{size: {8.5, 14.0}, format: "Legal"},
+    tabloid: %{size: {11.0, 17.0}, format: "Tabloid"}
   }
 
   @default_content """
@@ -165,7 +159,8 @@ defmodule ChromicPDF.Template do
     styles = do_styles(opts)
     orientation = Keyword.get(opts, :orientation, :portrait)
 
-    {width, height} = get_paper_size(opts, orientation)
+    %{:size => {width, height}, :format => format} =
+      get_paper_size(opts, orientation)
 
     %{
       source: {:html, html_concat(styles, content)},
@@ -176,7 +171,8 @@ defmodule ChromicPDF.Template do
           footerTemplate: html_concat(styles, footer),
           paperWidth: width,
           paperHeight: height,
-          landscape: orientation === :landscape
+          landscape: orientation === :landscape,
+          format: format
         }
       ]
     }
@@ -254,7 +250,7 @@ defmodule ChromicPDF.Template do
 
   defp do_styles(opts) do
     orientation = Keyword.get(opts, :orientation, :portrait)
-    {width, height} = get_paper_size(opts, orientation)
+    %{:size => {width, height}} = get_paper_size(opts, orientation)
 
     assigns = [
       width: "#{width}in",
@@ -287,5 +283,8 @@ defmodule ChromicPDF.Template do
   end
 
   defp maybe_rotate_page(size, :portrait), do: size
-  defp maybe_rotate_page({w, h}, :landscape), do: {h, w}
+  defp maybe_rotate_page(%{:size => {w, h}} = page_size, :landscape) do
+    page_size
+    |> Map.replace(:size, {h, w})
+  end
 end
