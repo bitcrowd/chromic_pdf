@@ -69,6 +69,10 @@ defmodule ChromicPDF.Template do
     tabloid: %{size: {11.0, 17.0}, format: "Tabloid"}
   }
 
+  @default_paper_name :us_letter
+  @default_paper Map.fetch!(@paper_sizes_in_inch, @default_paper_name)
+  @default_paper_size Map.fetch!(@default_paper, :size)
+
   @default_content """
   <style>
     body {
@@ -272,15 +276,19 @@ defmodule ChromicPDF.Template do
     do: %{size: manual, format: :nil}
   defp get_paper_size(name, orientation) when is_atom(name) do
     @paper_sizes_in_inch
-    |> Map.fetch!(name)
+    |> Map.get(name, @default_paper)
     |> maybe_rotate_page(orientation)
   end
   defp get_paper_size(opts, orientation) when is_list(opts) do
     opts
-    |> Keyword.get(:size, :us_letter)
+    |> Keyword.get(:size, @default_paper_name)
     |> get_paper_size(orientation)
   end
 
+  defp maybe_rotate_page(:nil, orientation) do
+    @default_paper_size
+    |> maybe_rotate_page(orientation)
+  end
   defp maybe_rotate_page(size, :portrait), do: size
   defp maybe_rotate_page(%{:size => {w, h}} = page_size, :landscape) do
     page_size
