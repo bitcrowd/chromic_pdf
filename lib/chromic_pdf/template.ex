@@ -76,7 +76,7 @@ defmodule ChromicPDF.Template do
     a10: {1.0, 1.5},
     us_letter: {8.5, 11.0},
     legal: {8.5, 14.0},
-    tabloid: {11.0, 17.0},
+    tabloid: {11.0, 17.0}
   }
 
   @default_paper_name :us_letter
@@ -285,10 +285,12 @@ defmodule ChromicPDF.Template do
 
   # Fetches paper size from opts, translates from config or uses given {width, height} tuple.
   defp get_paper_size(manual) when tuple_size(manual) === 2, do: manual
+
   defp get_paper_size(name) when is_atom(name) do
     @paper_sizes_in_inch
     |> Map.get(name, @default_paper_size)
   end
+
   defp get_paper_size(opts) when is_list(opts) do
     opts
     |> Keyword.get(:size, @default_paper_size)
