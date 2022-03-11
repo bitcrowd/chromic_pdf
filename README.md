@@ -7,8 +7,6 @@
 [![License](https://img.shields.io/hexpm/l/chromic_pdf.svg)](https://github.com/bitcrowd/chromic_pdf/blob/master/LICENSE)
 [![Last Updated](https://img.shields.io/github/last-commit/bitcrowd/chromic_pdf.svg)](https://github.com/bitcrowd/chromic_pdf/commits/master)
 
-
-
 ChromicPDF is a HTML-to-PDF renderer for Elixir, based on headless Chrome.
 
 ## Features
