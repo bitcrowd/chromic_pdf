@@ -180,8 +180,7 @@ defmodule ChromicPDF.Template do
           headerTemplate: html_concat(styles, header),
           footerTemplate: html_concat(styles, footer),
           paperWidth: width,
-          paperHeight: height,
-          landscape: landscape
+          paperHeight: height
         }
       ]
     }
