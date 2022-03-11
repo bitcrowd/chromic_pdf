@@ -47,6 +47,8 @@ defmodule ChromicPDF.Template do
           | :a10
           | :us_letter
 
+  @type orientation :: :portrait | :landscape
+
   @type style_option ::
           {:size, paper_size()}
           | {:header_height, binary()}
@@ -56,6 +58,7 @@ defmodule ChromicPDF.Template do
           | {:footer_font_size, binary()}
           | {:footer_zoom, binary()}
           | {:webkit_print_color_adjust, binary()}
+          | {:orientation, orientation()}
 
   @paper_sizes_in_inch %{
     a0: {33.1, 46.8},
@@ -160,8 +163,9 @@ defmodule ChromicPDF.Template do
     header = Keyword.get(opts, :header, "")
     footer = Keyword.get(opts, :footer, "")
     styles = do_styles(opts)
+    orientation = Keyword.get(opts, :orientation, :portrait)
 
-    {width, height} = get_paper_size(opts)
+    {width, height} = get_paper_size(opts, orientation)
 
     %{
       source: {:html, html_concat(styles, content)},
@@ -171,7 +175,8 @@ defmodule ChromicPDF.Template do
           headerTemplate: html_concat(styles, header),
           footerTemplate: html_concat(styles, footer),
           paperWidth: width,
-          paperHeight: height
+          paperHeight: height,
+          landscape: orientation === :landscape
         }
       ]
     }
@@ -248,7 +253,8 @@ defmodule ChromicPDF.Template do
   def styles(opts \\ []), do: do_styles(opts)
 
   defp do_styles(opts) do
-    {width, height} = get_paper_size(opts)
+    orientation = Keyword.get(opts, :orientation, :portrait)
+    {width, height} = get_paper_size(opts, orientation)
 
     assigns = [
       width: "#{width}in",
@@ -268,12 +274,18 @@ defmodule ChromicPDF.Template do
   EEx.function_from_string(:defp, :render_styles, @styles, [:assigns])
 
   # Fetches paper size from opts, translates from config or uses given {width, height} tuple.
-  defp get_paper_size(manual) when tuple_size(manual) == 2, do: manual
-  defp get_paper_size(name) when is_atom(name), do: Map.fetch!(@paper_sizes_in_inch, name)
-
-  defp get_paper_size(opts) when is_list(opts) do
+  defp get_paper_size(manual, _orientation) when tuple_size(manual) == 2, do: manual
+  defp get_paper_size(name, orientation) when is_atom(name) do
+    @paper_sizes_in_inch
+    |> Map.fetch!(name)
+    |> maybe_rotate_page(orientation)
+  end
+  defp get_paper_size(opts, orientation) when is_list(opts) do
     opts
     |> Keyword.get(:size, :us_letter)
-    |> get_paper_size()
+    |> get_paper_size(orientation)
   end
+
+  defp maybe_rotate_page(size, :portrait), do: size
+  defp maybe_rotate_page({w, h}, :landscape), do: {h, w}
 end
