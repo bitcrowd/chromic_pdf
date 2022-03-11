@@ -108,7 +108,7 @@ defmodule ChromicPDF.Template do
       ChromicPDF.Template.source_and_options(
         content: "<p>Hello</p>",
         header: "<p>header</p>",
-        footer: "<p>footer</p>"
+        footer: "<p>footer</p>",
         size: :a4,
         header_height: "45mm",
         header_font_size: "20pt",
