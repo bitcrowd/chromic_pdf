@@ -170,7 +170,7 @@ defmodule ChromicPDF.Template do
     styles = do_styles(opts)
     landscape = Keyword.get(opts, :landscape, false)
 
-    {width, height} = get_paper_size_and_maybe_rotate(opts, landscape)
+    {width, height} = get_paper_size(opts, landscape)
 
     %{
       source: {:html, html_concat(styles, content)},
@@ -259,7 +259,7 @@ defmodule ChromicPDF.Template do
 
   defp do_styles(opts) do
     landscape = Keyword.get(opts, :landscape, false)
-    {width, height} = get_paper_size_and_maybe_rotate(opts, landscape)
+    {width, height} = get_paper_size(opts, landscape)
 
     assigns = [
       width: "#{width}in",
@@ -297,7 +297,7 @@ defmodule ChromicPDF.Template do
   end
 
   # Return the paper size and maybe rotates according to the orientation.
-  defp get_paper_size_and_maybe_rotate(paper, landscape) do
+  defp get_paper_size(paper, landscape) do
     get_paper_size(paper)
     |> maybe_rotate_paper(landscape)
   end
