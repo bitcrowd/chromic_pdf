@@ -163,7 +163,7 @@ defmodule ChromicPDF.Template do
     styles = do_styles(opts)
     orientation = Keyword.get(opts, :orientation, :portrait)
 
-    paper_size = get_paper_size(opts, orientation)
+    paper = get_paper(opts, orientation)
 
     %{
       source: {:html, html_concat(styles, content)},
@@ -174,7 +174,7 @@ defmodule ChromicPDF.Template do
           footerTemplate: html_concat(styles, footer),
           landscape: orientation === :landscape,
         }
-        |> put_size_or_format(paper_size)
+        |> put_size_or_format(paper)
       ]
     }
   end
@@ -253,7 +253,7 @@ defmodule ChromicPDF.Template do
 
   defp do_styles(opts) do
     orientation = Keyword.get(opts, :orientation, :portrait)
-    paper_size = get_paper_size(opts, orientation)
+    paper = get_paper(opts, orientation)
 
     assigns = [
       header_height: Keyword.get(opts, :header_height, "0"),
@@ -264,7 +264,7 @@ defmodule ChromicPDF.Template do
       footer_zoom: Keyword.get(opts, :footer_zoom, "0.75"),
       webkit_print_color_adjust: Keyword.get(opts, :webkit_print_color_adjust, "exact")
     ]
-    |> maybe_assign_style_size(paper_size)
+    |> maybe_assign_style_size(paper)
 
     render_styles(assigns)
   end
@@ -272,38 +272,39 @@ defmodule ChromicPDF.Template do
   EEx.function_from_string(:defp, :render_styles, @styles, [:assigns])
 
   # Fetches paper size from opts, translates from config or uses given {width, height} tuple.
-  defp get_paper_size(manual, _orientation) when tuple_size(manual) == 2,
+  defp get_paper(manual, _orientation) when tuple_size(manual) == 2,
     do: %{size: manual, format: :nil}
-  defp get_paper_size(name, orientation) when is_atom(name) do
+  defp get_paper(name, orientation) when is_atom(name) do
     @paper_sizes_in_inch
     |> Map.get(name, @default_paper)
-    |> maybe_rotate_page(orientation)
+    |> maybe_rotate_paper(orientation)
   end
-  defp get_paper_size(opts, orientation) when is_list(opts) do
+  defp get_paper(opts, orientation) when is_list(opts) do
     opts
-    |> Keyword.get(:size, @default_paper_name)
-    |> get_paper_size(orientation)
+    |> Keyword.get(:size, @default_paper_size)
+    |> get_paper(orientation)
+    |> maybe_rotate_paper(orientation)
   end
 
-  defp maybe_rotate_page(:nil, orientation) do
+  defp maybe_rotate_paper(:nil, orientation) do
     @default_paper_size
-    |> maybe_rotate_page(orientation)
+    |> maybe_rotate_paper(orientation)
   end
-  defp maybe_rotate_page(size, :portrait), do: size
-  defp maybe_rotate_page(%{:size => {w, h}} = paper_size, :landscape) do
-    paper_size
+  defp maybe_rotate_paper(size, :portrait), do: size
+  defp maybe_rotate_paper(%{:size => {w, h}} = paper, :landscape) do
+    paper
     |> Map.replace(:size, {h, w})
   end
 
   defp put_size_or_format(
-    print_to_pdf,
+    print_to_pdf_opts,
     %{:size => {width, height}, :format => :nil}
   ) do
-    print_to_pdf
+    print_to_pdf_opts
     |> Map.merge(%{paperWidth: width, paperHeight: height})
   end
-  defp put_size_or_format(print_to_pdf, %{:format => format}) do
-    print_to_pdf
+  defp put_size_or_format(print_to_pdf_opts, %{:format => format}) do
+    print_to_pdf_opts
     |> Map.put(:format, format)
   end
 
@@ -311,6 +312,6 @@ defmodule ChromicPDF.Template do
     assigns, %{:size => {width, height}, :format => :nil}
   ), do: assigns ++ [width: "#{width}in", height: "#{height}in"]
   defp maybe_assign_style_size(
-    assigns, _page_size
+    assigns, _paper
   ), do: assigns ++ [width: :nil, height: :nil]
 end
