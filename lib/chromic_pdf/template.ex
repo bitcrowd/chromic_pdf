@@ -272,8 +272,10 @@ defmodule ChromicPDF.Template do
   EEx.function_from_string(:defp, :render_styles, @styles, [:assigns])
 
   # Fetches paper size from opts, translates from config or uses given {width, height} tuple.
-  defp get_paper(manual, _orientation) when tuple_size(manual) == 2,
-    do: %{size: manual, format: :nil}
+  defp get_paper(manual, orientation) when tuple_size(manual) === 2 do
+    %{size: manual, format: :nil}
+    |> maybe_rotate_paper(orientation)
+  end
   defp get_paper(name, orientation) when is_atom(name) do
     @paper_sizes_in_inch
     |> Map.get(name, @default_paper)
