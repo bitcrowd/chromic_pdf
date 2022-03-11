@@ -35,8 +35,7 @@ defmodule ChromicPDF.Utils do
     date =
       [:year, :month, :day, :hour, :minute, :second]
       |> Enum.map(&Map.fetch!(value, &1))
-      |> Enum.map(&pad_two_digits/1)
-      |> Enum.join()
+      |> Enum.map_join(&pad_two_digits/1)
 
     "D:#{date}+#{pad_two_digits(value.utc_offset)}'00'"
   end
