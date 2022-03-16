@@ -4,6 +4,11 @@ defmodule ChromicPDF.TemplateTest do
 
   @output Path.expand("../test.pdf", __ENV__.file)
 
+  defp print_to_pdf(opts, cb) do
+    ChromicPDF.Template.source_and_options(opts)
+    |> print_to_pdf(&ChromicPDF.print_to_pdf/2, cb)
+  end
+
   defp print_to_pdf(source_and_opts, print_fun, cb) do
     assert print_fun.(source_and_opts, output: @output) == :ok
     assert File.exists?(@output)
@@ -43,6 +48,36 @@ defmodule ChromicPDF.TemplateTest do
     @tag :pdftotext
     test "`source_and_options/1` can be used as the source param for `print_to_pdfa/2`" do
       assert_print_fun_accepts_source_and_options(&ChromicPDF.print_to_pdfa/2)
+    end
+
+    @tag :pdfinfo
+    test "it keeps the page size when landscape param is false" do
+      pdf_params = [
+        content: "<p>Hello</p>",
+        size: :a4,
+        landscape: false
+      ]
+
+      print_to_pdf(pdf_params, fn _text ->
+        output = system_cmd!("pdfinfo", [@output])
+
+        assert output =~ ~r/Page size:\s+597.12 x 841.92 pts \(A4\)/
+      end)
+    end
+
+    @tag :pdfinfo
+    test "it inverts the page size when landscape param is true" do
+      pdf_params = [
+        content: "<p>Hello</p>",
+        size: :a4,
+        landscape: true
+      ]
+
+      print_to_pdf(pdf_params, fn _text ->
+        output = system_cmd!("pdfinfo", [@output])
+
+        assert output =~ ~r/Page size:\s+841.92 x 597.12 pts \(A4\)/
+      end)
     end
   end
 end
