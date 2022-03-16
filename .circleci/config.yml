@@ -19,7 +19,7 @@ jobs:
             - v2-deps-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
             - v2-deps-cache-{{ .Branch }}
             - v2-deps-cache
-      - run: mix do deps.clean --all, deps.get, deps.compile
+      - run: mix deps.get
       - save_cache:
           key: v2-deps-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
           paths: deps
