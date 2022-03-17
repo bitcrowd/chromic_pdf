@@ -21,6 +21,8 @@ defmodule ChromicPDF.Template do
   US-letter format unless configured differently with the `paperWidth` and `paperHeight` options.
   Experience has shown, that results will be best if the `@page` rule aligns with the values
   passed to `printToPDF/2`, which is why this module exists to make basic page sizing easier.
+
+  To rotate a page into landscape, use the `landscape` option.
   """
 
   require EEx
@@ -251,6 +253,13 @@ defmodule ChromicPDF.Template do
   * `footer_font_size` default: 10pt
   * `footer_zoom` default: 0.75
   * `webkit_color_print_adjust` default: "exact"
+  * `landscape` default: false
+
+  ## Landscape
+
+  As it turns out, Chrome does not recognize the `landscape` option in its `printToPDF` command
+  when explicit page dimensions are given. Hence, we provide a `landscape` option here that
+  swaps the page dimensions (e.g. it turns 11.7x8.3" A4 into 8.3"x11.7").
   """
   @spec styles([style_option()]) :: blob()
   def styles(opts \\ []), do: do_styles(opts)
