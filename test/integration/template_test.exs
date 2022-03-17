@@ -61,7 +61,7 @@ defmodule ChromicPDF.TemplateTest do
       print_to_pdf(pdf_params, fn _text ->
         output = system_cmd!("pdfinfo", [@output])
 
-        assert output =~ ~r/Page size:\s+597.12 x 841.92 pts \(A4\)/
+        assert output =~ ~r/Page size:\s+597.12 x 841.92 pts/
       end)
     end
 
@@ -76,7 +76,7 @@ defmodule ChromicPDF.TemplateTest do
       print_to_pdf(pdf_params, fn _text ->
         output = system_cmd!("pdfinfo", [@output])
 
-        assert output =~ ~r/Page size:\s+841.92 x 597.12 pts \(A4\)/
+        assert output =~ ~r/Page size:\s+841.92 x 597.12 pts/
       end)
     end
   end
