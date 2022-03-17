@@ -75,10 +75,9 @@ defmodule ChromicPDF.ChromeError do
     |> String.trim()
     |> String.split("\n")
     |> Enum.with_index()
-    |> Enum.map(fn
+    |> Enum.map_join("\n", fn
       {line, ^line_number} -> "!!!   #{line}"
       {line, _line_number} -> "      #{line}"
     end)
-    |> Enum.join("\n")
   end
 end
