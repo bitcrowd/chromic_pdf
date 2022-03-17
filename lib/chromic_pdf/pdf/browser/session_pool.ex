@@ -8,6 +8,7 @@ defmodule ChromicPDF.Browser.SessionPool do
   alias ChromicPDF.Browser.Channel
   alias ChromicPDF.{CloseTarget, Protocol, SpawnSession}
 
+  @default_init_timeout 5000
   @default_timeout 5000
   @default_max_session_uses 1000
 
@@ -15,6 +16,7 @@ defmodule ChromicPDF.Browser.SessionPool do
           browser: pid(),
           spawn_protocol: Protocol.t(),
           max_session_uses: non_neg_integer(),
+          init_timeout: timeout(),
           timeout: timeout()
         }
 
@@ -78,12 +80,17 @@ defmodule ChromicPDF.Browser.SessionPool do
        browser: browser,
        spawn_protocol: spawn_protocol(args),
        max_session_uses: max_session_uses(args),
+       init_timeout: init_timeout(args),
        timeout: timeout(args)
      }}
   end
 
   defp timeout(args) do
     get_in(args, [:session_pool, :timeout]) || @default_timeout
+  end
+
+  defp init_timeout(args) do
+    get_in(args, [:session_pool, :init_timeout]) || @default_init_timeout
   end
 
   defp max_session_uses(args) do
@@ -100,9 +107,10 @@ defmodule ChromicPDF.Browser.SessionPool do
   @impl NimblePool
   @spec init_worker(pool_state()) :: {:async, (() -> worker_state()), pool_state()}
   def init_worker(
-        %{browser: browser, spawn_protocol: spawn_protocol, timeout: timeout} = pool_state
+        %{browser: browser, spawn_protocol: spawn_protocol, init_timeout: init_timeout} =
+          pool_state
       ) do
-    {:async, fn -> do_init_worker(browser, spawn_protocol, timeout) end, pool_state}
+    {:async, fn -> do_init_worker(browser, spawn_protocol, init_timeout) end, pool_state}
   end
 
   defp do_init_worker(browser, spawn_protocol, timeout) do
