@@ -99,15 +99,17 @@ defmodule ChromicPDF.Browser.SessionPool do
 
   @impl NimblePool
   @spec init_worker(pool_state()) :: {:async, (() -> worker_state()), pool_state()}
-  def init_worker(%{browser: browser, spawn_protocol: spawn_protocol} = pool_state) do
-    {:async, fn -> do_init_worker(browser, spawn_protocol) end, pool_state}
+  def init_worker(
+        %{browser: browser, spawn_protocol: spawn_protocol, timeout: timeout} = pool_state
+      ) do
+    {:async, fn -> do_init_worker(browser, spawn_protocol, timeout) end, pool_state}
   end
 
-  defp do_init_worker(browser, spawn_protocol) do
+  defp do_init_worker(browser, spawn_protocol, timeout) do
     {:ok, %{"sessionId" => sid, "targetId" => tid}} =
       browser
       |> Browser.channel()
-      |> Channel.run_protocol(spawn_protocol, @default_timeout)
+      |> Channel.run_protocol(spawn_protocol, timeout)
 
     %{session_id: sid, target_id: tid, uses: 0}
   end
