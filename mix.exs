@@ -31,6 +31,7 @@ defmodule ChromicPdf.MixProject do
           LICENSE: [title: "License"],
           "README.md": [title: "Overview"]
         ],
+        skip_undefined_reference_warnings_on: ["CHANGELOG.md"],
         main: "readme",
         source_url: @source_url,
         source_ref: "v#{@version}",
