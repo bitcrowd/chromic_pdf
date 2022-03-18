@@ -203,7 +203,10 @@ defmodule ChromicPDF.Supervisor do
               | output_option()
               | telemetry_metadata_option()
 
-      @type session_pool_option :: {:size, non_neg_integer()} | {:timeout, timeout()}
+      @type session_pool_option ::
+              {:size, non_neg_integer()}
+              | {:init_timeout, timeout()}
+              | {:timeout, timeout()}
       @type ghostscript_pool_option :: {:size, non_neg_integer()}
 
       @type global_option ::

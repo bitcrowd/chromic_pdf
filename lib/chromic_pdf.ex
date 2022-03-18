@@ -124,6 +124,15 @@ defmodule ChromicPDF do
         ]
       end
 
+  In addition, there is the `init_timeout` option, which controls the timeout when the session pool
+  initializes (defaults also to 5 seconds).
+
+      defp chromic_pdf_opts do
+        [
+          session_pool: [init_timeout: 10_000]   # in milliseconds
+        ]
+      end
+
   ### Automatic session restarts to avoid memory drain
 
   By default, ChromicPDF will restart sessions within the Chrome process after 1000 operations.
