@@ -6,6 +6,7 @@
 - Added a logger call when we receive the `Inspector.targetCrashed` message, so users can tell that their Chrome target has died for some reason.
 - Add more paper sizes to `ChromicPDF.Template`. (@williamthome)
 - Add `:landscape` option to `ChromicPDF.Template`. (@williamthome)
+- Add `:init_timeout` option to `ChromicPDF.Browser.SessionPool`. (@dvic)
 
 ## [1.1.2] - 2021-10-27
 
