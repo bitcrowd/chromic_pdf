@@ -44,6 +44,9 @@ defmodule ChromicPDF.ChromeImpl do
     "chromium-browser",
     "chromium",
     "google-chrome",
+    "/usr/bin/chromium-browser",
+    "/usr/bin/chromium",
+    "/usr/bin/google-chrome",
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/Applications/Chromium.app/Contents/MacOS/Chromium"
   ]
