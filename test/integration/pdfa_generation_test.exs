@@ -1,6 +1,6 @@
 defmodule ChromicPDF.PDFAGenerationTest do
   use ExUnit.Case, async: false
-  import ChromicPDF.Utils, only: [system_cmd!: 2]
+  import ChromicPDF.Utils, only: [system_cmd!: 2, with_tmp_dir: 1]
 
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)
 
@@ -46,6 +46,20 @@ defmodule ChromicPDF.PDFAGenerationTest do
       receive do
         path -> refute File.exists?(path)
       end
+    end
+
+    test "works with file names that need shell escaping" do
+      with_tmp_dir(fn tmp_dir ->
+        pdf_path = Path.join(tmp_dir, "output !@#$%.pdf")
+        pdfa_path = Path.join(tmp_dir, "output* !@#$%.pdf")
+
+        [content: "<p>Test</p>"]
+        |> ChromicPDF.Template.source_and_options()
+        |> ChromicPDF.print_to_pdf(output: pdf_path)
+
+        ChromicPDF.convert_to_pdfa(pdf_path, output: pdfa_path)
+        assert File.exists?(pdfa_path)
+      end)
     end
 
     @info_opts %{
