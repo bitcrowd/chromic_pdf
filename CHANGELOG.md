@@ -1,3 +1,10 @@
+## [1.2.1] - 2022-07-12
+
+### Fixed 
+
+- Incompatibility with ghostcript 9.56.1 (fixes #153)
+- Added search paths for chrome executable (fixes #151)
+
 ## [1.2.0] - 2022-03-17
 
 ### Added
