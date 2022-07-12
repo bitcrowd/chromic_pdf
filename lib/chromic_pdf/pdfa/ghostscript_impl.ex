@@ -20,20 +20,20 @@ defmodule ChromicPDF.GhostscriptImpl do
   @impl ChromicPDF.Ghostscript
   def run_postscript(pdf_path, ps_path) do
     ghostscript_cmd!([
-      ~s(--permit-file-read="#{pdf_path}"),
-      ~s(--permit-file-read="#{ps_path}"),
+      ~s(--permit-file-read=#{pdf_path}),
+      ~s(--permit-file-read=#{ps_path}),
       "-dNODISPLAY",
       "-q",
-      ~s(-sFile="#{pdf_path}"),
-      ~s("#{ps_path}")
+      ~s(-sFile=#{pdf_path}),
+      ps_path
     ])
   end
 
   @impl ChromicPDF.Ghostscript
   def embed_fonts(pdf_path, output_path) do
     ghostscript_cmd!([
-      ~s(--permit-file-read="#{pdf_path}"),
-      ~s(--permit-file-write="#{output_path}"),
+      ~s(--permit-file-read=#{pdf_path}),
+      ~s(--permit-file-write=#{output_path}),
       "-dEmbedAllFonts=true",
       "-dSubsetFonts=true",
       "-dCompressFonts=true",
@@ -45,8 +45,8 @@ defmodule ChromicPDF.GhostscriptImpl do
       "-dAutoFilterColorImages=false",
       "-dAutoFilterGrayImages=false",
       "-sDEVICE=pdfwrite",
-      ~s(-sOutputFile="#{output_path}"),
-      ~s("#{pdf_path}")
+      ~s(-sOutputFile=#{output_path}),
+      ~s(#{pdf_path})
     ])
 
     :ok
@@ -56,20 +56,20 @@ defmodule ChromicPDF.GhostscriptImpl do
   def convert_to_pdfa(pdf_path, pdfa_version, icc_path, pdfa_def_ps_path, output_path)
       when pdfa_version in ["2", "3"] do
     ghostscript_cmd!([
-      ~s(--permit-file-read="#{pdf_path}"),
-      ~s(--permit-file-read="#{icc_path}"),
-      ~s(--permit-file-read="#{pdfa_def_ps_path}"),
-      ~s(--permit-file-write="#{output_path}"),
+      ~s(--permit-file-read=#{pdf_path}),
+      ~s(--permit-file-read=#{icc_path}),
+      ~s(--permit-file-read=#{pdfa_def_ps_path}),
+      ~s(--permit-file-write=#{output_path}),
       "-dPDFA=#{pdfa_version}",
       # http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=094d5a1880f1cb9ed320ca9353eb69436e09b594
       "-dPDFACompatibilityPolicy=1",
       "-sProcessColorModel=DeviceRGB",
       "-sColorConversionStrategy=RGB",
-      ~s(-sOutputICCProfile="#{icc_path}"),
+      ~s(-sOutputICCProfile=#{icc_path}),
       "-sDEVICE=pdfwrite",
-      ~s(-sOutputFile="#{output_path}"),
-      ~s("#{pdf_path}"),
-      ~s("#{pdfa_def_ps_path}")
+      ~s(-sOutputFile=#{output_path}),
+      ~s(#{pdf_path}),
+      ~s(#{pdfa_def_ps_path})
     ])
 
     :ok
