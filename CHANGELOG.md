@@ -1,3 +1,9 @@
+## [1.2.2] - 2022-07-18
+
+### Fixed 
+
+- Use old pdf interpreter with ghostcript > 9.56 to avoid segfaults (see #158)
+
 ## [1.2.1] - 2022-07-12
 
 ### Fixed 
