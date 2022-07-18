@@ -16,6 +16,7 @@ defmodule ChromicPDF.GhostscriptImpl do
 
   @ghostscript_bin "gs"
   @ghostscript_safer_version [9, 28]
+  @ghostscript_new_interpreter_version [9, 56]
 
   @impl ChromicPDF.Ghostscript
   def run_postscript(pdf_path, ps_path) do
@@ -76,17 +77,38 @@ defmodule ChromicPDF.GhostscriptImpl do
   end
 
   defp ghostscript_cmd!(args) do
-    if ghostscript_version() < @ghostscript_safer_version do
+    args =
       args
-      |> Enum.reject(&String.contains?(&1, "--permit"))
-      |> do_ghostscript_cmd!()
+      |> maybe_strip_permit_flag()
+      |> maybe_use_old_interpreter()
+
+    system_cmd!(ghostscript_executable(), @default_args ++ args, stderr_to_stdout: true)
+  end
+
+  defp maybe_strip_permit_flag(args) do
+    if ghostscript_version() < @ghostscript_safer_version do
+      Enum.reject(args, &String.contains?(&1, "--permit"))
     else
-      do_ghostscript_cmd!(args)
+      args
     end
   end
 
-  defp do_ghostscript_cmd!(args) do
-    system_cmd!(ghostscript_executable(), @default_args ++ args, stderr_to_stdout: true)
+  defp maybe_use_old_interpreter(args) do
+    if ghostscript_version() >= @ghostscript_new_interpreter_version do
+      # We get segmentation faults with the new intepreter (see https://github.com/bitcrowd/chromic_pdf/issues/153):
+      #
+      # /usr/bin/gs exited with status 139!
+      #
+      # Ghostscript provides us with a workaround until they iron out all the issues:
+      #
+      # > In this (9.56.0) release, the new PDF interpreter is now ENABLED by default in Ghostscript,
+      # > but the old PDF interpreter can be used as a fallback by specifying -dNEWPDF=false. We've
+      # > provided this so users that encounter issues with the new interpreter can keep working while
+      # > we iron out those issues, the option will not be available in the long term.
+      ["-dNEWPDF=false" | args]
+    else
+      args
+    end
   end
 
   defp ghostscript_executable do
