@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule ChromicPDF.Protocol do
   @moduledoc false
 

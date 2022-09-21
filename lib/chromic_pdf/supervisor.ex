@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule ChromicPDF.Supervisor do
   @moduledoc """
   Use this for multiple ChromicPDF instances.

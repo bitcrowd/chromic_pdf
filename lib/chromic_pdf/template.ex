@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule ChromicPDF.Template do
   @moduledoc """
   Helper functions for page styling.

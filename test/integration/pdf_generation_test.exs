@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule ChromicPDF.PDFGenerationTest do
   use ExUnit.Case, async: false
   import ExUnit.CaptureLog

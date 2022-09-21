@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule ChromicPDF do
   @moduledoc """
   ChromicPDF is a fast HTML-to-PDF/A renderer based on Chrome & Ghostscript.
