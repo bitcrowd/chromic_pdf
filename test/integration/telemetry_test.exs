@@ -17,8 +17,16 @@ defmodule ChromicPDF.TelemetryTest do
   end
 
   defp with_handler(event, fun) do
-    :ok = :telemetry.attach("#{event}_start", [:chromic_pdf, event, :start], &handler/4, nil)
-    :ok = :telemetry.attach("#{event}_stop", [:chromic_pdf, event, :stop], &handler/4, nil)
+    :ok =
+      :telemetry.attach(
+        "#{event}_start",
+        [:chromic_pdf, event, :start],
+        &__MODULE__.handler/4,
+        nil
+      )
+
+    :ok =
+      :telemetry.attach("#{event}_stop", [:chromic_pdf, event, :stop], &__MODULE__.handler/4, nil)
 
     try do
       fun.()
