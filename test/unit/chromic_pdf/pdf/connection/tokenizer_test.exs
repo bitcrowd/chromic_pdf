@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule ChromicPDF.Connection.TokenizerTest do
   use ExUnit.Case, async: true
   import ChromicPDF.Connection.Tokenizer

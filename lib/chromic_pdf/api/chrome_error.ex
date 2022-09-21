@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule ChromicPDF.ChromeError do
   @moduledoc """
   Exception in the communication with Chrome.

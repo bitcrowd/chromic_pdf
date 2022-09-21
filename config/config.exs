@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 import Config
 
 # Set this to true to see protocol messages.

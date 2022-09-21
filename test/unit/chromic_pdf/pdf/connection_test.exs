@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule ChromicPDF.ConnectionTest do
   use ExUnit.Case
   import Mox

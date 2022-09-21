@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule ChromicPDF.ConnectionLostTest do
   use ExUnit.Case, async: false
   alias ChromicPDF.Connection

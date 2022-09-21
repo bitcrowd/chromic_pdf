@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule ChromicPDF.SessionRestartTest do
   use ExUnit.Case, async: false
   import ChromicPDF.Assertions

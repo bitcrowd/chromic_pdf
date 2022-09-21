@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 defmodule ChromicPDF.ZUGFeRDTest do
   use ExUnit.Case, async: false
   import ChromicPDF.Utils, only: [system_cmd!: 2]
