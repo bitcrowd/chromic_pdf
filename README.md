@@ -94,6 +94,6 @@ For running the full suite of integration tests, please install and have in your
 
 ## Copyright and License
 
-Copyright (c) 2019–2021 Bitcrowd GmbH
+Copyright (c) 2019–2022 Bitcrowd GmbH
 
 Licensed under the Apache License 2.0. See [LICENSE](LICENSE) file for details.
