@@ -132,7 +132,7 @@ defmodule ChromicPDF.Protocol do
       Known causes:
 
       1) External URLs in `<link>` tags in the header/footer templates cause Chrome to crash.
-      2) Shared memory exhaustion causes Chrome to crash. Docker containers only have 64 MB by default available in /dev/shm. Pass --disable-dev-shm-usage as a Chrome flag to use /tmp for this purpose instead, or increase the amount of shared memory available to the container with --shm-size.
+      2) Shared memory exhaustion can cause Chrome to crash. Depending on your environment, the available shared memory at /dev/shm may be too small for your use-case. This may especially affect you if you run ChromicPDF in a container, as, for instance, the Docker runtime provides only 64 MB to containers by default. Pass --disable-dev-shm-usage as a Chrome flag to use /tmp for this purpose instead (via the `chrome_args` option), or increase the amount of shared memory available to the container (see --shm-size for Docker).
       """)
     end
   end
