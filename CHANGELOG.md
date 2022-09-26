@@ -1,7 +1,9 @@
 ## Unreleased
 
 ### Added
-- Add `disable_scripts` global option. See the security section of `lib/chromic_pdf.ex` for more details
+
+- Add `disable_scripts` global option.
+
 ## [1.2.2] - 2022-07-18
 
 ### Fixed 
