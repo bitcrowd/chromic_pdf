@@ -183,6 +183,7 @@ defmodule ChromicPDF.Supervisor do
 
       @type navigate_option ::
               {:set_cookie, map()}
+              | {:disable_scripts, boolean()}
               | evaluate_option()
               | wait_for_option()
 

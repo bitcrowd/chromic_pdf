@@ -1,3 +1,7 @@
+## Unreleased
+
+### Added
+- Add disable_scripts option to `print_to_pdf/2`. 
 ## [1.2.2] - 2022-07-18
 
 ### Fixed 
