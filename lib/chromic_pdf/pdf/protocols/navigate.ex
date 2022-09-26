@@ -6,17 +6,6 @@ defmodule ChromicPDF.Navigate do
   import ChromicPDF.ProtocolMacros
 
   steps do
-    if_option :disable_scripts do
-      call(
-        :disable_scripts,
-        "Emulation.setScriptExecutionDisabled",
-        [{"value", :disable_scripts}],
-        %{}
-      )
-
-      await_response(:scripts_disabled, [])
-    end
-
     if_option :set_cookie do
       call(:set_cookie, "Network.setCookie", &Map.fetch!(&1, :set_cookie), %{})
       await_response(:cookie_set, [])

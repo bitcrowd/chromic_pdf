@@ -41,6 +41,15 @@ defmodule ChromicPDF.SpawnSession do
       )
     end
 
+    if_option :disable_scripts do
+      call(
+        :disable_scripts,
+        "Emulation.setScriptExecutionDisabled",
+        [{"value", :disable_scripts}],
+        %{}
+      )
+    end
+
     if_option {:ignore_certificate_errors, true} do
       call(:ignore_certificate_errors, "Security.setIgnoreCertificateErrors", [], %{
         "ignore" => true
