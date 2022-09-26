@@ -56,6 +56,18 @@ defmodule ChromicPDF do
         [offline: true]
       end
 
+  ### Disabling scripts
+  
+  Scripts are the biggest attack vector in a browser, potentially leading to many different
+  exploits in case of XSS, such as SSRF or even code execution in case of a v8 exploit. 
+  They can be disabled using the DevTools command [Emulation.setScriptExecutionDisabled](https://chromedevtools.github.io/devtools-protocol/tot/Emulation/#method-setScriptExecutionDisabled).
+  Note that this doesn't prevent other features, like the `evaluate` option from working,
+  it simply prevents scripts from being executed on the page.
+
+      def chromic_pdf_opts do
+        [disable_scripts: true]
+      end
+
   ### Chrome Sandbox in Docker containers
 
   By default, ChromicPDF will allow Chrome to make use of its own ["sandbox" process jail](https://chromium.googlesource.com/chromium/src/+/master/docs/design/sandbox.md).

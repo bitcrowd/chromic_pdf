@@ -1,7 +1,7 @@
 ## Unreleased
 
 ### Added
-- Add disable_scripts option to `print_to_pdf/2`. 
+- Add disable_scripts option to `print_to_pdf/2`. See the security section of `lib/chromic_pdf.ex` for more details
 ## [1.2.2] - 2022-07-18
 
 ### Fixed 
