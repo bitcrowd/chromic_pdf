@@ -224,14 +224,17 @@ defmodule ChromicPDF.PDFGenerationTest do
         assert String.contains?(text, "Dynamic content from Javascript")
       end)
     end
+  end
+
+  describe "disable scripts" do
+    setup do
+      start_supervised!({ChromicPDF, disable_scripts: true})
+      :ok
+    end
 
     @tag :pdftotext
     test "it renders noscript tags when given disable_scripts: true" do
-      params = [
-        disable_scripts: true
-      ]
-
-      print_to_pdf({:url, "file://#{@test_dynamic_html}"}, params, fn text ->
+      print_to_pdf({:url, "file://#{@test_dynamic_html}"}, [], fn text ->
         assert String.contains?(text, "Javascript is disabled")
         assert !String.contains?(text, "Dynamic content from Javascript")
       end)
@@ -240,8 +243,7 @@ defmodule ChromicPDF.PDFGenerationTest do
     @tag :pdftotext
     test "it can evaluate scripts with disable_scripts: true" do
       params = [
-        evaluate: %{expression: @script},
-        disable_scripts: true
+        evaluate: %{expression: @script}
       ]
 
       print_to_pdf({:html, File.read!(@test_html)}, params, fn text ->

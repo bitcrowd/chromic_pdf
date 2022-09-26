@@ -183,7 +183,6 @@ defmodule ChromicPDF.Supervisor do
 
       @type navigate_option ::
               {:set_cookie, map()}
-              | {:disable_scripts, boolean()}
               | evaluate_option()
               | wait_for_option()
 
@@ -214,6 +213,7 @@ defmodule ChromicPDF.Supervisor do
 
       @type global_option ::
               {:offline, boolean()}
+              | {:disable_scripts, boolean()}
               | {:max_session_uses, non_neg_integer()}
               | {:session_pool, [session_pool_option()]}
               | {:no_sandbox, boolean()}
