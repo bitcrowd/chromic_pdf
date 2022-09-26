@@ -57,7 +57,7 @@ defmodule ChromicPDF do
       end
 
   ### Disabling scripts
-  
+
   Scripts are the biggest attack vector in a browser, potentially leading to many different
   exploits in case of XSS, such as SSRF or even code execution in case of a v8 exploit. 
   They can be disabled using the DevTools command [Emulation.setScriptExecutionDisabled](https://chromedevtools.github.io/devtools-protocol/tot/Emulation/#method-setScriptExecutionDisabled).
