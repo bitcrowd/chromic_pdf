@@ -39,6 +39,8 @@ defmodule ChromicPDF.SpawnSession do
           "uploadThroughput" => 0
         }
       )
+
+      # Intentionally not awaiting the response to speed up session spawning.
     end
 
     if_option :disable_scripts do
@@ -48,6 +50,8 @@ defmodule ChromicPDF.SpawnSession do
         [{"value", :disable_scripts}],
         %{}
       )
+
+      # Intentionally not awaiting the response to speed up session spawning.
     end
 
     if_option {:ignore_certificate_errors, true} do
