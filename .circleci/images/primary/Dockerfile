@@ -1,13 +1,21 @@
-FROM circleci/elixir:1.11.2
+FROM hexpm/elixir:1.14.0-erlang-25.1-debian-buster-20220801
 
 USER root
+
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends \
+  && apt-get install -y --no-install-recommends \
     chromium \
+    chromium-sandbox \
     ghostscript \
+    # for verapdf & ZUV
     openjdk-11-jre \
+    # for pdftotext & friends
     poppler-utils \
-	&& rm -rf /var/lib/apt/lists/*
+    # for 'kill'
+    procps \
+    # temporary for installation below
+    wget \
+    unzip
 
 RUN mkdir /opt/verapdf
 WORKDIR /opt/verapdf
@@ -22,5 +30,14 @@ WORKDIR /opt/zuv
 RUN wget https://github.com/ZUGFeRD/ZUV/releases/download/v0.8.3/ZUV-0.8.3.jar
 ENV ZUV_JAR /opt/zuv/ZUV-0.8.3.jar
 
+RUN apt-get remove -y \
+    wget \
+    unzip \
+  && apt-get autoremove -y \
+	&& rm -rf /var/lib/apt/lists/*
+
+RUN adduser --disabled-password --gecos "" circleci
 USER circleci
 WORKDIR /home/circleci
+
+RUN mix local.hex --force && mix local.rebar

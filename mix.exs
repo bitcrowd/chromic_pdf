@@ -83,10 +83,7 @@ defmodule ChromicPdf.MixProject do
       {:phoenix, "~> 1.5", only: [:dev, :integration]},
       {:phoenix_html, "~> 2.14", only: [:dev, :integration]},
       {:plug, "~> 1.11", only: [:dev, :integration]},
-      {:plug_cowboy, "~> 2.4", only: [:integration]},
-
-      # NOTE: cowboy 2.9.0 fails with ranch error
-      {:cowboy, "< 2.9.0", only: [:integration]}
+      {:plug_cowboy, "~> 2.5", only: [:integration]}
     ]
   end
 
