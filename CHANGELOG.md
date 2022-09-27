@@ -1,18 +1,19 @@
-## Unreleased
+## [1.3.0] - 2022-09-27
 
 ### Added
 
-- Add `disable_scripts` global option.
+- Add `disable_scripts` global option. (@MaeIsBad)
+- Add error details about potential shared memory exhaustion. (@WilliamVenner)
 
 ## [1.2.2] - 2022-07-18
 
-### Fixed 
+### Fixed
 
 - Use old pdf interpreter with ghostcript > 9.56 to avoid segfaults (see #158)
 
 ## [1.2.1] - 2022-07-12
 
-### Fixed 
+### Fixed
 
 - Incompatibility with ghostcript 9.56.1 (fixes #153)
 - Added search paths for chrome executable (fixes #151)
