@@ -34,21 +34,47 @@ defmodule ChromicPDF do
 
   ## Security Considerations
 
-  Before adding a browser to your application's (perhaps already long) list of dependencies, you
-  may want consider the security hints below.
+  By default, ChromicPDF will allow Chrome to make use of its own ["sandbox" process jail](https://chromium.googlesource.com/chromium/src/+/master/docs/design/sandbox.md).
+  The sandbox tries to limit system resource access of the renderer processes to the minimum
+  resources they require to perform their task. It is designed to make displaying HTML pages
+  relatively safe, in terms of preventing undesired access of a page to the host operating system.
+
+  Nevertheless, running a browser as part of your application, especially when used to process
+  user-supplied content, significantly increases your attack surface. Hence, before adding
+  ChromicPDF to your application's (perhaps already long) list of dependencies, you may want
+  to consider the security hints below.
+
+  ### Architectural isolation
+
+  A great, if not the best option to mitigate security risks due to the use of ChromicPDF / a
+  Browser in your stack, is to turn your "document renderer" component into a containerized
+  service with a small RPC interface. This will create a nice barrier between Chrome and the rest
+  of your application, so that even if an attacker manages to escape Chrome's sandbox, they will
+  still be jailed within the container. It also has other benefits like better control of
+  resources, e.g. how much CPU you want to dedicate to PDF rendering.
 
   ### Escape user-supplied data
 
-  Make sure to escape any user-provided data with something like [`Phoenix.HTML.html_escape`](https://hexdocs.pm/phoenix_html/Phoenix.HTML.html#html_escape/1).
-  Chrome is designed to make displaying HTML pages relatively safe, in terms of preventing
-  undesired access of a page to the host operating system. However, the attack surface of your
-  application is still increased. Running this in a containerized application with a small RPC
-  interface creates an additional barrier (and has other benefits).
+  Make sure to always escape user-provided data with something like [`Phoenix.HTML.html_escape`](https://hexdocs.pm/phoenix_html/Phoenix.HTML.html#html_escape/1).
+  This should prevent an attacker from injecting malicious scripts into your template.
+
+  ### Disabling scripts
+
+  If your template allows, you can disable JavaScript execution altogether (using the
+  DevTools command [`Emulation.setScriptExecutionDisabled`](https://chromedevtools.github.io/devtools-protocol/tot/Emulation/#method-setScriptExecutionDisabled))
+  with the `:disable_scripts` option:
+
+      def chromic_pdf_opts do
+        [disable_scripts: true]
+      end
+
+  Note that this doesn't prevent other features like the `evaluate` option from working, it
+  solely applies to scripts being supplied by the rendered page itself.
 
   ### Running in offline mode
 
-  For some apparent security bonus, browser targets can be spawned in "offline mode" (using the
-  DevTools command [`Network.emulateNetworkConditions`](https://chromedevtools.github.io/devtools-protocol/tot/Network#method-emulateNetworkConditions).
+  To prevent your templates from accessing any remote hosts, the browser targets can be spawned
+  in "offline mode" (using the DevTools command [`Network.emulateNetworkConditions`](https://chromedevtools.github.io/devtools-protocol/tot/Network#method-emulateNetworkConditions)).
   Chrome targets with network conditions set to `offline` can't resolve any external URLs (e.g.
   `https://`), neither entered as navigation URL nor contained within the HTML body.
 
@@ -56,27 +82,11 @@ defmodule ChromicPDF do
         [offline: true]
       end
 
-  ### Disabling scripts
-
-  Scripts are the biggest attack vector in a browser, potentially leading to many different
-  exploits in case of XSS, such as SSRF or even code execution in case of a v8 exploit. 
-  They can be disabled using the DevTools command [Emulation.setScriptExecutionDisabled](https://chromedevtools.github.io/devtools-protocol/tot/Emulation/#method-setScriptExecutionDisabled).
-  Note that this doesn't prevent other features, like the `evaluate` option from working,
-  it simply prevents scripts from being executed on the page.
-
-      def chromic_pdf_opts do
-        [disable_scripts: true]
-      end
-
   ### Chrome Sandbox in Docker containers
 
-  By default, ChromicPDF will allow Chrome to make use of its own ["sandbox" process jail](https://chromium.googlesource.com/chromium/src/+/master/docs/design/sandbox.md).
-  The sandbox tries to limit system resource access of the renderer processes to the minimum
-  resources they require to perform their task.
-
-  However, in Docker containers running Linux images (e.g. images based on Alpine), and which
-  are configured to run their main job as a non-root user, this causes Chrome to crash on startup
-  as it requires root privileges to enter the sandbox.
+  In Docker containers running Linux images (e.g. images based on Alpine), and which
+  are configured to run their main job as a non-root user, the sandbox may cause Chrome to crash
+  on startup as it requires root privileges.
 
   The error output (`discard_stderr: false` option) looks as follows:
 
