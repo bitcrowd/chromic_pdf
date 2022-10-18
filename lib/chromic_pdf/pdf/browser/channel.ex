@@ -22,7 +22,7 @@ defmodule ChromicPDF.Browser.Channel do
   def run_protocol(pid, %Protocol{} = protocol, timeout) do
     GenServer.call(pid, {:run_protocol, protocol}, timeout)
   catch
-    :exit, {:timeout, {GenServer, :call, [_pid, {:run_protocol, _protocol}, _timeout]}} ->
+    :exit, {:timeout, {GenServer, :call, [_pid, {:run_protocol, protocol}, _timeout]}} ->
       raise("""
       Timeout in Channel.run_protocol/3!
 
@@ -35,6 +35,12 @@ defmodule ChromicPDF.Browser.Channel do
 
       If you are *not* printing large PDFs but your print jobs still time out, this is likely a
       bug in ChromicPDF. Please open an issue on the issue tracker.
+
+      ---
+
+      Current protocol:
+
+      #{inspect(protocol, pretty: true)}
       """)
   end
 

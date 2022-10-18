@@ -138,4 +138,73 @@ defmodule ChromicPDF.Protocol do
       """)
     end
   end
+
+  defimpl Inspect do
+    @filtered "[FILTERED]"
+
+    @allowed_values %{
+      result_fun: true,
+      steps: true,
+      state: %{
+        :capture_screenshot => %{
+          "format" => true,
+          "quality" => true,
+          "clip" => true,
+          "fromSurface" => true,
+          "captureBeyondViewport" => true
+        },
+        :print_to_pdf => %{
+          "landscape" => true,
+          "displayHeaderFooter" => true,
+          "printBackground" => true,
+          "scale" => true,
+          "paperWidth" => true,
+          "paperHeight" => true,
+          "marginTop" => true,
+          "marginBottom" => true,
+          "marginLeft" => true,
+          "marginRight" => true,
+          "pageRanges" => true,
+          "preferCSSPageSize" => true
+        },
+        :source_type => true,
+        "sessionId" => true,
+        :wait_for => true,
+        :evaluate => true,
+        :size => true,
+        :init_timeout => true,
+        :timeout => true,
+        :offline => true,
+        :disable_scripts => true,
+        :max_session_uses => true,
+        :session_pool => true,
+        :no_sandbox => true,
+        :discard_stderr => true,
+        :chrome_args => true,
+        :chrome_executable => true,
+        :ignore_certificate_errors => true,
+        :ghostscript_pool => true,
+        :on_demand => true,
+        :__protocol__ => true
+      }
+    }
+
+    def inspect(%ChromicPDF.Protocol{} = protocol, opts) do
+      protocol
+      |> Map.from_struct()
+      |> filter(@allowed_values)
+      |> then(fn map -> struct!(ChromicPDF.Protocol, map) end)
+      |> Inspect.Any.inspect(opts)
+    end
+
+    defp filter(map, allowed) when is_map(map) and is_map(allowed) do
+      Map.new(map, fn {key, value} ->
+        case Map.get(allowed, key) do
+          nil -> {key, @filtered}
+          true -> {key, value}
+          nested when is_map(nested) -> {key, filter(value, nested)}
+        end
+      end)
+    end
+  end
 end

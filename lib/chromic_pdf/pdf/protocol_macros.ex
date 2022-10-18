@@ -24,7 +24,7 @@ defmodule ChromicPDF.ProtocolMacros do
       def new(opts \\ []) do
         Protocol.new(
           build_steps(opts),
-          Enum.into(opts, %{})
+          initial_state(opts)
         )
       end
 
@@ -32,8 +32,20 @@ defmodule ChromicPDF.ProtocolMacros do
       def new(session_id, opts) do
         Protocol.new(
           build_steps(opts),
-          opts |> Enum.into(%{}) |> Map.put("sessionId", session_id)
+          initial_state(session_id, opts)
         )
+      end
+
+      defp initial_state(opts) do
+        opts
+        |> Enum.into(%{})
+        |> Map.put(:__protocol__, __MODULE__)
+      end
+
+      defp initial_state(session_id, opts) do
+        opts
+        |> initial_state()
+        |> Map.put("sessionId", session_id)
       end
 
       defp build_steps(opts) do

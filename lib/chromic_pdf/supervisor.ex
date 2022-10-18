@@ -209,6 +209,7 @@ defmodule ChromicPDF.Supervisor do
               {:size, non_neg_integer()}
               | {:init_timeout, timeout()}
               | {:timeout, timeout()}
+
       @type ghostscript_pool_option :: {:size, non_neg_integer()}
 
       @type global_option ::
