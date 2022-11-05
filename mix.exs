@@ -28,13 +28,14 @@ defmodule ChromicPdf.MixProject do
       source_url: @source_url,
       homepage_url: @source_url,
       docs: [
+        main: "ChromicPDF",
+        logo: "assets/icon.png",
         extras: [
+          "README.md": [title: "Read Me"],
           "CHANGELOG.md": [title: "Changelog"],
-          LICENSE: [title: "License"],
-          "README.md": [title: "Overview"]
+          LICENSE: [title: "License"]
         ],
         skip_undefined_reference_warnings_on: ["CHANGELOG.md"],
-        main: "readme",
         source_url: @source_url,
         source_ref: "v#{@version}",
         formatters: ["html"],
