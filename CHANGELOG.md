@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changed
+
+- Included the inspected `ChromicPDF.Protocol` in the timeout exception to improve debugging.
+
 ## [1.3.0] - 2022-09-27
 
 ### Added

@@ -346,8 +346,9 @@ defmodule ChromicPDF.PDFGenerationTest do
           :timer.sleep(10)
         end)
 
-      assert err =~ "(RuntimeError) Timeout in Channel.run_protocol"
+      assert err =~ "Timeout in Channel.run_protocol"
       assert err =~ "within the configured\n1 milliseconds"
+      assert err =~ "%ChromicPDF.Protocol{"
     end
   end
 
