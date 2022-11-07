@@ -343,7 +343,7 @@ defmodule ChromicPDF.PDFGenerationTest do
         capture_log(fn ->
           start_supervised!({ChromicPDF, session_pool: [init_timeout: 1]})
           # wait for nimble pool to init
-          :timer.sleep(10)
+          :timer.sleep(100)
         end)
 
       assert err =~ "Timeout in Channel.run_protocol"
