@@ -82,7 +82,7 @@ defmodule ChromicPdf.MixProject do
       {:junit_formatter, "~> 3.1", only: [:test, :integration]},
       {:mox, "~> 1.0", only: [:test]},
       {:phoenix, "~> 1.5", only: [:dev, :integration]},
-      {:phoenix_html, "~> 2.14", only: [:dev, :integration]},
+      {:phoenix_html, "~> 3.0", only: [:dev, :integration]},
       {:plug, "~> 1.11", only: [:dev, :integration]},
       {:plug_cowboy, "~> 2.5", only: [:integration]}
     ]

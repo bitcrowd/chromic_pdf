@@ -3,6 +3,9 @@
 ### Changed
 
 - Included the inspected `ChromicPDF.Protocol` in the timeout exception to improve debugging.
+- Bump jason to 1.3
+- Bump telemetry to 1.1
+- Updated dev dependencies
 
 ## [1.3.0] - 2022-09-27
 
