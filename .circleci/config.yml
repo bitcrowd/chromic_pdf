@@ -16,21 +16,21 @@ jobs:
       - run: mix local.rebar --force
       - restore_cache:
           keys:
-            - v4-deps-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
-            - v4-deps-cache-{{ .Branch }}
-            - v4-deps-cache
+            - v6-deps-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+            - v6-deps-cache-{{ .Branch }}
+            - v6-deps-cache
       - run: mix deps.get
       - save_cache:
-          key: v4-deps-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+          key: v6-deps-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
           paths: deps
       - save_cache:
-          key: v4-deps-cache-{{ .Branch }}
+          key: v6-deps-cache-{{ .Branch }}
           paths: deps
       - save_cache:
-          key: v4-deps-cache
+          key: v6-deps-cache
           paths: deps
       - save_cache:
-          key: v4-repo-cache-setup-{{ .Environment.CIRCLE_SHA1 }}
+          key: v6-repo-cache-setup-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - ~/.mix
             - ~/repo
@@ -41,42 +41,44 @@ jobs:
       MIX_ENV: test
     steps:
       - restore_cache:
-          key: v4-repo-cache-setup-{{ .Environment.CIRCLE_SHA1 }}
+          key: v6-repo-cache-setup-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
           keys:
-            - v4-build-cache-test-{{ .Branch }}
-            - v4-build-cache-test
+            - v6-build-cache-test-{{ .Branch }}
+            - v6-build-cache-test
       - restore_cache:
           keys:
-            - v4-plt-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
-            - v4-plt-cache-{{ .Branch }}
-            - v4-plt-cache
+            - v6-plt-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+            - v6-plt-cache-{{ .Branch }}
+            - v6-plt-cache
       - run: mix compile
       - run: mix dialyzer --plt
       - save_cache:
-          key: v4-build-cache-test-{{ .Branch }}
+          key: v6-build-cache-test-{{ .Branch }}
           paths: _build/test
       - save_cache:
-          key: v4-build-cache-test
+          key: v6-build-cache-test
           paths: _build/test
       - save_cache:
-          key: v4-plt-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+          key: v6-plt-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
           paths:
             - .plts
       - save_cache:
-          key: v4-plt-cache-{{ .Branch }}
+          key: v6-plt-cache-{{ .Branch }}
           paths:
             - .plts
       - save_cache:
-          key: v4-plt-cache
+          key: v6-plt-cache
           paths:
             - .plts
       - save_cache:
-          key: v4-repo-cache-test-{{ .Environment.CIRCLE_SHA1 }}
+          key: v6-repo-cache-test-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - ~/.mix
             - ~/repo
 
+  # For some reason rebar writes into `deps` again in the compile step
+  # https://github.com/erlang/rebar3/issues/1824#issuecomment-464486224
   integration_env:
     <<: *base
     environment:
@@ -84,20 +86,24 @@ jobs:
     steps:
       - restore_cache:
           keys:
-            - v4-repo-cache-setup-{{ .Environment.CIRCLE_SHA1 }}
+            - v6-repo-cache-setup-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
           keys:
-            - v4-build-cache-integration-{{ .Branch }}
-            - v4-build-cache-integration
+            - v6-build-cache-integration-{{ .Branch }}
+            - v6-build-deps-cache-integration
       - run: mix compile
       - save_cache:
-          key: v4-build-cache-integration-{{ .Branch }}
-          paths: _build/integration
+          key: v6-build-deps-cache-integration-{{ .Branch }}
+          paths:
+            - _build/integration
+            - deps
       - save_cache:
-          key: v4-build-cache-integration
-          paths: _build/integration
+          key: v6-build-deps-cache-integration
+          paths:
+            - _build/integration
+            - deps
       - save_cache:
-          key: v4-repo-cache-integration-{{ .Environment.CIRCLE_SHA1 }}
+          key: v6-repo-cache-integration-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - ~/.mix
             - ~/repo
@@ -108,7 +114,7 @@ jobs:
       MIX_ENV: test
     steps:
       - restore_cache:
-          key: v4-repo-cache-test-{{ .Environment.CIRCLE_SHA1 }}
+          key: v6-repo-cache-test-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Run Linter
           command: mix lint
@@ -119,7 +125,7 @@ jobs:
       MIX_ENV: test
     steps:
       - restore_cache:
-          key: v4-repo-cache-test-{{ .Environment.CIRCLE_SHA1 }}
+          key: v6-repo-cache-test-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Run Unit Tests
           command: mix test
@@ -132,7 +138,7 @@ jobs:
       MIX_ENV: integration
     steps:
       - restore_cache:
-          key: v4-repo-cache-integration-{{ .Environment.CIRCLE_SHA1 }}
+          key: v6-repo-cache-integration-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Run Integration Tests
           command: mix test
