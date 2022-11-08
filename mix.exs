@@ -84,7 +84,7 @@ defmodule ChromicPdf.MixProject do
       {:phoenix, "~> 1.5", only: [:dev, :integration]},
       {:phoenix_html, "~> 3.0", only: [:dev, :integration]},
       {:plug, "~> 1.11", only: [:dev, :integration]},
-      {:plug_cowboy, "~> 2.5", only: [:integration]}
+      {:bandit, "~> 0.5.11", only: [:integration]}
     ]
   end
 

@@ -283,7 +283,7 @@ defmodule ChromicPDF.PDFGenerationTest do
 
     setup do
       start_supervised!({ChromicPDF, offline: false})
-      start_supervised!(TestServer.cowboy(:http))
+      start_supervised!(TestServer.bandit(:http))
 
       %{port: TestServer.port(:http)}
     end
@@ -304,7 +304,7 @@ defmodule ChromicPDF.PDFGenerationTest do
   describe "certificate error handling" do
     setup do
       start_supervised!(ChromicPDF)
-      start_supervised!(TestServer.cowboy(:https))
+      start_supervised!(TestServer.bandit(:https))
 
       %{port: TestServer.port(:https)}
     end
@@ -323,7 +323,7 @@ defmodule ChromicPDF.PDFGenerationTest do
   describe ":ignore_certificate_errors option" do
     setup do
       start_supervised!({ChromicPDF, ignore_certificate_errors: true})
-      start_supervised!(TestServer.cowboy(:https))
+      start_supervised!(TestServer.bandit(:https))
 
       %{port: TestServer.port(:https)}
     end

@@ -10,12 +10,14 @@ defmodule ChromicPDF.TestServer do
     https: 44_286
   }
 
-  @cowboy_opts [
+  @bandit_opts [
     http: [port: @ports[:http]],
     https: [
       port: @ports[:https],
-      keyfile: Path.expand("../../fixtures/cert_key.pem", __ENV__.file),
-      certfile: Path.expand("../../fixtures/cert.pem", __ENV__.file)
+      transport_options: [
+        keyfile: Path.expand("../../fixtures/cert_key.pem", __ENV__.file),
+        certfile: Path.expand("../../fixtures/cert.pem", __ENV__.file)
+      ]
     ]
   ]
 
@@ -33,7 +35,7 @@ defmodule ChromicPDF.TestServer do
 
   def port(scheme), do: Map.fetch!(@ports, scheme)
 
-  def cowboy(scheme) do
-    {Plug.Cowboy, scheme: scheme, plug: __MODULE__, options: @cowboy_opts[scheme]}
+  def bandit(scheme) do
+    {Bandit, scheme: scheme, plug: __MODULE__, options: @bandit_opts[scheme]}
   end
 end
