@@ -73,7 +73,7 @@ defmodule ChromicPDF.Connection do
     {msgs, tokenizer} = Tokenizer.tokenize(data, state.tokenizer)
 
     for msg <- msgs do
-      send(state.parent_pid, {:msg_in, JsonRPC.decode(msg)})
+      send(state.parent_pid, {:chrome_message, JsonRPC.decode(msg)})
     end
 
     {:noreply, %{state | tokenizer: tokenizer}}

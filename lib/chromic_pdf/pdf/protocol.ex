@@ -3,7 +3,6 @@
 defmodule ChromicPDF.Protocol do
   @moduledoc false
 
-  require Logger
   alias ChromicPDF.Connection.JsonRPC
 
   # A protocol is a sequence of JsonRPC calls and responses/notifications.
@@ -27,9 +26,10 @@ defmodule ChromicPDF.Protocol do
   #   message is matched, the await step is removed from the queue. Multiple await steps in
   #   sequence are matched **out of order** as messages from the browser are often received out
   #   of order as well, from different OS processes.
-  # * The output step is a simple function executed at the end of a protocol to send the protocol
-  #   result back to the client (using the `result_fun`), applying a mapper function before. If
-  #   no output step is defined in a protocol, the client is not sent a reply.
+  # * The output step is a simple function executed at the end of a protocol to fetch the result
+  #   of the operation from the state. The result is then passed to the client in the channel.
+  #   If no output step exists, the protocol returns `:ok`.
+  #   Output step has to be the last step of the protocol.
 
   @type call_fun :: (state(), dispatch() -> state() | error())
   @type call_step :: {:call, call_fun()}
@@ -40,102 +40,62 @@ defmodule ChromicPDF.Protocol do
   @type output_fun :: (state() -> any())
   @type output_step :: {:output, output_fun()}
 
-  @type result :: {:ok, any()} | {:error, term()}
-  @type result_fun :: (result() -> any())
+  @type result :: :ok | {:ok, any()} | {:error, term()}
 
   @callback increment_session_use_count?() :: boolean()
   @callback new(keyword()) :: __MODULE__.t()
   @callback new(JsonRPC.session_id(), keyword()) :: __MODULE__.t()
 
-  @type t :: %__MODULE__{
-          steps: [step()],
-          state: state(),
-          result_fun: result_fun() | nil
-        }
+  @type t :: %__MODULE__{steps: [step()], state: state()}
 
-  @enforce_keys [:steps, :state, :result_fun]
-  defstruct [:steps, :state, :result_fun]
+  @enforce_keys [:steps, :state]
+  defstruct [:steps, :state]
 
   @spec new([step()], state()) :: __MODULE__.t()
   def new(steps, initial_state \\ %{}) do
-    %__MODULE__{
-      steps: steps,
-      state: initial_state,
-      result_fun: nil
-    }
+    %__MODULE__{steps: steps, state: initial_state}
   end
 
-  @spec init(__MODULE__.t(), result_fun(), dispatch()) :: __MODULE__.t()
-  def init(%__MODULE__{} = protocol, result_fun, dispatch) do
-    advance(%{protocol | result_fun: result_fun}, dispatch)
+  # Runs protocol instructions until all done or await instruction reached.
+  @spec run(__MODULE__.t(), dispatch()) :: {:await, __MODULE__.t()} | {:halt, result()}
+  def run(%__MODULE__{state: {:error, error}}, _dispatch) do
+    {:halt, {:error, error}}
   end
 
-  defp advance(%__MODULE__{state: {:error, error}, result_fun: result_fun} = protocol, _dispatch) do
-    result_fun.({:error, error})
-    %{protocol | steps: []}
-  end
+  def run(%__MODULE__{steps: []}, _dispatch), do: {:halt, :ok}
 
-  defp advance(%__MODULE__{steps: []} = protocol, _dispatch), do: protocol
-  defp advance(%__MODULE__{steps: [{:await, _fun} | _rest]} = protocol, _dispatch), do: protocol
+  def run(%__MODULE__{steps: [{:await, _fun} | _rest]} = protocol, _dispatch),
+    do: {:await, protocol}
 
-  defp advance(%__MODULE__{steps: [{:call, fun} | rest], state: state} = protocol, dispatch) do
+  def run(%__MODULE__{steps: [{:call, fun} | rest], state: state} = protocol, dispatch) do
     state = fun.(state, dispatch)
-    advance(%{protocol | steps: rest, state: state}, dispatch)
+    run(%{protocol | steps: rest, state: state}, dispatch)
   end
 
-  defp advance(
-         %__MODULE__{steps: [{:output, output_fun} | rest], state: state, result_fun: result_fun} =
-           protocol,
-         dispatch
-       ) do
-    result_fun.({:ok, output_fun.(state)})
-    advance(%{protocol | steps: rest}, dispatch)
+  def run(%__MODULE__{steps: [{:output, output_fun}], state: state}, _dispatch) do
+    {:halt, {:ok, output_fun.(state)}}
   end
 
-  @spec run(__MODULE__.t(), JsonRPC.message(), dispatch()) :: __MODULE__.t()
-  def run(protocol, msg, dispatch) do
-    warn_on_inspector_crash!(msg)
-
-    protocol
-    |> test(msg)
-    |> advance(dispatch)
-  end
-
-  defp test(%__MODULE__{steps: steps, state: state} = protocol, msg) do
+  # Returns updated protocol if message could be matched, :no_match otherwise.
+  @spec match_chrome_message(__MODULE__.t(), JsonRPC.message()) ::
+          :no_match | {:match, __MODULE__.t()}
+  def match_chrome_message(%__MODULE__{steps: steps, state: state} = protocol, msg) do
     {awaits, rest} = Enum.split_while(steps, fn {type, _fun} -> type == :await end)
 
-    case do_test(awaits, [], state, msg) do
-      {:error, error} -> %{protocol | steps: [], state: {:error, error}}
-      {new_head, new_state} -> %{protocol | steps: new_head ++ rest, state: new_state}
+    case do_match_chrome_message(awaits, [], state, msg) do
+      :no_match -> :no_match
+      {:error, error} -> {:match, %{protocol | state: {:error, error}}}
+      {new_head, new_state} -> {:match, %{protocol | steps: new_head ++ rest, state: new_state}}
     end
   end
 
-  defp do_test([], acc, state, _msg), do: {acc, state}
+  defp do_match_chrome_message([], _acc, _state, _msg), do: :no_match
 
-  defp do_test([{:await, fun} | rest], acc, state, msg) do
+  defp do_match_chrome_message([{:await, fun} | rest], acc, state, msg) do
     case fun.(state, msg) do
-      :no_match -> do_test(rest, acc ++ [{:await, fun}], state, msg)
+      :no_match -> do_match_chrome_message(rest, acc ++ [{:await, fun}], state, msg)
       {:match, new_state} -> {acc ++ rest, new_state}
       {:error, error} -> {:error, error}
-    end
-  end
-
-  @spec finished?(__MODULE__.t()) :: boolean()
-  def finished?(%__MODULE__{steps: []}), do: true
-  def finished?(%__MODULE__{}), do: false
-
-  defp warn_on_inspector_crash!(msg) do
-    if match?(%{"method" => "Inspector.targetCrashed"}, msg) do
-      Logger.error("""
-      ChromicPDF received an 'Inspector.targetCrashed' message.
-
-      This means an active Chrome tab has died and your current operation is going to time out.
-
-      Known causes:
-
-      1) External URLs in `<link>` tags in the header/footer templates cause Chrome to crash.
-      2) Shared memory exhaustion can cause Chrome to crash. Depending on your environment, the available shared memory at /dev/shm may be too small for your use-case. This may especially affect you if you run ChromicPDF in a container, as, for instance, the Docker runtime provides only 64 MB to containers by default. Pass --disable-dev-shm-usage as a Chrome flag to use /tmp for this purpose instead (via the `chrome_args` option), or increase the amount of shared memory available to the container (see --shm-size for Docker).
-      """)
     end
   end
 
@@ -143,7 +103,6 @@ defmodule ChromicPDF.Protocol do
     @filtered "[FILTERED]"
 
     @allowed_values %{
-      result_fun: true,
       steps: true,
       state: %{
         :capture_screenshot => %{

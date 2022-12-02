@@ -3,14 +3,8 @@
 defmodule ChromicPDF.PDFGenerationTest do
   use ExUnit.Case, async: false
   import ExUnit.CaptureLog
-  import ChromicPDF.Utils, only: [system_cmd!: 2]
+  import ChromicPDF.TestAPI
   alias ChromicPDF.TestServer
-
-  @test_html Path.expand("../fixtures/test.html", __ENV__.file)
-  @test_dynamic_html Path.expand("../fixtures/test_dynamic.html", __ENV__.file)
-  @test_image Path.expand("../fixtures/image_with_text.svg", __ENV__.file)
-
-  @output Path.expand("../test.pdf", __ENV__.file)
 
   setup context do
     if {:disable_logger, true} in context do
@@ -19,28 +13,6 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     :ok
-  end
-
-  defp print_to_pdf(cb) do
-    print_to_pdf({:url, "file://#{@test_html}"}, [], cb)
-  end
-
-  defp print_to_pdf(params, cb) when is_list(params) do
-    print_to_pdf({:url, "file://#{@test_html}"}, params, cb)
-  end
-
-  defp print_to_pdf(input, cb) do
-    print_to_pdf(input, [], cb)
-  end
-
-  defp print_to_pdf(input, pdf_params, cb) do
-    assert ChromicPDF.print_to_pdf(input, Keyword.put(pdf_params, :output, @output)) == :ok
-    assert File.exists?(@output)
-
-    text = system_cmd!("pdftotext", [@output, "-"])
-    cb.(text)
-  after
-    File.rm_rf!(@output)
   end
 
   describe "PDF printing" do
@@ -58,21 +30,21 @@ defmodule ChromicPDF.PDFGenerationTest do
 
     @tag :pdftotext
     test "it prints PDF from files (expanding to file://) URLs" do
-      print_to_pdf({:url, @test_html}, fn text ->
+      print_to_pdf(fn text ->
         assert String.contains?(text, "Hello ChromicPDF!")
       end)
     end
 
     @tag :pdftotext
     test "it prints PDF from HTML content" do
-      print_to_pdf({:html, File.read!(@test_html)}, fn text ->
+      print_to_pdf({:html, test_html()}, fn text ->
         assert String.contains?(text, "Hello ChromicPDF!")
       end)
     end
 
     @tag :pdftotext
     test "it waits for external resources when printing HTML content" do
-      html = ~s(<img src="file://#{@test_image}" />)
+      html = ~s(<img src="file://#{test_image_path()}" />)
 
       print_to_pdf({:html, html}, fn text ->
         assert String.contains?(text, "some text from an external svg")
@@ -103,7 +75,7 @@ defmodule ChromicPDF.PDFGenerationTest do
 
     @tag :pdftotext
     test "it can deal with {:safe, iolist()} tuples" do
-      print_to_pdf({:html, {:safe, [File.read!(@test_html)]}}, fn text ->
+      print_to_pdf({:html, {:safe, [test_html()]}}, fn text ->
         assert String.contains?(text, "Hello ChromicPDF!")
       end)
     end
@@ -124,13 +96,14 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     test "it can return the Base64 encoded PDF" do
-      assert {:ok, blob} = ChromicPDF.print_to_pdf({:url, "file://#{@test_html}"})
+      assert {:ok, blob} = ChromicPDF.print_to_pdf({:html, test_html()})
       assert blob =~ ~r<^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$>
     end
 
     test "it can yield a temporary file to a callback" do
       result =
-        ChromicPDF.print_to_pdf({:url, "file://#{@test_html}"},
+        ChromicPDF.print_to_pdf(
+          {:html, test_html()},
           output: fn path ->
             assert File.exists?(path)
             send(self(), path)
@@ -153,7 +126,7 @@ defmodule ChromicPDF.PDFGenerationTest do
     test "it can evaluate scripts when printing from :url" do
       params = [evaluate: %{expression: @script}]
 
-      print_to_pdf({:url, "file://#{@test_html}"}, params, fn text ->
+      print_to_pdf({:url, "file://#{test_html_path()}"}, params, fn text ->
         assert String.contains?(text, "hello from script")
       end)
     end
@@ -162,7 +135,7 @@ defmodule ChromicPDF.PDFGenerationTest do
     test "it can evaluate scripts when printing from `:html`" do
       params = [evaluate: %{expression: @script}]
 
-      print_to_pdf({:html, File.read!(@test_html)}, params, fn text ->
+      print_to_pdf({:html, test_html()}, params, fn text ->
         assert String.contains?(text, "hello from script")
       end)
     end
@@ -209,7 +182,7 @@ defmodule ChromicPDF.PDFGenerationTest do
         wait_for: %{selector: "#print-ready", attribute: "ready-to-print"}
       ]
 
-      print_to_pdf({:url, "file://#{@test_dynamic_html}"}, params, fn text ->
+      print_to_pdf({:url, "file://#{test_dynamic_html_path()}"}, params, fn text ->
         assert String.contains?(text, "Dynamic content from Javascript")
       end)
     end
@@ -220,7 +193,7 @@ defmodule ChromicPDF.PDFGenerationTest do
         wait_for: %{selector: "#print-ready", attribute: "ready-to-print"}
       ]
 
-      print_to_pdf({:html, File.read!(@test_dynamic_html)}, params, fn text ->
+      print_to_pdf({:html, test_dynamic_html()}, params, fn text ->
         assert String.contains?(text, "Dynamic content from Javascript")
       end)
     end
@@ -234,14 +207,14 @@ defmodule ChromicPDF.PDFGenerationTest do
 
     @tag :pdftotext
     test "scripts are not evaluated" do
-      print_to_pdf({:url, "file://#{@test_dynamic_html}"}, [], fn text ->
+      print_to_pdf({:html, test_dynamic_html()}, [], fn text ->
         refute String.contains?(text, "Dynamic content from Javascript")
       end)
     end
 
     @tag :pdftotext
     test "<noscript> elements are rendered" do
-      print_to_pdf({:url, "file://#{@test_dynamic_html}"}, [], fn text ->
+      print_to_pdf({:html, test_dynamic_html()}, [], fn text ->
         assert String.contains?(text, "Javascript is disabled")
       end)
     end
@@ -252,7 +225,7 @@ defmodule ChromicPDF.PDFGenerationTest do
         evaluate: %{expression: @script}
       ]
 
-      print_to_pdf({:html, File.read!(@test_html)}, params, fn text ->
+      print_to_pdf({:html, test_html()}, params, fn text ->
         assert String.contains?(text, "hello from script")
       end)
     end
@@ -288,6 +261,7 @@ defmodule ChromicPDF.PDFGenerationTest do
       %{port: TestServer.port(:http)}
     end
 
+    @tag :disable_logger
     test "cookies can be set thru print_to_pdf/2 and are cleared afterwards", %{port: port} do
       input = {:url, "http://localhost:#{port}/cookie_echo"}
 
@@ -337,41 +311,13 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
   end
 
-  describe "session pool init timeout" do
-    test "can be configured and generates a nice error messages" do
-      err =
-        capture_log(fn ->
-          start_supervised!({ChromicPDF, session_pool: [init_timeout: 1]})
-          # wait for nimble pool to init
-          :timer.sleep(100)
-        end)
-
-      assert err =~ "Timeout in Channel.run_protocol"
-      assert err =~ "within the configured\n1 milliseconds"
-      assert err =~ "%ChromicPDF.Protocol{"
-    end
-  end
-
-  describe "session pool timeout" do
-    setup do
-      start_supervised!({ChromicPDF, session_pool: [timeout: 1]})
-      :ok
-    end
-
-    test "can be configured and generates a nice error messages" do
-      assert_raise RuntimeError, ~r/Timeout in Channel.run_protocol/, fn ->
-        print_to_pdf(fn _output -> :ok end)
-      end
-    end
-  end
-
-  describe "error handling of crashing targets" do
+  describe "crashed targets (Inspector.targetCrashed message)" do
     setup do
       start_supervised!({ChromicPDF, session_pool: [timeout: 300]})
       :ok
     end
 
-    test "it logs an error on Inspector.targetCrashed before it times out" do
+    test "a warning is logged before the timeout" do
       params = [
         print_to_pdf: %{
           displayHeaderFooter: true,
@@ -380,9 +326,11 @@ defmodule ChromicPDF.PDFGenerationTest do
       ]
 
       assert capture_log(fn ->
-               assert_raise RuntimeError, fn ->
-                 ChromicPDF.print_to_pdf({:html, ""}, params)
-               end
+               assert_raise ChromicPDF.Browser.ExecutionError,
+                            ~r/Timeout in Channel.run_protocol/,
+                            fn ->
+                              ChromicPDF.print_to_pdf({:html, ""}, params)
+                            end
              end) =~ "received an 'Inspector.targetCrashed' message"
     end
   end

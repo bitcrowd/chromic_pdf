@@ -51,7 +51,6 @@ defmodule ChromicPDF.ProtocolTest do
 
       inspected = inspect(PrintToPDF.new("12345", opts))
 
-      assert inspected =~ ~s(result_fun: nil)
       assert inspected =~ ~s(:__protocol__ => ChromicPDF.PrintToPDF)
       assert inspected =~ ~s("captureBeyondViewport" => true)
       assert inspected =~ ~s("clip" => "some-viewport")
