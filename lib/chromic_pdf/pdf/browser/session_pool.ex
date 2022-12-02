@@ -7,11 +7,13 @@ defmodule ChromicPDF.Browser.SessionPool do
 
   import ChromicPDF.Utils, only: [default_pool_size: 0]
   alias ChromicPDF.Browser
-  alias ChromicPDF.Browser.Channel
+  alias ChromicPDF.Browser.{Channel, ExecutionError}
   alias ChromicPDF.{CloseTarget, Protocol, SpawnSession}
 
   @default_init_timeout 5000
   @default_timeout 5000
+  @checkout_timeout 5000
+  @close_timeout 1000
   @default_max_session_uses 1000
 
   @type pool_state :: %{
@@ -60,8 +62,45 @@ defmodule ChromicPDF.Browser.SessionPool do
         result = Channel.run_protocol(channel, protocol, timeout)
 
         {result, :ok}
-      end
+      end,
+      @checkout_timeout
     )
+  catch
+    :exit, {:timeout, _} ->
+      raise(ExecutionError, """
+      Caught EXIT signal from NimblePool.checkout!/4
+
+            ** (EXIT) time out
+
+      This means that your operation was unable to acquire a worker from the pool
+      within #{@checkout_timeout}ms, as all workers are currently occupied.
+
+      Two scenarios where this may happen:
+
+      1) You suffer from this error at boot time. For instance, you're running tests
+         on CI and occasionally Chrome takes a long time to spawn, exceeding the
+         session pool's "init timeout". Hence, when you're trying to print a PDF
+         in a test, the pool does not have any initialized worker yet.
+
+         Unfortunately, there is currently very little you can do about this.
+
+         See issue #160 for a discussion.
+
+      2) You're experiencing this error randomly under load. This would indicate that
+         the number of concurrent print jobs exceeds the total number of workers in
+         the pool, so that all workers are occupied.
+
+         To fix this, you need to increase your resources, e.g. by increasing the number
+         of workers with the `session_pool: [size: ...]` option.
+
+         However, please be aware that while ChromicPDF (rather, the underlying
+         NimblePool worker pool) does perform simple queueing of worker
+         checkouts, it is not suitable as a proper job queue. If you expect to
+         multiple print PDFs concurrently and especially when you expect peaks in
+         your load, a job queue like Oban will provide a better experience.
+
+      Please also consult the worker pool section in the documentation.
+      """)
   end
 
   defp command(protocol_mod) do
@@ -153,7 +192,7 @@ defmodule ChromicPDF.Browser.SessionPool do
       {:ok, true} =
         pool_state.browser
         |> Browser.channel()
-        |> Channel.run_protocol(CloseTarget.new(targetId: session.target_id), @default_timeout)
+        |> Channel.run_protocol(CloseTarget.new(targetId: session.target_id), @close_timeout)
     end)
 
     {:ok, pool_state}

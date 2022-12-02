@@ -1,3 +1,9 @@
+## Unreleased
+
+## Added
+
+- Add error details on failure to acquire worker from pool.
+
 ## [1.3.1] - 2022-11-08
 
 ### Changed

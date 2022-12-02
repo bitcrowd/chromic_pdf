@@ -4,6 +4,7 @@ defmodule ChromicPDF.Browser.Channel do
   @moduledoc false
 
   use GenServer
+  alias ChromicPDF.Browser.ExecutionError
   alias ChromicPDF.{Connection, Protocol}
 
   @enforce_keys [:dispatch, :protocols]
@@ -23,7 +24,7 @@ defmodule ChromicPDF.Browser.Channel do
     GenServer.call(pid, {:run_protocol, protocol}, timeout)
   catch
     :exit, {:timeout, {GenServer, :call, [_pid, {:run_protocol, protocol}, _timeout]}} ->
-      raise("""
+      raise(ExecutionError, """
       Timeout in Channel.run_protocol/3!
 
       The underlying GenServer.call/3 exited with a timeout. This happens when the browser was

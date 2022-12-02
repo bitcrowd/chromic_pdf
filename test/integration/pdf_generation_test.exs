@@ -8,6 +8,11 @@ defmodule ChromicPDF.PDFGenerationTest do
 
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)
   @test_dynamic_html Path.expand("../fixtures/test_dynamic.html", __ENV__.file)
+  @test_dynamic_long_runtime_html Path.expand(
+                                    "../fixtures/test_dynamic_long_runtime.html",
+                                    __ENV__.file
+                                  )
+
   @test_image Path.expand("../fixtures/image_with_text.svg", __ENV__.file)
 
   @output Path.expand("../test.pdf", __ENV__.file)
@@ -21,16 +26,28 @@ defmodule ChromicPDF.PDFGenerationTest do
     :ok
   end
 
-  defp print_to_pdf(cb) do
+  defp print_to_pdf do
+    print_to_pdf(fn _output -> :ok end)
+  end
+
+  defp print_to_pdf(cb) when is_function(cb) do
     print_to_pdf({:url, "file://#{@test_html}"}, [], cb)
   end
 
-  defp print_to_pdf(params, cb) when is_list(params) do
+  defp print_to_pdf(input) when is_tuple(input) do
+    print_to_pdf(input, [], fn _output -> :ok end)
+  end
+
+  defp print_to_pdf(params, cb) when is_list(params) and is_function(cb) do
     print_to_pdf({:url, "file://#{@test_html}"}, params, cb)
   end
 
-  defp print_to_pdf(input, cb) do
+  defp print_to_pdf(input, cb) when is_tuple(input) and is_function(cb) do
     print_to_pdf(input, [], cb)
+  end
+
+  defp print_to_pdf(input, params) when is_tuple(input) and is_list(params) do
+    print_to_pdf(input, params, fn _output -> :ok end)
   end
 
   defp print_to_pdf(input, pdf_params, cb) do
@@ -359,9 +376,39 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     test "can be configured and generates a nice error messages" do
-      assert_raise RuntimeError, ~r/Timeout in Channel.run_protocol/, fn ->
-        print_to_pdf(fn _output -> :ok end)
+      assert_raise ChromicPDF.Browser.ExecutionError, ~r/Timeout in Channel.run_protocol/, fn ->
+        print_to_pdf()
       end
+    end
+  end
+
+  describe "error handling of failed worker checkout" do
+    setup do
+      start_supervised!({ChromicPDF, session_pool: [size: 1, timeout: 10_000]})
+
+      # JS in fixture waits for 6 seconds until it sets the ready-to-print attribute.
+      start_supervised!(
+        {Task,
+         fn ->
+           print_to_pdf(
+             {:url, "file://#{@test_dynamic_long_runtime_html}"},
+             wait_for: %{selector: "#print-ready", attribute: "ready-to-print"}
+           )
+         end}
+      )
+
+      # Wait for a little bit to make sure the task above acquires the worker.
+      :timer.sleep(300)
+
+      :ok
+    end
+
+    test "generates a nice error message" do
+      assert_raise ChromicPDF.Browser.ExecutionError,
+                   ~r/Caught EXIT signal from NimblePool/,
+                   fn ->
+                     print_to_pdf()
+                   end
     end
   end
 
@@ -380,7 +427,7 @@ defmodule ChromicPDF.PDFGenerationTest do
       ]
 
       assert capture_log(fn ->
-               assert_raise RuntimeError, fn ->
+               assert_raise ChromicPDF.Browser.ExecutionError, fn ->
                  ChromicPDF.print_to_pdf({:html, ""}, params)
                end
              end) =~ "received an 'Inspector.targetCrashed' message"
