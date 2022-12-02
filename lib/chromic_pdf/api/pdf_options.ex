@@ -46,21 +46,23 @@ defmodule ChromicPDF.PDFOptions do
   )
 
   defp replace_wait_for_with_evaluate(opts) do
-    opts
-    |> Keyword.pop(:wait_for)
-    |> do_replace_wait_for_with_evaluate()
+    case Keyword.pop(opts, :wait_for) do
+      {nil, opts} -> opts
+      {wait_for, opts} -> do_replace_wait_for_with_evaluate(opts, wait_for)
+    end
   end
 
-  defp do_replace_wait_for_with_evaluate({nil, opts}), do: opts
+  defp do_replace_wait_for_with_evaluate(opts, %{selector: selector, attribute: attribute}) do
+    wait_for_script = render_wait_for_script(selector, attribute)
 
-  defp do_replace_wait_for_with_evaluate({%{selector: selector, attribute: attribute}, opts}) do
-    if Keyword.has_key?(opts, :evaluate) do
-      raise("wait_for option cannot be combined with evaluate option")
-    end
-
-    expression = render_wait_for_script(selector, attribute)
-
-    Keyword.put(opts, :evaluate, %{expression: expression})
+    Keyword.update(opts, :evaluate, %{expression: wait_for_script}, fn evaluate ->
+      Map.update!(evaluate, :expression, fn user_script ->
+        """
+        #{user_script}
+        #{wait_for_script}
+        """
+      end)
+    end)
   end
 
   @map_options [:print_to_pdf, :capture_screenshot]

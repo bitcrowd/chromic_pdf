@@ -74,7 +74,7 @@ defmodule ChromicPDF.ConnectionTest do
 
     test "decodes complete messages and sends them to parent", %{state: state} do
       handle_info({@port, {:data, "{}\0"}}, state)
-      assert_receive {:msg_in, %{}}
+      assert_receive {:chrome_message, %{}}
     end
   end
 

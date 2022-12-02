@@ -1,3 +1,19 @@
+## Unreleased
+
+### Added
+
+- Add error details on failure to checkout worker from pool.
+
+### Changed
+
+- `wait_for` and `evaluate` options can now be combined, as the `wait_for` script is appended to the user-given `evaluate` expression.
+
+### Fixed
+
+- Make sure to close a browser target when the worker in the pool is terminated. Previously, when a worker was terminated due to an exception (e.g. the timeout error), the target wasn't cleaned up, potentially leading to memory exhaustion.
+- Actually inspect the current state of the protocol in the timeout exception, instead of the (pretty useless) initial parameter.
+- Make sure the `inspectorCrashed` warning is only printed once.
+
 ## [1.3.1] - 2022-11-08
 
 ### Changed
