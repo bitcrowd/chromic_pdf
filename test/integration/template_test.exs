@@ -63,7 +63,9 @@ defmodule ChromicPDF.TemplateTest do
       print_to_pdf(pdf_params, fn _text ->
         output = system_cmd!("pdfinfo", [@output])
 
-        assert output =~ ~r/Page size:\s+597.12 x 841.92 pts/
+        # Older Chrome/Skia versions calculated slightly lower pts from the 8.3 inch width.
+        # Older versions were not detected as A4 by pdfinfo.
+        assert output =~ ~r/Page size:\s+(597\.12|598\.08) x 841\.92 pts( \(A4\))?/
       end)
     end
 
@@ -78,7 +80,7 @@ defmodule ChromicPDF.TemplateTest do
       print_to_pdf(pdf_params, fn _text ->
         output = system_cmd!("pdfinfo", [@output])
 
-        assert output =~ ~r/Page size:\s+841.92 x 597.12 pts/
+        assert output =~ ~r/Page size:\s+841\.92 x (597\.12|598\.08) pts/
       end)
     end
   end
