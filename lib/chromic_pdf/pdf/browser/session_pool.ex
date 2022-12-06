@@ -56,7 +56,7 @@ defmodule ChromicPDF.Browser.SessionPool do
   def run_protocol(pid, protocol_mod, params) do
     NimblePool.checkout!(
       pid,
-      command(protocol_mod),
+      command(params),
       fn _, {channel, %{session_id: session_id}, timeout} ->
         protocol = protocol_mod.new(session_id, params)
         result = Channel.run_protocol(channel, protocol, timeout)
@@ -103,11 +103,11 @@ defmodule ChromicPDF.Browser.SessionPool do
       """)
   end
 
-  defp command(protocol_mod) do
-    if protocol_mod.increment_session_use_count?() do
-      :checkout_and_count
-    else
+  defp command(params) do
+    if params[:skip_session_use_count] do
       :checkout
+    else
+      :checkout_and_count
     end
   end
 
@@ -160,29 +160,29 @@ defmodule ChromicPDF.Browser.SessionPool do
       |> Browser.channel()
       |> Channel.run_protocol(spawn_protocol, timeout)
 
-    %{session_id: sid, target_id: tid, uses: 0}
+    %{session: %{session_id: sid, target_id: tid}, uses: 0}
   end
 
   @impl NimblePool
-  def handle_checkout(:checkout_and_count, from, session, pool_state) do
-    handle_checkout(:checkout, from, increment_uses_count(session), pool_state)
+  def handle_checkout(:checkout_and_count, from, worker_state, pool_state) do
+    handle_checkout(:checkout, from, increment_uses_count(worker_state), pool_state)
   end
 
-  def handle_checkout(:checkout, _from, session, pool_state) do
-    client_state = {Browser.channel(pool_state.browser), session, pool_state.timeout}
-    {:ok, client_state, session, pool_state}
+  def handle_checkout(:checkout, _from, worker_state, pool_state) do
+    client_state = {Browser.channel(pool_state.browser), worker_state.session, pool_state.timeout}
+    {:ok, client_state, worker_state, pool_state}
   end
 
-  defp increment_uses_count(%{uses: uses} = session) do
-    %{session | uses: uses + 1}
+  defp increment_uses_count(%{uses: uses} = worker_state) do
+    %{worker_state | uses: uses + 1}
   end
 
   @impl NimblePool
-  def handle_checkin(:ok, _from, session, pool_state) do
-    if session.uses >= pool_state.max_session_uses do
+  def handle_checkin(:ok, _from, worker_state, pool_state) do
+    if worker_state.uses >= pool_state.max_session_uses do
       {:remove, :max_session_uses_reached, pool_state}
     else
-      {:ok, session, pool_state}
+      {:ok, worker_state, pool_state}
     end
   end
 
@@ -190,13 +190,15 @@ defmodule ChromicPDF.Browser.SessionPool do
   # Reasons we want to gracefully clean up the target in the Browser:
   # - max_session_uses_reached, our own mechanism for keeping memory bloat in check
   # - error, when an exception is raised in the Channel
-  def terminate_worker(reason, session, pool_state)
+  def terminate_worker(reason, worker_state, pool_state)
       when reason in [:max_session_uses_reached, :error] do
     Task.async(fn ->
+      protocol = CloseTarget.new(targetId: worker_state.session.target_id)
+
       {:ok, true} =
         pool_state.browser
         |> Browser.channel()
-        |> Channel.run_protocol(CloseTarget.new(targetId: session.target_id), @close_timeout)
+        |> Channel.run_protocol(protocol, @close_timeout)
     end)
 
     {:ok, pool_state}
