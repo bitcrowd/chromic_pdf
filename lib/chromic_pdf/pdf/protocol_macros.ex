@@ -4,7 +4,7 @@ defmodule ChromicPDF.ProtocolMacros do
   @moduledoc false
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
-  defmacro steps(opts \\ [], do: block) do
+  defmacro steps(do: block) do
     quote do
       alias ChromicPDF.Connection.JsonRPC
       alias ChromicPDF.Protocol
