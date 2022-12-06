@@ -52,13 +52,13 @@ defmodule ChromicPDF.SessionPoolTest do
     test "can be configured and generates a nice error messages" do
       err =
         capture_log(fn ->
-          start_supervised!({ChromicPDF, session_pool: [init_timeout: 1]})
+          start_supervised!({ChromicPDF, session_pool: [init_timeout: 10]})
           # wait for nimble pool to init
           :timer.sleep(100)
         end)
 
       assert err =~ "Timeout in Channel.run_protocol"
-      assert err =~ "within the configured\n1 milliseconds"
+      assert err =~ "within the configured\n10 milliseconds"
       assert err =~ "%ChromicPDF.Protocol{"
       assert err =~ "SpawnSession"
     end
