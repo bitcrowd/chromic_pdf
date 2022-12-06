@@ -18,15 +18,68 @@ defmodule ChromicPDF.ChromeImpl do
     :ok
   end
 
+  # --------------------------- Chrome Command Line ----------------------------------
+  #
+  # For the most part, this list is shamelessly stolen from Puppeteer. Kudos to the Puppeteer team
+  # for figuring all these out.
+  #
+  #   https://github.com/puppeteer/puppeteer/blob/main/packages/puppeteer-core/src/node/ChromeLauncher.ts
+  #
+  # Some of this may arguably be cargo cult. Some options have since become the default in newer
+  # Chrome versions (e.g. --export-tagged-pdf since Chrome 91) but they're kept around to support
+  # older browsers.
+  #
+  # We do not have the --disable-dev-shm-usage option set (as historically it worked without),
+  # instead the targetCrashed exception handler explains that it can be set in case of shared
+  # memory exhaustion.
+  #
+  # For a description of the options, see
+  #
+  #   https://github.com/GoogleChrome/chrome-launcher/blob/main/docs/chrome-flags-for-tools.md
+  #   https://peter.sh/experiments/chromium-command-line-switches/
+  #
+  # One major difference is that we're connecting to Chrome via the newer --remote-debugging-pipe
+  # option (i.e. via pipes) instead of via a socket.
+  #
   # NOTE: The redirection is needed due to obscure behaviour of Ports that use more than 2 FDs.
   # https://github.com/bitcrowd/chromic_pdf/issues/76
-
+  #
   defp chrome_command(opts) do
     [
       ~s("#{chrome_executable(opts[:chrome_executable])}"),
-      "--headless --disable-gpu --remote-debugging-pipe"
+      "--remote-debugging-pipe",
+      "--headless",
+      "--disable-accelerated-2d-canvas",
+      "--disable-gpu",
+      "--allow-pre-commit-input",
+      "--disable-background-networking",
+      "--disable-background-timer-throttling",
+      "--disable-backgrounding-occluded-windows",
+      "--disable-breakpad",
+      "--disable-client-side-phishing-detection",
+      "--disable-component-extensions-with-background-pages",
+      "--disable-component-update",
+      "--disable-default-apps",
+      "--disable-extensions",
+      "--disable-features=Translate,BackForwardCache,AcceptCHFrame,MediaRouter,OptimizationHints",
+      "--disable-hang-monitor",
+      "--disable-ipc-flooding-protection",
+      "--disable-popup-blocking",
+      "--disable-prompt-on-repost",
+      "--disable-renderer-backgrounding",
+      "--disable-sync",
+      "--enable-automation",
+      "--enable-features=NetworkServiceInProcess2",
+      "--export-tagged-pdf",
+      "--force-color-profile=srgb",
+      "--metrics-recording-only",
+      "--no-default-browser-check",
+      "--no-first-run",
+      "--no-service-autorun",
+      "--password-store=basic",
+      "--use-mock-keychain"
     ]
-    |> append_if("--no-sandbox", no_sandbox?(opts))
+    |> append_if("--no-sandbox --no-zygote", no_sandbox?(opts))
     |> append_if(to_string(opts[:chrome_args]), !!opts[:chrome_args])
     |> append_if("2>/dev/null 3<&0 4>&1", discard_stderr?(opts))
     |> Enum.join(" ")

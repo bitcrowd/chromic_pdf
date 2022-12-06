@@ -4,6 +4,7 @@ defmodule ChromicPDF.PDFGenerationTest do
   use ExUnit.Case, async: false
   import ExUnit.CaptureLog
   import ChromicPDF.TestAPI
+  import ChromicPDF.Utils, only: [system_cmd!: 2]
   alias ChromicPDF.TestServer
 
   setup context do
@@ -195,6 +196,14 @@ defmodule ChromicPDF.PDFGenerationTest do
 
       print_to_pdf({:html, test_dynamic_html()}, params, fn text ->
         assert String.contains?(text, "Dynamic content from Javascript")
+      end)
+    end
+
+    @tag :pdfinfo
+    test "generated PDFs are tagged" do
+      with_output_path(fn output ->
+        assert ChromicPDF.print_to_pdf({:html, test_html()}, output: output) == :ok
+        assert system_cmd!("pdfinfo", [output]) =~ ~r/Tagged:\s+yes/
       end)
     end
   end
