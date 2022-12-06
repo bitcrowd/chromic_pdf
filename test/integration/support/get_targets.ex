@@ -5,7 +5,7 @@ defmodule ChromicPDF.GetTargets do
 
   import ChromicPDF.ProtocolMacros
 
-  steps(increment_session_use_count: false) do
+  steps do
     call(:get_targets, "Target.getTargets", [], %{})
     await_response(:targets, ["targetInfos"])
 
@@ -15,7 +15,9 @@ defmodule ChromicPDF.GetTargets do
   def run do
     {:ok, target_infos} =
       ChromicPDF.Supervisor.with_services(ChromicPDF, fn services ->
-        ChromicPDF.Browser.run_protocol(services.browser, __MODULE__, %{})
+        ChromicPDF.Browser.run_protocol(services.browser, __MODULE__, %{
+          skip_session_use_count: true
+        })
       end)
 
     for %{"targetId" => target_id, "url" => url} <- target_infos,
