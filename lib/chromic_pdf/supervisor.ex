@@ -375,7 +375,10 @@ defmodule ChromicPDF.Supervisor do
           content = SomeView.render("body.html") |> Phoenix.HTML.safe_to_string()
           ChromicPDF.print_to_pdf({:html, content})
 
-      ## PDF printing options
+      ## Custom options for `Page.printToPDF`
+
+      You can provide custom options for the [`Page.printToPDF`](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-printToPDF)
+      call by passing a map to the `:print_to_pdf` option.
 
           ChromicPDF.print_to_pdf(
             {:url, "file:///example.html"},
@@ -419,8 +422,8 @@ defmodule ChromicPDF.Supervisor do
             }
           )
 
-      Please note the camel-case. For a full list of options to the `printToPDF` function,
-      please see the Chrome documentation at:
+      Please note the **camel-case**. For a full list of options, please see the Chrome
+      documentation at:
 
       https://chromedevtools.github.io/devtools-protocol/tot/Page#method-printToPDF
 
@@ -517,10 +520,10 @@ defmodule ChromicPDF.Supervisor do
 
           {:ok, blob} = ChromicPDF.capture_screenshot({:url, "file:///example.html"})
 
-      ## Options
+      ## Custom options for `Page.captureScreenshot`
 
-      Options to the [`Page.captureScrenshot`](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-captureScreenshot)
-      call can be passed by passing a map to the `:capture_screenshot` option.
+      Custom options for the [`Page.captureScreenshot`](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-captureScreenshot)
+      call can be specified by passing a map to the `:capture_screenshot` option.
 
           ChromicPDF.capture_screenshot(
             {:url, "file:///example.html"},
