@@ -59,6 +59,12 @@ Here's how you generate a PDF from an external URL and store it in the local fil
 ChromicPDF.print_to_pdf({:url, "https://example.net"}, output: "example.pdf")
 ```
 
+And here's how you pass options to [Chrome DevTools' `printToPDF`](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-printToPDF) function:
+
+```elixir
+ChromicPDF.print_to_pdf({:url, "https://example.net"}, output: "example.pdf", print_to_pdf: %{marginTop: 0})
+```
+
 The next example shows how to print a local HTML file to PDF/A, as well as the use of a callback
 function that receives the generated PDF as path to a temporary file.
 
