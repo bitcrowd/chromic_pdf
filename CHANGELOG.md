@@ -3,6 +3,7 @@
 ### Added
 
 - Add error details on failure to checkout worker from pool.
+- Add a whole list of new default command line options following Puppeteer's example.
 
 ### Changed
 

@@ -47,13 +47,13 @@ defmodule ChromicPDF.TestAPI do
   end
 
   def print_to_pdf(input, pdf_params, cb) do
-    assert ChromicPDF.print_to_pdf(input, Keyword.put(pdf_params, :output, @output)) == :ok
-    assert File.exists?(@output)
+    with_output_path(fn output ->
+      assert ChromicPDF.print_to_pdf(input, Keyword.put(pdf_params, :output, output)) == :ok
+      assert File.exists?(output)
 
-    text = system_cmd!("pdftotext", [@output, "-"])
-    cb.(text)
-  after
-    File.rm_rf!(@output)
+      text = system_cmd!("pdftotext", [output, "-"])
+      cb.(text)
+    end)
   end
 
   def print_to_pdf_delayed(delay_ms) do
@@ -67,5 +67,11 @@ defmodule ChromicPDF.TestAPI do
       },
       wait_for: %{selector: "#print-ready", attribute: "ready-to-print"}
     )
+  end
+
+  def with_output_path(fun) do
+    fun.(@output)
+  after
+    File.rm_rf!(@output)
   end
 end

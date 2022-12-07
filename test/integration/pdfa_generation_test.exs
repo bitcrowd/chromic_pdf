@@ -100,5 +100,15 @@ defmodule ChromicPDF.PDFAGenerationTest do
         assert output =~ ~r/Title:\s+OverriddenTitle/
       end)
     end
+
+    @tag :pdfinfo
+    # pdfwrite does not copy the structural metadata from the input PDF to the output.
+    # https://stackoverflow.com/q/69299263
+    test "unfortunately converted PDFs are not tagged anymore" do
+      print_to_pdfa([], fn file ->
+        output = system_cmd!("pdfinfo", [file])
+        assert output =~ ~r/Tagged:\s+no/
+      end)
+    end
   end
 end
