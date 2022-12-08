@@ -283,9 +283,9 @@ defmodule ChromicPDF.Supervisor do
 
           ChromicPDF.print_to_pdf({:url, "file:///example.html"})
 
-          ChromicPDF.print_to_pdf({:url, "http:///example.net"})
+          ChromicPDF.print_to_pdf({:url, "http://example.net"})
 
-          ChromicPDF.print_to_pdf({:url, "https:///example.net"})
+          ChromicPDF.print_to_pdf({:url, "https://example.net"})
 
       #### Cookies
 
