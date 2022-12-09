@@ -14,10 +14,7 @@ defmodule ChromicPDF.ConnectionTest do
       port: @port,
       parent_pid: self(),
       tokenizer: [],
-      dispatcher: %ChromicPDF.Connection.Dispatcher{
-        next_call_id: 1,
-        port: @port
-      }
+      next_call_id: 1
     }
   end
 
@@ -54,7 +51,7 @@ defmodule ChromicPDF.ConnectionTest do
   describe "graceful shutdown" do
     setup [:new_state]
 
-    test "it gracefully closes Chrome on shutdown", %{state: %{dispatcher: %{port: port}} = state} do
+    test "it gracefully closes Chrome on shutdown", %{state: %{port: port} = state} do
       expected_msg = ~s({"id":1,"method":"Browser.close","params":{}})
       expect(ChromeMock, :send_msg, fn ^port, ^expected_msg -> :ok end)
 
@@ -81,13 +78,11 @@ defmodule ChromicPDF.ConnectionTest do
   describe "outgoing messages" do
     setup [:new_state]
 
-    test "it encodes messages and sends them to Chrome", %{
-      state: %{dispatcher: %{port: port}} = state
-    } do
+    test "it encodes messages and sends them to Chrome", %{state: %{port: port} = state} do
       expected_msg = ~s({"id":1,"method":"method","params":{}})
       expect(ChromeMock, :send_msg, fn ^port, ^expected_msg -> :ok end)
 
-      assert {:reply, 1, %{dispatcher: %{next_call_id: 2}}} =
+      assert {:reply, 1, %{next_call_id: 2}} =
                handle_call({:dispatch_call, {"method", %{}}}, {self(), @ref}, state)
     end
   end

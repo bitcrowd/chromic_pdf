@@ -4,7 +4,7 @@ defmodule ChromicPDF.Connection do
   @moduledoc false
 
   use GenServer
-  alias ChromicPDF.Connection.{ConnectionLostError, Dispatcher, JsonRPC, Tokenizer}
+  alias ChromicPDF.Connection.{ConnectionLostError, JsonRPC, Tokenizer}
 
   @chrome Application.compile_env(:chromic_pdf, :chrome, ChromicPDF.ChromeImpl)
 
@@ -12,7 +12,7 @@ defmodule ChromicPDF.Connection do
           port: port(),
           parent_pid: pid(),
           tokenizer: Tokenizer.t(),
-          dispatcher: Dispatcher.t()
+          next_call_id: pos_integer()
         }
 
   # ------------- API ----------------
@@ -44,7 +44,7 @@ defmodule ChromicPDF.Connection do
       port: port,
       parent_pid: parent_pid,
       tokenizer: Tokenizer.init(),
-      dispatcher: Dispatcher.init(port)
+      next_call_id: 1
     }
 
     {:ok, state}
@@ -57,10 +57,10 @@ defmodule ChromicPDF.Connection do
   end
 
   @impl GenServer
-  def handle_call({:dispatch_call, call}, _from, state) do
-    {reply, dispatcher} = Dispatcher.dispatch(state.dispatcher, call)
+  def handle_call({:dispatch_call, call}, _from, %{port: port, next_call_id: call_id} = state) do
+    @chrome.send_msg(port, JsonRPC.encode(call, call_id))
 
-    {:reply, reply, %{state | dispatcher: dispatcher}}
+    {:reply, call_id, %{state | next_call_id: call_id + 1}}
   end
 
   def handle_call(:port_info, _from, %{port: port} = state) do
@@ -108,10 +108,10 @@ defmodule ChromicPDF.Connection do
     """)
   end
 
-  def terminate(:shutdown, state) do
+  def terminate(:shutdown, %{port: port, next_call_id: call_id}) do
     # Graceful shutdown: Dispatch the Browser.close call to Chrome which will cause it to detach
     # all debugging sessions and close the port.
-    Dispatcher.dispatch(state.dispatcher, {"Browser.close", %{}})
+    @chrome.send_msg(port, JsonRPC.encode({"Browser.close", %{}}, call_id))
 
     # We can't enter the GenServer loop from here, so we need to manually receive the message
     # about the port going down. In case Chrome takes longer than the configured supervision
