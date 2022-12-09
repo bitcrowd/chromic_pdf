@@ -4,7 +4,7 @@ defmodule ChromicPDF.ConnectionTest do
   use ExUnit.Case
   import Mox
   import ChromicPDF.Connection
-  alias ChromicPDF.ChromeMock
+  alias ChromicPDF.ChromeRunnerMock
 
   @port :some_port
   @ref :some_ref
@@ -31,7 +31,7 @@ defmodule ChromicPDF.ConnectionTest do
         chrome_args: "--foo"
       ]
 
-      expect(ChromeMock, :spawn, fn ^opts -> {:ok, @port} end)
+      expect(ChromeRunnerMock, :spawn, fn ^opts -> {:ok, @port} end)
       assert init({self(), opts}) == {:ok, new_state()}
     end
   end
@@ -53,7 +53,7 @@ defmodule ChromicPDF.ConnectionTest do
 
     test "it gracefully closes Chrome on shutdown", %{state: %{port: port} = state} do
       expected_msg = ~s({"id":1,"method":"Browser.close","params":{}})
-      expect(ChromeMock, :send_msg, fn ^port, ^expected_msg -> :ok end)
+      expect(ChromeRunnerMock, :send_msg, fn ^port, ^expected_msg -> :ok end)
 
       # Inject :DOWN message before calling terminate/2 to avoid locking in receive.
       send(self(), {:DOWN, @ref, :port, @port, 0})
@@ -80,7 +80,7 @@ defmodule ChromicPDF.ConnectionTest do
 
     test "it encodes messages and sends them to Chrome", %{state: %{port: port} = state} do
       expected_msg = ~s({"id":1,"method":"method","params":{}})
-      expect(ChromeMock, :send_msg, fn ^port, ^expected_msg -> :ok end)
+      expect(ChromeRunnerMock, :send_msg, fn ^port, ^expected_msg -> :ok end)
 
       assert {:reply, 1, %{next_call_id: 2}} =
                handle_call({:dispatch_call, {"method", %{}}}, {self(), @ref}, state)

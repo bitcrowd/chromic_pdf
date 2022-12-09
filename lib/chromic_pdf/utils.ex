@@ -46,6 +46,8 @@ defmodule ChromicPDF.Utils do
     String.pad_leading(to_string(i), 2, "0")
   end
 
+  @spec system_cmd!(binary(), [binary()]) :: binary()
+  @spec system_cmd!(binary(), [binary()], keyword()) :: binary()
   def system_cmd!(cmd, args, opts \\ []) do
     case System.cmd(cmd, args, opts) do
       {output, 0} ->
