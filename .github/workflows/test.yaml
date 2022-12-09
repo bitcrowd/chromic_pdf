@@ -1,0 +1,36 @@
+name: Test
+on: [pull_request]
+jobs:
+  test:
+    name: ${{matrix.mix_env}} tests on Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
+    strategy:
+      matrix:
+        otp: ['24.2.2']
+        elixir: ['1.13.4']
+        mix_env: ['test', 'integration']
+    env:
+      MIX_ENV: ${{matrix.mix_env}}
+    runs-on: ubuntu-latest
+    steps:
+      - run: sudo apt-get install ghostscript poppler-utils
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{matrix.otp}}
+          elixir-version: ${{matrix.elixir}}
+      - uses: actions/checkout@v3
+      - name: Dependencies cache
+        id: deps-cache
+        uses: actions/cache@v3
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ matrix.elixir }}-${{ matrix.otp }}-${{ matrix.mix_env }}-deps-v1-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+      - name: Build artifacts cache
+        id: build-cache
+        uses: actions/cache@v3
+        with:
+          path: _build
+          key: ${{ runner.os }}-${{ matrix.elixir }}-${{ matrix.otp }}-${{ matrix.mix_env }}-build-v1-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+      - run: mix deps.get
+      - run: mix compile
+      - run: mix chromic_pdf.warm_up
+      - run: mix test
