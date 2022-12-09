@@ -211,18 +211,21 @@ defmodule ChromicPDF.Supervisor do
 
       @type ghostscript_pool_option :: {:size, non_neg_integer()}
 
+      @type chrome_runner_option ::
+              {:no_sandbox, boolean()}
+              | {:discard_stderr, boolean()}
+              | {:chrome_args, binary()}
+              | {:chrome_executable, binary()}
+
       @type global_option ::
               {:offline, boolean()}
               | {:disable_scripts, boolean()}
               | {:max_session_uses, non_neg_integer()}
               | {:session_pool, [session_pool_option()]}
-              | {:no_sandbox, boolean()}
-              | {:discard_stderr, boolean()}
-              | {:chrome_args, binary()}
-              | {:chrome_executable, binary()}
               | {:ignore_certificate_errors, boolean()}
               | {:ghostscript_pool, [ghostscript_pool_option()]}
               | {:on_demand, boolean()}
+              | chrome_runner_option()
 
       @doc """
       Returns a specification to start this module as part of a supervision tree.

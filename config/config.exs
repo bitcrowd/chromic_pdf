@@ -6,7 +6,7 @@ import Config
 config :chromic_pdf, debug_protocol: false
 
 if Mix.env() == :test do
-  config :chromic_pdf, chrome: ChromicPDF.ChromeMock
+  config :chromic_pdf, chrome: ChromicPDF.ChromeRunnerMock
 end
 
 if Mix.env() in [:test, :integration, :dev] do

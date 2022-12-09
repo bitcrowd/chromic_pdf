@@ -77,14 +77,12 @@ defmodule ChromicPDF.Browser.SessionPool do
 
       Two scenarios where this may happen:
 
-      1) You suffer from this error at boot time. For instance, you're running tests
-         on CI and occasionally Chrome takes a long time to spawn, exceeding the
-         session pool's "init timeout". Hence, when you're trying to print a PDF
-         in a test, the pool does not have any initialized worker yet.
+      1) You suffer from this error at boot time or in your CI. For instance,
+         you're running PDF printing tests in CI and occasionally the first of these test
+         fails. This may be caused by Chrome being delayed by initialization tasks when
+         it is first launched.
 
-         Unfortunately, there is currently very little you can do about this.
-
-         See issue #160 for a discussion.
+         See ChromicPDF.warm_up/1 for a possible mitigation.
 
       2) You're experiencing this error randomly under load. This would indicate that
          the number of concurrent print jobs exceeds the total number of workers in
@@ -93,11 +91,11 @@ defmodule ChromicPDF.Browser.SessionPool do
          To fix this, you need to increase your resources, e.g. by increasing the number
          of workers with the `session_pool: [size: ...]` option.
 
-         However, please be aware that while ChromicPDF (rather, the underlying
-         NimblePool worker pool) does perform simple queueing of worker
-         checkouts, it is not suitable as a proper job queue. If you expect to
-         print multiple PDFs concurrently and especially if you expect peaks in
-         your load, a job queue like Oban will provide a better experience.
+         However, please be aware that while ChromicPDF (by virtue of the underlying
+         NimblePool worker pool) does perform simple queueing of worker checkouts,
+         it is not suitable as a proper job queue. If you expect to peaks in your load
+         leading to a high level of concurrent use of your PDF printing component,
+         a job queue like Oban will provide a better experience.
 
       Please also consult the worker pool section in the documentation.
       """)

@@ -6,7 +6,14 @@ defmodule ChromicPDF.Connection do
   use GenServer
   alias ChromicPDF.Connection.{ConnectionLostError, JsonRPC, Tokenizer}
 
-  @chrome Application.compile_env(:chromic_pdf, :chrome, ChromicPDF.ChromeImpl)
+  defmodule ChromeRunner do
+    @moduledoc false
+
+    @callback spawn(keyword()) :: {:ok, port()}
+    @callback send_msg(port(), msg :: binary()) :: :ok
+  end
+
+  @chrome Application.compile_env(:chromic_pdf, :chrome, ChromicPDF.ChromeRunner)
 
   @type state :: %{
           port: port(),

@@ -304,4 +304,51 @@ defmodule ChromicPDF do
   """
 
   use ChromicPDF.Supervisor
+
+  @doc """
+  Runs a one-off Chrome process to allow Chrome to initialize its caches.
+
+  On some infrastructure (notably, Github Actions), Chrome occassionally takes a long nap between
+  process launch and first replying to DevTools commands. If meanwhile you happen to print a PDF
+  (so, before any sessions have been spawned by the session pool), the session checkout will fail
+  with a timeout error:
+
+      Caught EXIT signal from NimblePool.checkout!/4
+
+            ** (EXIT) time out
+
+  This function mitigates the issue by launching a Chrome process via a shell command, bypassing
+  ChromicPDF's internals.
+
+  ## Usage
+
+      # in your test_helper.exs
+      {:ok, _} = ChromicPDF.warm_up()
+      ...
+      ExUnit.start()
+
+  ## Options
+
+  This function accepts all options of `print_to_pdf/2` related to external Chrome process.
+
+  If you pass `discard_stderr: false`, Chrome's standard error is returned.
+
+      {:ok, stderr} = ChromicPDF.warm_up(discard_stderr: false)
+      IO.inspect(stderr, label: "chrome stderr")
+
+  ## Mix Task
+
+  Alternatively, you can choose to run a mix task as part of your CI script, see
+  `Mix.Tasks.ChromicPdf.WarmUp`. The task currently does not accept any options.
+
+      ...
+      $ mix chromic_pdf.warm_up
+      $ mix test
+
+  """
+  @spec warm_up() :: {:ok, binary()}
+  @spec warm_up([ChromicPDF.chrome_runner_option()]) :: {:ok, binary()}
+  def warm_up(opts \\ []) do
+    ChromicPDF.ChromeRunner.warm_up(opts)
+  end
 end

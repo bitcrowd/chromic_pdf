@@ -3,6 +3,7 @@
 ### Added
 
 - Add automatic PDF concatenation when passing a list to `print_to_pdf/2` or `print_to_pdfa/2`. (@xaviRodri)
+- Add `warm_up/1` to allow one-off launches of the Chrome executable with our default arguments, to mitigate random CI failures on Github Actions.
 
 ## [1.4.0] - 2022-12-07
 
