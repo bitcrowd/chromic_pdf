@@ -34,5 +34,3 @@ RUN apk del \
     wget \
     unzip \
 	&& rm -rf /var/lib/apt/lists/*
-
-RUN mix local.hex --force && mix local.rebar

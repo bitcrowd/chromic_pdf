@@ -40,7 +40,7 @@ defmodule ChromicPDF.GhostscriptRunner do
         @default_args,
         "-dNODISPLAY",
         "-q",
-        ~s(-sFile="#{pdf_path}"),
+        "-sFile=#{pdf_path}",
         ps_path
       ]
     })
@@ -55,7 +55,7 @@ defmodule ChromicPDF.GhostscriptRunner do
       args: [
         @default_args,
         @pdfwrite_default_args,
-        ~s(-sOutputFile="#{output_path}"),
+        "-sOutputFile=#{output_path}",
         source_paths
       ]
     }
@@ -72,7 +72,7 @@ defmodule ChromicPDF.GhostscriptRunner do
       icc_path = Keyword.fetch!(pdfa_opts, :icc_path)
 
       args = [
-        ~s(-sOutputICCProfile="#{icc_path}"),
+        "-sOutputICCProfile=#{icc_path}",
         "-sProcessColorModel=DeviceRGB",
         "-sColorConversionStrategy=RGB",
         "-dPDFA=#{version}",
@@ -107,8 +107,8 @@ defmodule ChromicPDF.GhostscriptRunner do
     if ghostscript_version() >= @ghostscript_safer_version do
       [
         "-dSAFER",
-        Enum.map(command.read, &~s(--permit-file-read="#{&1}")),
-        Enum.map(command.write, &~s(--permit-file-write="#{&1}"))
+        Enum.map(command.read, &"--permit-file-read=#{&1}"),
+        Enum.map(command.write, &"--permit-file-write=#{&1}")
       ]
     else
       []

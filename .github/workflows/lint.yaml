@@ -1,0 +1,34 @@
+name: Lint
+on: [pull_request]
+jobs:
+  test:
+    name: Lint
+    env:
+      MIX_ENV: test
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/bitcrowd/chromic_pdf-test-image:debian-bullseye
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      options: --privileged --user 1001
+    steps:
+      - uses: actions/checkout@v3
+      - name: Dependencies cache
+        id: deps-cache
+        uses: actions/cache@v3
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ matrix.mix_env }}-deps-v1-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+      - name: Build artifacts cache
+        id: build-and-plts-cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            _build
+            .plts
+          key: ${{ runner.os }}-${{ matrix.mix_env }}-build-and-plts-v1-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+      - run: mix local.hex --force && mix local.rebar
+      - run: mix deps.get
+      - run: mix compile
+      - run: mix lint
