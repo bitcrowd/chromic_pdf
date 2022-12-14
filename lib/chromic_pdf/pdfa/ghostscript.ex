@@ -12,4 +12,5 @@ defmodule ChromicPDF.Ghostscript do
               pdfa_def_ps_path :: binary(),
               output_path :: binary()
             ) :: :ok
+  @callback merge(pdf_path_list :: list(binary()), output_path :: binary()) :: :ok
 end
