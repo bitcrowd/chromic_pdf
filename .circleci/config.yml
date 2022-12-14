@@ -1,0 +1,167 @@
+version: 2
+
+references:
+  base: &base
+    docker:
+      - image: maltoe/chromic-pdf-primary:0.0.9
+        user: circleci
+    working_directory: ~/repo
+
+jobs:
+  setup:
+    <<: *base
+    steps:
+      - checkout
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - restore_cache:
+          keys:
+            - v6-deps-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+            - v6-deps-cache-{{ .Branch }}
+            - v6-deps-cache
+      - run: mix deps.get
+      - save_cache:
+          key: v6-deps-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+          paths: deps
+      - save_cache:
+          key: v6-deps-cache-{{ .Branch }}
+          paths: deps
+      - save_cache:
+          key: v6-deps-cache
+          paths: deps
+      - save_cache:
+          key: v6-repo-cache-setup-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/.mix
+            - ~/repo
+
+  test_env:
+    <<: *base
+    environment:
+      MIX_ENV: test
+    steps:
+      - restore_cache:
+          key: v6-repo-cache-setup-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - v6-build-cache-test-{{ .Branch }}
+            - v6-build-cache-test
+      - restore_cache:
+          keys:
+            - v6-plt-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+            - v6-plt-cache-{{ .Branch }}
+            - v6-plt-cache
+      - run: mix compile
+      - run: mix dialyzer --plt
+      - save_cache:
+          key: v6-build-cache-test-{{ .Branch }}
+          paths: _build/test
+      - save_cache:
+          key: v6-build-cache-test
+          paths: _build/test
+      - save_cache:
+          key: v6-plt-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+          paths:
+            - .plts
+      - save_cache:
+          key: v6-plt-cache-{{ .Branch }}
+          paths:
+            - .plts
+      - save_cache:
+          key: v6-plt-cache
+          paths:
+            - .plts
+      - save_cache:
+          key: v6-repo-cache-test-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/.mix
+            - ~/repo
+
+  # For some reason rebar writes into `deps` again in the compile step
+  # https://github.com/erlang/rebar3/issues/1824#issuecomment-464486224
+  integration_env:
+    <<: *base
+    environment:
+      MIX_ENV: integration
+    steps:
+      - restore_cache:
+          keys:
+            - v6-repo-cache-setup-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - v6-build-cache-integration-{{ .Branch }}
+            - v6-build-deps-cache-integration
+      - run: mix compile
+      - save_cache:
+          key: v6-build-deps-cache-integration-{{ .Branch }}
+          paths:
+            - _build/integration
+            - deps
+      - save_cache:
+          key: v6-build-deps-cache-integration
+          paths:
+            - _build/integration
+            - deps
+      - save_cache:
+          key: v6-repo-cache-integration-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/.mix
+            - ~/repo
+
+  lint:
+    <<: *base
+    environment:
+      MIX_ENV: test
+    steps:
+      - restore_cache:
+          key: v6-repo-cache-test-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Run Linter
+          command: mix lint
+
+  test:
+    <<: *base
+    environment:
+      MIX_ENV: test
+    steps:
+      - restore_cache:
+          key: v6-repo-cache-test-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Run Unit Tests
+          command: mix test
+      - store_test_results:
+          path: _build/test/lib/chromic_pdf
+
+  integration:
+    <<: *base
+    environment:
+      MIX_ENV: integration
+    steps:
+      - restore_cache:
+          key: v6-repo-cache-integration-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Run Integration Tests
+          command: mix test
+      - store_test_results:
+          path: _build/integration/lib/chromic_pdf
+
+workflows:
+  version: 2
+  checks:
+    jobs:
+      - setup
+      - test_env:
+          requires:
+            - setup
+      - integration_env:
+          requires:
+            - setup
+      - lint:
+          requires:
+            - test_env
+      - test:
+          requires:
+            - test_env
+      - integration:
+          requires:
+            - integration_env
