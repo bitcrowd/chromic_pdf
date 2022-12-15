@@ -156,9 +156,13 @@ defmodule ChromicPDF.Supervisor do
       @type output_function :: (blob() -> output_function_result())
       @type output_option :: {:output, binary()} | {:output, output_function()}
 
-      @type return :: :ok | {:ok, binary()} | {:ok, output_function_result()}
-
       @type telemetry_metadata_option :: {:telemetry_metadata, map()}
+
+      @type export_option ::
+              output_option()
+              | telemetry_metadata_option()
+
+      @type export_return :: :ok | {:ok, binary()} | {:ok, output_function_result()}
 
       @type info_option ::
               {:info,
@@ -189,21 +193,15 @@ defmodule ChromicPDF.Supervisor do
       @type pdf_option ::
               {:print_to_pdf, map()}
               | navigate_option()
-              | output_option()
-              | telemetry_metadata_option()
 
       @type pdfa_option ::
               {:pdfa_version, binary()}
               | {:pdfa_def_ext, binary()}
               | info_option()
-              | output_option()
-              | telemetry_metadata_option()
 
       @type capture_screenshot_option ::
               {:capture_screenshot, map()}
               | navigate_option()
-              | output_option()
-              | telemetry_metadata_option()
 
       @type session_pool_option ::
               {:size, non_neg_integer()}
@@ -505,8 +503,8 @@ defmodule ChromicPDF.Supervisor do
       '''
       @spec print_to_pdf(
               input :: source() | source_and_options(),
-              opts :: [pdf_option()]
-            ) :: return()
+              opts :: [pdf_option() | export_option()]
+            ) :: export_return()
       def print_to_pdf(input, opts \\ []) do
         with_services(__MODULE__, &API.print_to_pdf(&1, input, opts))
       end
@@ -534,7 +532,10 @@ defmodule ChromicPDF.Supervisor do
 
       For navigational options (source, cookies, evaluating scripts) see `print_to_pdf/2`.
       """
-      @spec capture_screenshot(url :: source(), opts :: [capture_screenshot_option()]) :: return()
+      @spec capture_screenshot(
+              url :: source(),
+              opts :: [capture_screenshot_option() | export_option()]
+            ) :: export_return()
       def capture_screenshot(input, opts \\ []) do
         with_services(__MODULE__, &API.capture_screenshot(&1, input, opts))
       end
@@ -597,7 +598,7 @@ defmodule ChromicPDF.Supervisor do
             pdfa_def_ext: "[/Title (OverriddenTitle) /DOCINFO pdfmark",
           )
       """
-      @spec convert_to_pdfa(pdf_path :: path(), opts :: [pdfa_option()]) :: return()
+      @spec convert_to_pdfa(pdf_path :: path(), opts :: [pdfa_option()]) :: export_return()
       def convert_to_pdfa(pdf_path, opts \\ []) do
         with_services(__MODULE__, &API.convert_to_pdfa(&1, pdf_path, opts))
       end
@@ -613,8 +614,8 @@ defmodule ChromicPDF.Supervisor do
       """
       @spec print_to_pdfa(
               input :: source() | source_and_options(),
-              opts :: [pdf_option() | pdfa_option()]
-            ) :: return()
+              opts :: [pdf_option() | pdfa_option() | export_option()]
+            ) :: export_return()
       def print_to_pdfa(input, opts \\ []) do
         with_services(__MODULE__, &API.print_to_pdfa(&1, input, opts))
       end

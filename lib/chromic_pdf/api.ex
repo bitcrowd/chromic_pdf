@@ -18,8 +18,8 @@ defmodule ChromicPDF.API do
   @spec print_to_pdf(
           ChromicPDF.Supervisor.services(),
           ChromicPDF.source() | ChromicPDF.source_and_options(),
-          [ChromicPDF.pdf_option()]
-        ) :: ChromicPDF.return()
+          [ChromicPDF.pdf_option() | ChromicPDF.export_option()]
+        ) :: ChromicPDF.export_return()
   def print_to_pdf(services, %{source: source, opts: opts}, overrides)
       when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
     print_to_pdf(services, source, Keyword.merge(opts, overrides))
@@ -30,9 +30,9 @@ defmodule ChromicPDF.API do
   end
 
   @spec capture_screenshot(ChromicPDF.Supervisor.services(), ChromicPDF.source(), [
-          ChromicPDF.capture_screenshot_option()
+          ChromicPDF.capture_screenshot_option() | ChromicPDF.export_option()
         ]) ::
-          ChromicPDF.return()
+          ChromicPDF.export_return()
   def capture_screenshot(services, source, opts) when tuple_size(source) == 2 and is_list(opts) do
     chrome_export(services, :capture_screenshot, source, opts)
   end
@@ -53,9 +53,9 @@ defmodule ChromicPDF.API do
   end
 
   @spec convert_to_pdfa(ChromicPDF.Supervisor.services(), ChromicPDF.path(), [
-          ChromicPDF.pdfa_option()
+          ChromicPDF.pdfa_option() | ChromicPDF.export_option()
         ]) ::
-          ChromicPDF.return()
+          ChromicPDF.export_return()
   def convert_to_pdfa(services, pdf_path, opts) when is_binary(pdf_path) and is_list(opts) do
     with_tmp_dir(fn tmp_dir ->
       do_convert_to_pdfa(services, pdf_path, opts, tmp_dir)
@@ -66,10 +66,10 @@ defmodule ChromicPDF.API do
           ChromicPDF.Supervisor.services(),
           ChromicPDF.source() | ChromicPDF.source_and_options(),
           [
-            ChromicPDF.pdf_option() | ChromicPDF.pdfa_option()
+            ChromicPDF.pdf_option() | ChromicPDF.pdfa_option() | ChromicPDF.export_option()
           ]
         ) ::
-          ChromicPDF.return()
+          ChromicPDF.export_return()
   def print_to_pdfa(services, %{source: source, opts: opts}, overrides)
       when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
     print_to_pdfa(services, source, Keyword.merge(opts, overrides))
