@@ -509,6 +509,14 @@ defmodule ChromicPDF.Supervisor do
         with_services(__MODULE__, &API.print_to_pdf(&1, input, opts))
       end
 
+      @spec print_to_pdf_and_merge(
+              inputs :: [source() | source_and_options()],
+              opts :: [pdf_option()]
+            ) :: return()
+      def print_to_pdf_and_merge(inputs, opts \\ []) do
+        with_services(__MODULE__, &API.print_to_pdf_and_merge(&1, inputs, opts))
+      end
+
       @doc """
       Captures a screenshot.
 

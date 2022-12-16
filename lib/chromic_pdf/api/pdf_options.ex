@@ -118,4 +118,23 @@ defmodule ChromicPDF.PDFOptions do
         {:ok, data}
     end
   end
+
+  def feed_merge_data_into_output(pdf_path, opts) do
+    case Keyword.get(opts, :output) do
+      path when is_binary(path) ->
+        File.cp!(pdf_path, path)
+        :ok
+
+      fun when is_function(fun, 1) ->
+        {:ok, fun.(pdf_path)}
+
+      nil ->
+        data =
+          pdf_path
+          |> File.read!()
+          |> Base.encode64()
+
+        {:ok, data}
+    end
+  end
 end

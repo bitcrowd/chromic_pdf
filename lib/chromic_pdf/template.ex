@@ -63,6 +63,11 @@ defmodule ChromicPDF.Template do
           | {:footer_zoom, binary()}
           | {:webkit_print_color_adjust, binary()}
           | {:landscape, boolean()}
+          | {:marginTop, number()}
+          | {:marginBottom, number()}
+          | {:marginLeft, number()}
+          | {:marginRight, number()}
+          | {:style, atom()}
 
   @paper_sizes_in_inch %{
     a0: {33.1, 46.8},
@@ -171,7 +176,7 @@ defmodule ChromicPDF.Template do
     content = Keyword.get(opts, :content, @default_content)
     header = Keyword.get(opts, :header, "")
     footer = Keyword.get(opts, :footer, "")
-    styles = do_styles(opts)
+    styles = if(opts[:style] == :custom, do: "", else: do_styles(opts))
 
     {width, height} = get_paper_size(opts)
 
@@ -183,7 +188,11 @@ defmodule ChromicPDF.Template do
           headerTemplate: html_concat(styles, header),
           footerTemplate: html_concat(styles, footer),
           paperWidth: width,
-          paperHeight: height
+          paperHeight: height,
+          marginTop: Keyword.get(opts, :marginTop),
+          marginLeft: Keyword.get(opts, :marginLeft),
+          marginRight: Keyword.get(opts, :marginRight),
+          marginBottom: Keyword.get(opts, :marginBottom)
         }
       ]
     }
