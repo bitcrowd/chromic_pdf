@@ -116,7 +116,7 @@ defmodule ChromicPDF.API do
   end
 
   @spec merge(ChromicPDF.Supervisor.services(), list(ChromicPDF.path()), keyword()) ::
-          ChromicPDF.return()
+          ChromicPDF.export_return()
   def merge(services, pdf_path_list, opts) do
     with_tmp_dir(fn tmp_dir ->
       tmp_path = Path.join(tmp_dir, random_file_name(".pdf"))
