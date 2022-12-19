@@ -10,8 +10,8 @@ defmodule ChromicPDF.API do
     Browser,
     CaptureScreenshot,
     GhostscriptPool,
+    OutputOptions,
     PDFOptions,
-    PDFAOptions,
     PrintToPDF
   }
 
@@ -38,7 +38,7 @@ defmodule ChromicPDF.API do
       merge_tmp_path = Path.join(tmp_dir, random_file_name(".pdf"))
 
       :ok = GhostscriptPool.merge(services.ghostscript_pool, pdf_path_list, opts, merge_tmp_path)
-      PDFOptions.feed_merge_data_into_output(merge_tmp_path, opts)
+      OutputOptions.feed_file_into_output(merge_tmp_path, opts)
     end)
   end
 
@@ -107,7 +107,7 @@ defmodule ChromicPDF.API do
     with_telemetry(protocol, opts, fn ->
       services.browser
       |> Browser.run_protocol(Map.fetch!(@export_protocols, protocol), opts)
-      |> PDFOptions.feed_chrome_data_into_output(opts)
+      |> OutputOptions.feed_chrome_data_into_output(opts)
     end)
   end
 
@@ -149,7 +149,7 @@ defmodule ChromicPDF.API do
       tmp_path = Path.join(tmp_dir, random_file_name(".pdf"))
 
       :ok = GhostscriptPool.merge(services.ghostscript_pool, pdf_path_list, opts, tmp_path)
-      PDFAOptions.feed_ghostscript_file_into_output(tmp_path, opts)
+      OutputOptions.feed_file_into_output(tmp_path, opts)
     end)
   end
 
@@ -158,7 +158,7 @@ defmodule ChromicPDF.API do
 
     with_telemetry(:convert_to_pdfa, opts, fn ->
       :ok = GhostscriptPool.convert(services.ghostscript_pool, pdf_path, opts, pdfa_path)
-      PDFAOptions.feed_ghostscript_file_into_output(pdfa_path, opts)
+      OutputOptions.feed_file_into_output(pdfa_path, opts)
     end)
   end
 end
