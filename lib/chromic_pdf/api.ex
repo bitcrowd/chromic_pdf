@@ -17,9 +17,29 @@ defmodule ChromicPDF.API do
 
   @spec print_to_pdf(
           ChromicPDF.Supervisor.services(),
-          ChromicPDF.source() | ChromicPDF.source_and_options(),
+          ChromicPDF.source()
+          | ChromicPDF.source_and_options()
+          | [ChromicPDF.source() | ChromicPDF.source_and_options()],
           [ChromicPDF.pdf_option() | ChromicPDF.export_option()]
         ) :: ChromicPDF.export_return()
+  def print_to_pdf(services, sources, opts) when is_list(sources) and is_list(opts) do
+    with_tmp_dir(fn tmp_dir ->
+      sources =
+        Enum.map(sources, fn
+          %{opts: source_opts} = source -> %{source | opts: Keyword.merge(source_opts, opts)}
+          source -> source
+        end)
+
+      pdf_path_list = Enum.map(sources, &print_tmp(services, &1, tmp_dir, opts))
+
+      merge_tmp_path = Path.join(tmp_dir, random_file_name(".pdf"))
+
+      :ok = GhostscriptPool.merge(services.ghostscript_pool, pdf_path_list, opts, merge_tmp_path)
+
+      OutputOptions.feed_file_into_output(merge_tmp_path, opts)
+    end)
+  end
+
   def print_to_pdf(services, %{source: source, opts: opts}, overrides)
       when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
     print_to_pdf(services, source, Keyword.merge(opts, overrides))
@@ -27,19 +47,6 @@ defmodule ChromicPDF.API do
 
   def print_to_pdf(services, source, opts) when tuple_size(source) == 2 and is_list(opts) do
     chrome_export(services, :print_to_pdf, source, opts)
-  end
-
-  def print_to_pdf_and_merge(services, sources, opts) when is_list(sources) and is_list(opts) do
-    with_tmp_dir(fn tmp_dir ->
-      sources = merge_print_options(sources, opts)
-
-      pdf_path_list = print_multiple_to_pdf(services, sources, tmp_dir, opts)
-
-      merge_tmp_path = Path.join(tmp_dir, random_file_name(".pdf"))
-
-      :ok = GhostscriptPool.merge(services.ghostscript_pool, pdf_path_list, opts, merge_tmp_path)
-      OutputOptions.feed_file_into_output(merge_tmp_path, opts)
-    end)
   end
 
   @spec capture_screenshot(ChromicPDF.Supervisor.services(), ChromicPDF.source(), [
@@ -55,52 +62,6 @@ defmodule ChromicPDF.API do
     print_to_pdf: PrintToPDF
   }
 
-  @margin_opts [:marginTop, :marginBottom, :marginLeft, :marginRight]
-
-  defp merge_print_options(sources, opts) when is_list(sources) do
-    Enum.map(sources, &merge_print_options(&1, opts))
-  end
-
-  defp merge_print_options(%{opts: [print_to_pdf: single_opts] = source_opts} = source, opts) do
-    general_print_opts = Keyword.get(opts, :print_to_pdf, %{})
-
-    merged_opts =
-      Map.merge(general_print_opts, single_opts, fn
-        k, v1, nil when k in @margin_opts -> v1
-        _k, _v1, v2 -> v2
-      end)
-
-    new_source_opts = Keyword.put(source_opts, :print_to_pdf, merged_opts)
-
-    %{source | opts: new_source_opts}
-  end
-
-  defp merge_print_options(source, opts) do
-    general_print_opts = Keyword.get(opts, :print_to_pdf, %{})
-
-    %{source: source, opts: general_print_opts}
-  end
-
-  defp print_multiple_to_pdf(services, sources, tmp_dir, opts) do
-    Enum.map(sources, fn
-      %{source: source, opts: opts} ->
-        tmp_path = Path.join(tmp_dir, random_file_name(".pdf"))
-        opts = Keyword.put(opts, :output, tmp_path)
-
-        chrome_export(services, :print_to_pdf, source, opts)
-
-        tmp_path
-
-      source when tuple_size(source) == 2 ->
-        tmp_path = Path.join(tmp_dir, random_file_name(".pdf"))
-        opts = Keyword.put(opts, :output, tmp_path)
-
-        chrome_export(services, :print_to_pdf, source, opts)
-
-        tmp_path
-    end)
-  end
-
   defp chrome_export(services, protocol, source, opts) do
     opts = PDFOptions.prepare_export_options(source, opts)
 
@@ -109,6 +70,18 @@ defmodule ChromicPDF.API do
       |> Browser.run_protocol(Map.fetch!(@export_protocols, protocol), opts)
       |> OutputOptions.feed_chrome_data_into_output(opts)
     end)
+  end
+
+  defp print_tmp(services, %{source: source, opts: opts}, tmp_dir, _opts),
+    do: print_tmp(services, source, tmp_dir, opts)
+
+  defp print_tmp(services, source, tmp_dir, opts) when tuple_size(source) == 2 do
+    tmp_path = Path.join(tmp_dir, random_file_name(".pdf"))
+    opts = Keyword.put(opts, :output, tmp_path)
+
+    chrome_export(services, :print_to_pdf, source, opts)
+
+    tmp_path
   end
 
   @spec convert_to_pdfa(ChromicPDF.Supervisor.services(), ChromicPDF.path(), [

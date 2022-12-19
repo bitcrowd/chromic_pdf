@@ -502,19 +502,11 @@ defmodule ChromicPDF.Supervisor do
           ChromicPDF.print_to_pdf({:url, "http:///example.net"}, wait_for: wait_for)
       '''
       @spec print_to_pdf(
-              input :: source() | source_and_options(),
+              input :: source() | source_and_options() | [source() | source_and_options()],
               opts :: [pdf_option() | export_option()]
             ) :: export_return()
       def print_to_pdf(input, opts \\ []) do
         with_services(__MODULE__, &API.print_to_pdf(&1, input, opts))
-      end
-
-      @spec print_to_pdf_and_merge(
-              inputs :: [source() | source_and_options()],
-              opts :: [pdf_option()]
-            ) :: return()
-      def print_to_pdf_and_merge(inputs, opts \\ []) do
-        with_services(__MODULE__, &API.print_to_pdf_and_merge(&1, inputs, opts))
       end
 
       @doc """
@@ -644,7 +636,7 @@ defmodule ChromicPDF.Supervisor do
 
           :ok = ChromicPDF.merge(["sample-1.pdf", "sample-2.pdf"], output: "combined-sample.pdf")
       """
-      @spec merge(pdf_path_list :: list(path()), opts :: keyword()) :: return()
+      @spec merge(pdf_path_list :: list(path()), opts :: keyword()) :: export_return()
       def merge(pdf_path_list, opts \\ []) do
         with_services(__MODULE__, &API.merge(&1, pdf_path_list, opts))
       end
