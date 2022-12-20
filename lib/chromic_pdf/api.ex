@@ -34,9 +34,12 @@ defmodule ChromicPDF.API do
 
       merge_tmp_path = Path.join(tmp_dir, random_file_name(".pdf"))
 
-      :ok = GhostscriptPool.merge(services.ghostscript_pool, pdf_path_list, opts, merge_tmp_path)
+      with_telemetry(:merge, opts, fn ->
+        :ok =
+          GhostscriptPool.merge(services.ghostscript_pool, pdf_path_list, opts, merge_tmp_path)
 
-      OutputOptions.feed_file_into_output(merge_tmp_path, opts)
+        OutputOptions.feed_file_into_output(merge_tmp_path, opts)
+      end)
     end)
   end
 
