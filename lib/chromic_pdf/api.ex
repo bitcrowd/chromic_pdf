@@ -27,10 +27,10 @@ defmodule ChromicPDF.API do
       sources =
         Enum.map(sources, fn
           %{opts: source_opts} = source -> %{source | opts: Keyword.merge(source_opts, opts)}
-          source -> source
+          source -> %{source: source, opts: opts}
         end)
 
-      pdf_path_list = Enum.map(sources, &print_tmp(services, &1, tmp_dir, opts))
+      pdf_path_list = Enum.map(sources, &print_tmp(services, &1, tmp_dir))
 
       merge_tmp_path = Path.join(tmp_dir, random_file_name(".pdf"))
 
@@ -72,10 +72,7 @@ defmodule ChromicPDF.API do
     end)
   end
 
-  defp print_tmp(services, %{source: source, opts: opts}, tmp_dir, _opts),
-    do: print_tmp(services, source, tmp_dir, opts)
-
-  defp print_tmp(services, source, tmp_dir, opts) when tuple_size(source) == 2 do
+  defp print_tmp(services, %{source: source, opts: opts}, tmp_dir) when tuple_size(source) == 2 do
     tmp_path = Path.join(tmp_dir, random_file_name(".pdf"))
     opts = Keyword.put(opts, :output, tmp_path)
 
