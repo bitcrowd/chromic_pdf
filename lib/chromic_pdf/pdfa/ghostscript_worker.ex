@@ -37,8 +37,6 @@ defmodule ChromicPDF.GhostscriptWorker do
 
   @spec merge(list(binary()), keyword(), binary()) :: :ok
   def merge(pdf_path_list, _params, output_path) do
-    pdf_path_list = Enum.map(pdf_path_list, &Path.expand/1)
-
     @ghostscript.merge(pdf_path_list, output_path)
 
     :ok
