@@ -112,17 +112,6 @@ defmodule ChromicPDF.API do
     end)
   end
 
-  @spec merge(ChromicPDF.Supervisor.services(), list(ChromicPDF.path()), keyword()) ::
-          ChromicPDF.export_return()
-  def merge(services, pdf_path_list, opts) do
-    with_tmp_dir(fn tmp_dir ->
-      tmp_path = Path.join(tmp_dir, random_file_name(".pdf"))
-
-      :ok = GhostscriptPool.merge(services.ghostscript_pool, pdf_path_list, opts, tmp_path)
-      OutputOptions.feed_file_into_output(tmp_path, opts)
-    end)
-  end
-
   defp do_convert_to_pdfa(services, pdf_path, opts, tmp_dir) do
     pdfa_path = Path.join(tmp_dir, random_file_name(".pdf"))
 

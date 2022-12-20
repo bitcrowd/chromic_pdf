@@ -619,27 +619,6 @@ defmodule ChromicPDF.Supervisor do
       def print_to_pdfa(input, opts \\ []) do
         with_services(__MODULE__, &API.print_to_pdfa(&1, input, opts))
       end
-
-      @doc """
-      Merges multiple PDF files.
-
-      It accepts an `output` option like `print_to_pdf/2` in order to choose
-      between the blob output or writing to a file.
-
-      Will raise if any of the given files is not found.
-
-      ## Example
-
-          {:ok, blob} = ChromicPDF.merge(["sample-1.pdf", "sample-2.pdf"])
-
-      ## Example with PDF file output
-
-          :ok = ChromicPDF.merge(["sample-1.pdf", "sample-2.pdf"], output: "combined-sample.pdf")
-      """
-      @spec merge(pdf_path_list :: list(path()), opts :: keyword()) :: export_return()
-      def merge(pdf_path_list, opts \\ []) do
-        with_services(__MODULE__, &API.merge(&1, pdf_path_list, opts))
-      end
     end
   end
 end
