@@ -149,8 +149,9 @@ defmodule ChromicPDF.Supervisor do
       @type path :: binary()
       @type blob :: iodata()
 
-      @type source :: {:url, url()} | {:html, blob()}
-      @type source_and_options :: %{source: source(), opts: [pdf_option()]}
+      @type source_tuple :: {:url, url()} | {:html, blob()}
+      @type source_and_options :: %{source: source_tuple(), opts: [pdf_option()]}
+      @type source :: source() | source_and_options()
 
       @type output_function_result :: any()
       @type output_function :: (blob() -> output_function_result())
@@ -373,41 +374,30 @@ defmodule ChromicPDF.Supervisor do
           content = SomeView.render("body.html") |> Phoenix.HTML.safe_to_string()
           ChromicPDF.print_to_pdf({:html, content})
 
-      ### Multiple source input & merge
+      ## Concatenating multiple sources
 
-      **This feature requires Ghostscript to merge different files.**
+      Pass a list of sources as first argument to instruct ChromicPDF to create a PDF file for
+      each source and concatenate these using Ghostscript. This is particularly useful when some
+      sections of your final document require a different page layout than others. You may use
+      `ChromicPDF.Template` or tuple sources.
 
-      If you have multiple inputs, you can pass them as a list of sources. In this case, the different results will be merged into one single output.
-      Remember that the merge will be done sequentially, so the order of the given list is important.
-
-          ChromicPDF.print_to_pdf(
-            [
-              {:html, "<h1>First page!</h1>"}
-              {:html, "<h1>Second page!</h1>"}
-            ]
-          )
-
-      This gives you also other benefits like the possibility of having different configurations for each input (header, footer, size, etc.).
-      In order to do that, you will need to use the `ChromicPDF.Template.source_and_options/1` function to specify them.
-
-          source_1 =
+          [
             ChromicPDF.Template.source_and_options(
-              content: "<h1>First page!</h1>",
+              content: "<h1>First part with header</h1>",
               header_height: "20mm",
-              header: ~S(<span style="font-size: 40px">Header for the first page</span>)
-            )
+              header: "<p>Some header text</p>"
+            ),
+            {:html, "second part without header"}
+          ]
+          |> ChromicPDF.print_to_pdf()
 
-          source_2 =
-            ChromicPDF.Template.source_and_options(
-              content: "<h1>Second page!</h1>",
-              header_height: "10mm",
-              header: ~S(<span style="font-size: 40px">Header for the second page</span>),
-              footer: ~S(<span style="font-size: 40px">Footer for the second page</span>)
-            )
+      You can pass additional options to `print_to_pdf/2` as usual, e.g. `:output` to control
+      the return value handling.
 
-          ChromicPDF.print_to_pdf([source_1, source_2])
-
-      If that's not needed, you can use the `print_to_pdf` option and all the different inputs will share the same configuration.
+      Individual sources are processed sequentially and eventually concatenated, so expect runtime
+      to increase linearly with the number of sources. The session timeout is applied per source.
+      Each source emits the normal `:print_to_pdf` telemetry events. The final concatenation emits
+      `:join_pdfs` events.
 
       ## Custom options for `Page.printToPDF`
 
@@ -537,12 +527,11 @@ defmodule ChromicPDF.Supervisor do
 
           ChromicPDF.print_to_pdf({:url, "http:///example.net"}, wait_for: wait_for)
       '''
-      @spec print_to_pdf(
-              input :: source() | source_and_options() | [source() | source_and_options()],
-              opts :: [pdf_option() | export_option()]
-            ) :: export_return()
-      def print_to_pdf(input, opts \\ []) do
-        with_services(__MODULE__, &API.print_to_pdf(&1, input, opts))
+      @spec print_to_pdf(source() | [source()]) :: export_return()
+      @spec print_to_pdf(source() | [source()], [pdf_option() | export_option()]) ::
+              export_return()
+      def print_to_pdf(source, opts \\ []) do
+        with_services(__MODULE__, &API.print_to_pdf(&1, source, opts))
       end
 
       @doc """
@@ -568,12 +557,11 @@ defmodule ChromicPDF.Supervisor do
 
       For navigational options (source, cookies, evaluating scripts) see `print_to_pdf/2`.
       """
-      @spec capture_screenshot(
-              url :: source(),
-              opts :: [capture_screenshot_option() | export_option()]
-            ) :: export_return()
-      def capture_screenshot(input, opts \\ []) do
-        with_services(__MODULE__, &API.capture_screenshot(&1, input, opts))
+      @spec capture_screenshot(source()) :: export_return()
+      @spec capture_screenshot(source(), [capture_screenshot_option() | export_option()]) ::
+              export_return()
+      def capture_screenshot(source, opts \\ []) do
+        with_services(__MODULE__, &API.capture_screenshot(&1, source, opts))
       end
 
       @doc """
@@ -634,7 +622,8 @@ defmodule ChromicPDF.Supervisor do
             pdfa_def_ext: "[/Title (OverriddenTitle) /DOCINFO pdfmark",
           )
       """
-      @spec convert_to_pdfa(pdf_path :: path(), opts :: [pdfa_option()]) :: export_return()
+      @spec convert_to_pdfa(path()) :: export_return()
+      @spec convert_to_pdfa(path(), [pdfa_option()]) :: export_return()
       def convert_to_pdfa(pdf_path, opts \\ []) do
         with_services(__MODULE__, &API.convert_to_pdfa(&1, pdf_path, opts))
       end
@@ -648,12 +637,11 @@ defmodule ChromicPDF.Supervisor do
 
           ChromicPDF.print_to_pdfa({:url, "https://example.net"})
       """
-      @spec print_to_pdfa(
-              input :: source() | source_and_options(),
-              opts :: [pdf_option() | pdfa_option() | export_option()]
-            ) :: export_return()
-      def print_to_pdfa(input, opts \\ []) do
-        with_services(__MODULE__, &API.print_to_pdfa(&1, input, opts))
+      @spec print_to_pdfa(source()) :: export_return()
+      @spec print_to_pdfa(source(), [pdf_option() | pdfa_option() | export_option()]) ::
+              export_return()
+      def print_to_pdfa(source, opts \\ []) do
+        with_services(__MODULE__, &API.print_to_pdfa(&1, source, opts))
       end
     end
   end

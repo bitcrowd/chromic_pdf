@@ -38,11 +38,11 @@ defmodule ChromicPDF.GhostscriptPool do
     end)
   end
 
-  # Merges multiple PDF files using Ghostscript.
-  @spec merge(pid(), list(binary()), keyword(), binary()) :: :ok
-  def merge(pool, pdf_path_list, params, output_path) do
+  # Concatenates multiple PDF files using Ghostscript.
+  @spec join(pid(), list(binary()), keyword(), binary()) :: :ok
+  def join(pool, pdf_paths, params, output_path) do
     NimblePool.checkout!(pool, :checkout, fn _from, _worker_state ->
-      {GhostscriptWorker.merge(pdf_path_list, params, output_path), :ok}
+      {GhostscriptWorker.join(pdf_paths, params, output_path), :ok}
     end)
   end
 

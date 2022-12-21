@@ -80,6 +80,14 @@ convenient API. See the documentation for details.
 |> ChromicPDF.print_to_pdf()
 ```
 
+### Multiple sources
+
+Multiple sources can be automatically concatenated.
+
+```elixir
+ChromicPDF.print_to_pdf([{:html, "page 1"}, {:html, "page 2"}], output: "joined.pdf")
+```
+
 ### Examples
 
 * For a more complete example of how to integrate ChromicPDF in a Phoenix application, see [examples/phoenix](https://github.com/bitcrowd/chromic_pdf/tree/main/examples/phoenix).

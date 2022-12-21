@@ -5,7 +5,7 @@ defmodule ChromicPDF.PDFOptions do
 
   require EEx
 
-  def prepare_export_options(source, opts) do
+  def prepare_input_options(source, opts) do
     opts
     |> put_source(source)
     |> replace_wait_for_with_evaluate()
