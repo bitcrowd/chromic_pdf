@@ -56,6 +56,12 @@ defmodule ChromicPDF.TelemetryTest do
     assert_events(:print_to_pdf, fn ->
       {:ok, _blob} = ChromicPDF.print_to_pdf({:html, ""}, telemetry_metadata: %{foo: :bar})
     end)
+
+    # when giving multiple sources, the `merge` event is triggered too
+    assert_events(:merge, fn ->
+      {:ok, _blob} =
+        ChromicPDF.print_to_pdf([{:html, ""}, {:html, ""}], telemetry_metadata: %{foo: :bar})
+    end)
   end
 
   test "executes events for capture_screenshot/2" do
