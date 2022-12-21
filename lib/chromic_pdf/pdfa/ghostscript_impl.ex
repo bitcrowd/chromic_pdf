@@ -78,6 +78,16 @@ defmodule ChromicPDF.GhostscriptImpl do
     :ok
   end
 
+  @impl ChromicPDF.Ghostscript
+  def merge(pdf_path_list, output_path) do
+    ghostscript_cmd!(
+      ["-dNOPAUSE", "-sDEVICE=pdfwrite", "-sOUTPUTFILE=#{output_path}", "-dBATCH"] ++
+        pdf_path_list
+    )
+
+    :ok
+  end
+
   defp ghostscript_cmd!(args) do
     args =
       args

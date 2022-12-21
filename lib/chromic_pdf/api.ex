@@ -5,21 +5,43 @@ defmodule ChromicPDF.API do
 
   import ChromicPDF.{Telemetry, Utils}
 
-  # credo:disable-for-next-line Credo.Check.Readability.AliasOrder
   alias ChromicPDF.{
     Browser,
     CaptureScreenshot,
     GhostscriptPool,
+    OutputOptions,
     PDFOptions,
-    PDFAOptions,
     PrintToPDF
   }
 
   @spec print_to_pdf(
           ChromicPDF.Supervisor.services(),
-          ChromicPDF.source() | ChromicPDF.source_and_options(),
+          ChromicPDF.source()
+          | ChromicPDF.source_and_options()
+          | [ChromicPDF.source() | ChromicPDF.source_and_options()],
           [ChromicPDF.pdf_option() | ChromicPDF.export_option()]
         ) :: ChromicPDF.export_return()
+  def print_to_pdf(services, sources, opts) when is_list(sources) and is_list(opts) do
+    with_tmp_dir(fn tmp_dir ->
+      sources =
+        Enum.map(sources, fn
+          %{opts: source_opts} = source -> %{source | opts: Keyword.merge(source_opts, opts)}
+          source -> %{source: source, opts: opts}
+        end)
+
+      pdf_path_list = Enum.map(sources, &print_tmp(services, &1, tmp_dir))
+
+      merge_tmp_path = Path.join(tmp_dir, random_file_name(".pdf"))
+
+      with_telemetry(:merge, opts, fn ->
+        :ok =
+          GhostscriptPool.merge(services.ghostscript_pool, pdf_path_list, opts, merge_tmp_path)
+
+        OutputOptions.feed_file_into_output(merge_tmp_path, opts)
+      end)
+    end)
+  end
+
   def print_to_pdf(services, %{source: source, opts: opts}, overrides)
       when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
     print_to_pdf(services, source, Keyword.merge(opts, overrides))
@@ -48,8 +70,17 @@ defmodule ChromicPDF.API do
     with_telemetry(protocol, opts, fn ->
       services.browser
       |> Browser.run_protocol(Map.fetch!(@export_protocols, protocol), opts)
-      |> PDFOptions.feed_chrome_data_into_output(opts)
+      |> OutputOptions.feed_chrome_data_into_output(opts)
     end)
+  end
+
+  defp print_tmp(services, %{source: source, opts: opts}, tmp_dir) when tuple_size(source) == 2 do
+    tmp_path = Path.join(tmp_dir, random_file_name(".pdf"))
+    opts = Keyword.put(opts, :output, tmp_path)
+
+    chrome_export(services, :print_to_pdf, source, opts)
+
+    tmp_path
   end
 
   @spec convert_to_pdfa(ChromicPDF.Supervisor.services(), ChromicPDF.path(), [
@@ -88,7 +119,7 @@ defmodule ChromicPDF.API do
 
     with_telemetry(:convert_to_pdfa, opts, fn ->
       :ok = GhostscriptPool.convert(services.ghostscript_pool, pdf_path, opts, pdfa_path)
-      PDFAOptions.feed_ghostscript_file_into_output(pdfa_path, opts)
+      OutputOptions.feed_file_into_output(pdfa_path, opts)
     end)
   end
 end

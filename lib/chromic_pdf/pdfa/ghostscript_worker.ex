@@ -35,6 +35,13 @@ defmodule ChromicPDF.GhostscriptWorker do
     :ok
   end
 
+  @spec merge(list(binary()), keyword(), binary()) :: :ok
+  def merge(pdf_path_list, _params, output_path) do
+    @ghostscript.merge(pdf_path_list, output_path)
+
+    :ok
+  end
+
   EEx.function_from_file(:defp, :render_pdfa_def_ps, @psdef_ps, [:assigns])
 
   defp create_pdfa_def_ps!(pdf_path, params, pdfa_def_ps_path) do

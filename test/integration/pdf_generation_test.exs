@@ -206,6 +206,55 @@ defmodule ChromicPDF.PDFGenerationTest do
         assert system_cmd!("pdfinfo", [output]) =~ ~r/Tagged:\s+yes/
       end)
     end
+
+    @tag :pdftotext
+    test "it prints multiple PDF and merges them from different sources" do
+      print_to_pdf(
+        [{:url, "https://example.net"}, {:html, {:safe, [test_html()]}}],
+        [],
+        fn text ->
+          assert String.contains?(text, "literature")
+          assert String.contains?(text, "Hello ChromicPDF!")
+        end
+      )
+    end
+
+    @tag :pdftotext
+    test "it prints and merges multiple PDF with different headers or footers" do
+      source_1 =
+        ChromicPDF.Template.source_and_options(
+          content: test_html(),
+          header_height: "20mm",
+          header: ~S(<span style="font-size: 40px">Header 1</span>),
+          footer: ~S(<span style="font-size: 40px">Footer 1</span>)
+        )
+
+      source_2 =
+        ChromicPDF.Template.source_and_options(
+          content: test_html(),
+          header_height: "20mm",
+          header: ~S(<span style="font-size: 40px">Header 2</span>),
+          footer: ~S(<span style="font-size: 40px">Footer 2</span>)
+        )
+
+      print_to_pdf(
+        [source_1, source_2],
+        [],
+        fn text ->
+          assert String.contains?(text, "Header 1")
+          assert String.contains?(text, "Footer 1")
+          assert String.contains?(text, "Header 2")
+          assert String.contains?(text, "Footer 2")
+        end
+      )
+    end
+  end
+
+  describe "multiple PDF printing & merge" do
+    setup do
+      start_supervised!(ChromicPDF)
+      :ok
+    end
   end
 
   describe "with disable_scripts: true" do

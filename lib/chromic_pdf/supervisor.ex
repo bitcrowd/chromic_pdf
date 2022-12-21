@@ -373,6 +373,42 @@ defmodule ChromicPDF.Supervisor do
           content = SomeView.render("body.html") |> Phoenix.HTML.safe_to_string()
           ChromicPDF.print_to_pdf({:html, content})
 
+      ### Multiple source input & merge
+
+      **This feature requires Ghostscript to merge different files.**
+
+      If you have multiple inputs, you can pass them as a list of sources. In this case, the different results will be merged into one single output.
+      Remember that the merge will be done sequentially, so the order of the given list is important.
+
+          ChromicPDF.print_to_pdf(
+            [
+              {:html, "<h1>First page!</h1>"}
+              {:html, "<h1>Second page!</h1>"}
+            ]
+          )
+
+      This gives you also other benefits like the possibility of having different configurations for each input (header, footer, size, etc.).
+      In order to do that, you will need to use the `ChromicPDF.Template.source_and_options/1` function to specify them.
+
+          source_1 =
+            ChromicPDF.Template.source_and_options(
+              content: "<h1>First page!</h1>",
+              header_height: "20mm",
+              header: ~S(<span style="font-size: 40px">Header for the first page</span>)
+            )
+
+          source_2 =
+            ChromicPDF.Template.source_and_options(
+              content: "<h1>Second page!</h1>",
+              header_height: "10mm",
+              header: ~S(<span style="font-size: 40px">Header for the second page</span>),
+              footer: ~S(<span style="font-size: 40px">Footer for the second page</span>)
+            )
+
+          ChromicPDF.print_to_pdf([source_1, source_2])
+
+      If that's not needed, you can use the `print_to_pdf` option and all the different inputs will share the same configuration.
+
       ## Custom options for `Page.printToPDF`
 
       You can provide custom options for the [`Page.printToPDF`](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-printToPDF)
@@ -502,7 +538,7 @@ defmodule ChromicPDF.Supervisor do
           ChromicPDF.print_to_pdf({:url, "http:///example.net"}, wait_for: wait_for)
       '''
       @spec print_to_pdf(
-              input :: source() | source_and_options(),
+              input :: source() | source_and_options() | [source() | source_and_options()],
               opts :: [pdf_option() | export_option()]
             ) :: export_return()
       def print_to_pdf(input, opts \\ []) do
