@@ -5,7 +5,6 @@ defmodule ChromicPDF.API do
 
   import ChromicPDF.{Telemetry, Utils}
 
-  # credo:disable-for-next-line Credo.Check.Readability.AliasOrder
   alias ChromicPDF.{
     Browser,
     CaptureScreenshot,
