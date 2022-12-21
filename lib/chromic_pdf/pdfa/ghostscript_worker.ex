@@ -35,9 +35,9 @@ defmodule ChromicPDF.GhostscriptWorker do
     :ok
   end
 
-  @spec merge(list(binary()), keyword(), binary()) :: :ok
-  def merge(pdf_path_list, _params, output_path) do
-    @ghostscript.merge(pdf_path_list, output_path)
+  @spec join(list(binary()), keyword(), binary()) :: :ok
+  def join(pdf_paths, _params, output_path) do
+    @ghostscript.join(pdf_paths, output_path)
 
     :ok
   end

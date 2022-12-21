@@ -36,31 +36,36 @@ defmodule ChromicPDF.TelemetryTest do
     end
   end
 
-  defp assert_events(event, fun) do
+  defp assert_events(event, count \\ 1, fun) do
     with_handler(event, fun)
 
-    assert_receive %{
-      event: [:chromic_pdf, ^event, :start],
-      measurements: %{},
-      metadata: %{foo: :bar}
-    }
+    for _ <- 1..count do
+      assert_receive %{
+        event: [:chromic_pdf, ^event, :start],
+        measurements: %{},
+        metadata: %{foo: :bar}
+      }
 
-    assert_receive %{
-      event: [:chromic_pdf, ^event, :stop],
-      measurements: %{duration: _duration},
-      metadata: %{foo: :bar}
-    }
+      assert_receive %{
+        event: [:chromic_pdf, ^event, :stop],
+        measurements: %{duration: _duration},
+        metadata: %{foo: :bar}
+      }
+    end
   end
 
   test "executes events for print_to_pdf/2" do
     assert_events(:print_to_pdf, fn ->
       {:ok, _blob} = ChromicPDF.print_to_pdf({:html, ""}, telemetry_metadata: %{foo: :bar})
     end)
+  end
 
-    # when giving multiple sources, the `merge` event is triggered too
-    assert_events(:merge, fn ->
-      {:ok, _blob} =
-        ChromicPDF.print_to_pdf([{:html, ""}, {:html, ""}], telemetry_metadata: %{foo: :bar})
+  test "executes the merge event when given multiple sources" do
+    assert_events(:print_to_pdf, 2, fn ->
+      assert_events(:join_pdfs, fn ->
+        {:ok, _blob} =
+          ChromicPDF.print_to_pdf([{:html, ""}, {:html, ""}], telemetry_metadata: %{foo: :bar})
+      end)
     end)
   end
 

@@ -1,3 +1,8 @@
+## Unreleased
+
+### Added
+
+- Add automatic PDF concatenation when passing a list to `print_to_pdf/2`. (@xaviRodri)
 ## [1.4.0] - 2022-12-07
 
 ### Added

@@ -271,8 +271,13 @@ defmodule ChromicPDF do
 
       ChromicPDF.print_to_pdf(..., telemetry_metadata: %{template: "invoice"})
 
-  The `print_to_pdfa` function emits both the `print_to_pdf` and `convert_to_pdfa` event series,
+  The `print_to_pdfa/2` function emits both the `print_to_pdf` and `convert_to_pdfa` event series,
   in that order.
+
+  Last but not least, the `print_to_pdf/2` function emits `:join_pdfs` events when concatenating
+  multiple input sources.
+
+  * `[:chromic_pdf, :join_pdfs, :start | :stop | exception]`
 
   ## How it works
 

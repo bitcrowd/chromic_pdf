@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-defmodule ChromicPDF.OutputOptions do
+defmodule ChromicPDF.ExportOptions do
   @moduledoc false
 
   import ChromicPDF.Utils
