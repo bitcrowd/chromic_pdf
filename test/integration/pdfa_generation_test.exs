@@ -50,6 +50,10 @@ defmodule ChromicPDF.PDFAGenerationTest do
       end
     end
 
+    test "it joins multiple sources into a single PDF" do
+      assert {:ok, _} = ChromicPDF.print_to_pdfa([{:html, "page 1"}, {:html, "page 2"}])
+    end
+
     test "works with file names that need shell escaping" do
       with_tmp_dir(fn tmp_dir ->
         pdf_path = Path.join(tmp_dir, "output !@#$%.pdf")
