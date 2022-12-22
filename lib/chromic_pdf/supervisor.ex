@@ -637,8 +637,8 @@ defmodule ChromicPDF.Supervisor do
 
           ChromicPDF.print_to_pdfa({:url, "https://example.net"})
       """
-      @spec print_to_pdfa(source()) :: export_return()
-      @spec print_to_pdfa(source(), [pdf_option() | pdfa_option() | export_option()]) ::
+      @spec print_to_pdfa(source() | [source()]) :: export_return()
+      @spec print_to_pdfa(source() | [source()], [pdf_option() | pdfa_option() | export_option()]) ::
               export_return()
       def print_to_pdfa(source, opts \\ []) do
         with_services(__MODULE__, &API.print_to_pdfa(&1, source, opts))

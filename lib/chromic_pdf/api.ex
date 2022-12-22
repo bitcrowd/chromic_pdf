@@ -79,16 +79,15 @@ defmodule ChromicPDF.API do
     end)
   end
 
-  @spec print_to_pdfa(ChromicPDF.Supervisor.services(), ChromicPDF.source(), [
-          ChromicPDF.pdf_option() | ChromicPDF.pdfa_option() | ChromicPDF.export_option()
-        ]) ::
+  @spec print_to_pdfa(
+          ChromicPDF.Supervisor.services(),
+          ChromicPDF.source() | [ChromicPDF.source()],
+          [
+            ChromicPDF.pdf_option() | ChromicPDF.pdfa_option() | ChromicPDF.export_option()
+          ]
+        ) ::
           ChromicPDF.export_return()
-  def print_to_pdfa(services, %{source: source, opts: opts}, overrides)
-      when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
-    print_to_pdfa(services, source, Keyword.merge(opts, overrides))
-  end
-
-  def print_to_pdfa(services, source, opts) when tuple_size(source) == 2 and is_list(opts) do
+  def print_to_pdfa(services, source, opts) when is_list(opts) do
     with_tmp_dir(fn tmp_dir ->
       pdf_path = Path.join(tmp_dir, random_file_name(".pdf"))
       :ok = print_to_pdf(services, source, Keyword.put(opts, :output, pdf_path))

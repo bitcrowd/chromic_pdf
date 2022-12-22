@@ -12,6 +12,11 @@ defmodule ChromicPDF.PDFAGenerationTest do
   end
 
   describe "PDF/A conversion" do
+    defp assert_pdfa_compliance(file, version) do
+      output = system_cmd!("verapdf", ["-f", version, file])
+      assert String.contains?(output, ~S(validationReports compliant="1"))
+    end
+
     defp print_to_pdfa(opts \\ [], cb) do
       opts = Keyword.put(opts, :output, cb)
       assert {:ok, _} = ChromicPDF.print_to_pdfa({:url, "file://#{@test_html}"}, opts)
@@ -20,16 +25,14 @@ defmodule ChromicPDF.PDFAGenerationTest do
     @tag :verapdf
     test "it generates PDF files in compliance with the PDF/A-2b standard" do
       print_to_pdfa([pdfa_version: "2"], fn file ->
-        output = system_cmd!("verapdf", ["-f", "2b", file])
-        assert String.contains?(output, ~S(validationReports compliant="1"))
+        assert_pdfa_compliance(file, "2b")
       end)
     end
 
     @tag :verapdf
     test "it generates PDF files in compliance with the PDF/A-3b standard (by default)" do
       print_to_pdfa(fn file ->
-        output = system_cmd!("verapdf", ["-f", "3b", file])
-        assert String.contains?(output, ~S(validationReports compliant="1"))
+        assert_pdfa_compliance(file, "3b")
       end)
     end
 
@@ -48,6 +51,16 @@ defmodule ChromicPDF.PDFAGenerationTest do
       receive do
         path -> refute File.exists?(path)
       end
+    end
+
+    @tag :verapdf
+    test "it joins multiple sources into a single PDF" do
+      assert {:ok, _} =
+               ChromicPDF.print_to_pdfa([{:html, "page 1"}, {:html, "page 2"}],
+                 output: fn file ->
+                   assert_pdfa_compliance(file, "3b")
+                 end
+               )
     end
 
     test "works with file names that need shell escaping" do

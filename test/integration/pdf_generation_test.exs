@@ -208,7 +208,7 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     @tag :pdftotext
-    test "it prints multiple PDF and merges them from different sources" do
+    test "it joins multiple sources into a single PDF" do
       print_to_pdf(
         [
           ChromicPDF.Template.source_and_options(
