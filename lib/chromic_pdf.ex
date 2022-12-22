@@ -308,7 +308,7 @@ defmodule ChromicPDF do
   @doc """
   Runs a one-off Chrome process to allow Chrome to initialize its caches.
 
-  On some infrastructure (notably, Github Actions), Chrome occassionally takes a long nap between
+  On some infrastructure (notably, Github Actions), Chrome occasionally takes a long nap between
   process launch and first replying to DevTools commands. If meanwhile you happen to print a PDF
   (so, before any sessions have been spawned by the session pool), the session checkout will fail
   with a timeout error:

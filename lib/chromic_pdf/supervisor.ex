@@ -592,7 +592,7 @@ defmodule ChromicPDF.Supervisor do
       PDF file to the output file. However, files printed by Chrome do not contain any metadata
       information (except "Creator" being "Chrome").
 
-      The `:info` option of the PDF/A converter allows to specify metatadata for the output file
+      The `:info` option of the PDF/A converter allows to specify metadata for the output file
       directly.
 
           ChromicPDF.convert_to_pdfa("some_pdf_file.pdf", info: %{creator: "ChromicPDF"})

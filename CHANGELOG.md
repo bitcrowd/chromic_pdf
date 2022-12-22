@@ -42,13 +42,13 @@
 
 ### Fixed
 
-- Use old pdf interpreter with ghostcript > 9.56 to avoid segfaults (see #158)
+- Use old pdf interpreter with ghostscript > 9.56 to avoid segfaults (see #158)
 
 ## [1.2.1] - 2022-07-12
 
 ### Fixed
 
-- Incompatibility with ghostcript 9.56.1 (fixes #153)
+- Incompatibility with ghostscript 9.56.1 (fixes #153)
 - Added search paths for chrome executable (fixes #151)
 
 ## [1.2.0] - 2022-03-17

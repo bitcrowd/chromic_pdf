@@ -104,7 +104,7 @@ defmodule ChromicPDF.GhostscriptImpl do
 
   defp maybe_use_old_interpreter(args) do
     if ghostscript_version() >= @ghostscript_new_interpreter_version do
-      # We get segmentation faults with the new intepreter (see https://github.com/bitcrowd/chromic_pdf/issues/153):
+      # We get segmentation faults with the new interpreter (see https://github.com/bitcrowd/chromic_pdf/issues/153):
       #
       # /usr/bin/gs exited with status 139!
       #
