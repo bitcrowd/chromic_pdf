@@ -1,3 +1,10 @@
+## Unreleased
+
+### Changed
+
+- Removed unnecessary Ghostscript step to embed fonts. Instead, the relevant arguments are now part of our default set of `pdfwrite` arguments, and hence are also applied to the PDF concatenation added in 1.5.0.
+- Made PDF concatenation take into account `SAFER` mode.
+
 ## [1.5.0] - 2022-12-22
 
 ### Added

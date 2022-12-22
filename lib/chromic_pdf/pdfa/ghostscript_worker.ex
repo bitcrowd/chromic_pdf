@@ -5,8 +5,7 @@ defmodule ChromicPDF.GhostscriptWorker do
 
   require EEx
   import ChromicPDF.Utils
-
-  @ghostscript Application.compile_env(:chromic_pdf, :ghostscript, ChromicPDF.GhostscriptImpl)
+  alias ChromicPDF.GhostscriptRunner
 
   @psdef_ps Path.expand("../PDFA_def.ps.eex", __ENV__.file)
   @external_resource @psdef_ps
@@ -25,19 +24,17 @@ defmodule ChromicPDF.GhostscriptWorker do
   @spec convert(binary(), keyword(), binary()) :: :ok
   def convert(pdf_path, params, output_path) do
     pdf_path = Path.expand(pdf_path)
-    pdf_with_fonts = Path.join(Path.dirname(output_path), random_file_name(".pdf"))
     pdfa_def_ps_path = Path.join(Path.dirname(output_path), random_file_name(".ps"))
 
     create_pdfa_def_ps!(pdf_path, params, pdfa_def_ps_path)
-    create_pdf_with_fonts!(pdf_path, pdf_with_fonts)
-    convert_to_pdfa!(pdf_with_fonts, params, pdfa_def_ps_path, output_path)
+    convert_to_pdfa!(pdf_path, params, pdfa_def_ps_path, output_path)
 
     :ok
   end
 
   @spec join(list(binary()), keyword(), binary()) :: :ok
   def join(pdf_paths, _params, output_path) do
-    @ghostscript.join(pdf_paths, output_path)
+    GhostscriptRunner.pdfwrite(pdf_paths, output_path)
 
     :ok
   end
@@ -60,30 +57,24 @@ defmodule ChromicPDF.GhostscriptWorker do
     File.write!(pdfa_def_ps_path, rendered)
   end
 
-  defp create_pdf_with_fonts!(pdf_path, pdf_with_fonts) do
-    :ok = @ghostscript.embed_fonts(pdf_path, pdf_with_fonts)
-  end
+  defp convert_to_pdfa!(pdf_path, params, pdfa_def_ps_path, output_path) do
+    paths = [
+      pdf_path,
+      pdfa_def_ps_path
+    ]
 
-  defp convert_to_pdfa!(pdf_with_fonts, params, pdfa_def_ps_path, output_path) do
-    pdfa_version =
-      params
-      |> Keyword.get(:pdfa_version, 3)
-      |> to_string()
+    pdfa_opts = [
+      version: Keyword.get(params, :pdfa_version, 3),
+      icc_path: priv_asset("eciRGB_v2.icc")
+    ]
 
-    :ok =
-      @ghostscript.convert_to_pdfa(
-        pdf_with_fonts,
-        pdfa_version,
-        priv_asset("eciRGB_v2.icc"),
-        pdfa_def_ps_path,
-        output_path
-      )
+    :ok = GhostscriptRunner.pdfwrite(paths, output_path, pdfa: pdfa_opts)
   end
 
   defp pdfinfo(pdf_path) do
     infos_from_file =
       pdf_path
-      |> @ghostscript.run_postscript(priv_asset("pdfinfo.ps"))
+      |> GhostscriptRunner.run_postscript(priv_asset("pdfinfo.ps"))
       |> String.trim()
       |> String.split("\n")
       |> Enum.map(&parse_info_line/1)
