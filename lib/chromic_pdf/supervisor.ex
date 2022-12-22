@@ -173,8 +173,8 @@ defmodule ChromicPDF.Supervisor do
                  optional(:subject) => binary(),
                  optional(:keywords) => binary(),
                  optional(:creator) => binary(),
-                 optional(:creation_date) => binary(),
-                 optional(:mod_date) => binary()
+                 optional(:creation_date) => binary() | DateTime.t(),
+                 optional(:mod_date) => binary() | DateTime.t()
                }}
 
       @type evaluate_option :: {:evaluate, %{required(:expression) => binary()}}
@@ -597,7 +597,7 @@ defmodule ChromicPDF.Supervisor do
 
           ChromicPDF.convert_to_pdfa("some_pdf_file.pdf", info: %{creator: "ChromicPDF"})
 
-      The converter understands the following keys, all of which accept only String values:
+      The converter understands the following keys, all of which accept String values:
 
       * `:title`
       * `:author`
