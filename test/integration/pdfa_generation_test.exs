@@ -56,9 +56,11 @@ defmodule ChromicPDF.PDFAGenerationTest do
     @tag :verapdf
     test "it joins multiple sources into a single PDF" do
       assert {:ok, _} =
-        ChromicPDF.print_to_pdfa([{:html, "page 1"}, {:html, "page 2"}], output: fn file ->
-          assert_pdfa_compliance(file, "3b")
-        end)
+               ChromicPDF.print_to_pdfa([{:html, "page 1"}, {:html, "page 2"}],
+                 output: fn file ->
+                   assert_pdfa_compliance(file, "3b")
+                 end
+               )
     end
 
     test "works with file names that need shell escaping" do
