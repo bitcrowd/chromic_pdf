@@ -91,6 +91,7 @@ jobs:
           keys:
             - v6-build-cache-integration-{{ .Branch }}
             - v6-build-deps-cache-integration
+      - run: mix chromic_pdf.warm_up
       - run: mix compile
       - save_cache:
           key: v6-build-deps-cache-integration-{{ .Branch }}
