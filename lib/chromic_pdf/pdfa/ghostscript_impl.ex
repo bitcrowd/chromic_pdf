@@ -80,10 +80,7 @@ defmodule ChromicPDF.GhostscriptImpl do
 
   @impl ChromicPDF.Ghostscript
   def join(pdf_paths, output_path) do
-    ghostscript_cmd!(
-      ["-dNOPAUSE", "-sDEVICE=pdfwrite", "-sOUTPUTFILE=#{output_path}", "-dBATCH"] ++
-        pdf_paths
-    )
+    ghostscript_cmd!(["-sDEVICE=pdfwrite", "-sOUTPUTFILE=#{output_path}"] ++ pdf_paths)
 
     :ok
   end
