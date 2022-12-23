@@ -5,7 +5,7 @@ defmodule Mix.Tasks.ChromicPdf.WarmUp do
   Runs a one-off Chrome process to allow Chrome to initialize its caches.
 
   This function mitigates timeout errors on certain CI environments where Chrome would
-  occassionally take a long time to respond to the first DevTools commands.
+  occasionally take a long time to respond to the first DevTools commands.
 
   See `ChromicPDF.warm_up/1` for details.
   """
