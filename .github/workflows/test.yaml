@@ -34,3 +34,19 @@ jobs:
       - run: mix compile
       - run: mix chromic_pdf.warm_up
       - run: mix test
+  test_on_image:
+    name: ${{matrix.image_version }} image
+    strategy:
+      matrix:
+        image_version: ['0.0.9']
+    env:
+      MIX_ENV: integration
+    runs-on: ubuntu-latest
+    container:
+      image: maltoe/chromic-pdf-primary:${{ matrix.image_version }}
+    steps:
+      - uses: actions/checkout@v3
+      - run: mix deps.get
+      - run: mix compile
+      - run: mix chromic_pdf.warm_up
+      - run: mix test
