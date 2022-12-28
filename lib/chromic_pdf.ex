@@ -25,12 +25,20 @@ defmodule ChromicPDF do
         end
       end
 
-  ### Print a PDF or PDF/A
+  ### Print a PDF
 
-      ChromicPDF.print_to_pdf({:url, "file:///example.html"}, output: "output.pdf")
+      ChromicPDF.print_to_pdf({:file, "example.html"}, output: "output.pdf")
 
-  PDF printing comes with a ton of options. Please see `ChromicPDF.print_to_pdf/2` and
-  `ChromicPDF.convert_to_pdfa/2` for details.
+  This tells Chrome to open the `example.html` file from your current directory and save the
+  rendered page as `output.pdf`. PDF printing comes with a ton of options. Please see
+  `ChromicPDF.print_to_pdf/2` for details.
+
+  ### Print a PDF/A
+
+      ChromicPDF.print_to_pdfa({:file, "example.html"}, output: "output.pdf")
+
+  This prints the same PDF with Chrome and afterwards passes it to Ghostscript to convert it to a
+  PDF/A. Please see `ChromicPDF.print_to_pdfa/2` or `ChromicPDF.convert_to_pdfa/2` for details.
 
   ## Security Considerations
 
@@ -279,28 +287,29 @@ defmodule ChromicPDF do
 
   * `[:chromic_pdf, :join_pdfs, :start | :stop | exception]`
 
-  ## How it works
+  ## On Accessibility / PDF/UA
 
-  ### PDF Printing
+  Since its version 85, Chrome generates "Tagged PDF" files [by
+  default](https://blog.chromium.org/2020/07/using-chrome-to-generate-more.html).  These files
+  contain structural information about the document, i.e. type information about the nodes
+  (headings, paragraph, etc.), as well as metadata like node attributes (e.g., image alt texts).
+  This information allows assistive tools like screen readers to do their job. `pdfinfo`
+  identifiers these files as `Tagged: yes`, and you may review some of the contained information
+  with the `pdfinfo -struct-text <file>` command.
 
-  * ChromicPDF spawns an instance of Chromium/Chrome (an OS process) and connects to its
-    "DevTools" channel via file descriptors.
-  * The Chrome process is supervised and the connected processes will automatically recover if it
-    crashes.
-  * A number of "targets" in Chrome are spawned, 1 per worker process in the `SessionPool`. By
-    default, ChromicPDF will spawn each session in a new browser context (i.e., a profile).
-  * When a PDF print is requested, a session will instruct its assigned "target" to navigate to
-    the given URL, then wait until it receives a "frameStoppedLoading" event, and proceed to call
-    the `printToPDF` function.
-  * The printed PDF will be sent to the session as Base64 encoded chunks.
+  However, at the time of writing, Chrome's most recent beta version 109 does not generate files
+  compliant to the PDF/UA standard (ISO 14289-1:2014). Both the ["PAC 2021" accessibility
+  checker](https://pdfua.foundation/en/pdf-accessibility-checker-pac/) and the VeraPDF validator
+  (capable of validating a subset of the PDF/UA rules since [version 1.18 from April
+  2021](https://www.pdfa.org/presentation/open-source-implementation-of-pdf-ua-validation/)) report
+  rule violations concerning mandatory metadata.
 
-  ### PDF/A Conversion
+  So, if your use-case requires you to generate fully PDF/UA-compliant files, at the moment Chrome
+  - and by extension, ChromicPDF - is not going fulfill your needs.
 
-  * To convert a PDF to a PDF/A-3, ChromicPDF uses the [ghostscript](https://ghostscript.com/)
-    utility.
-  * Since it is required to embed a color scheme into PDF/A files, ChromicPDF ships with a copy
-    of the royalty-free [`eciRGB_V2`](http://www.eci.org/) scheme by the European Color
-    Initiative. If you need to be able to use a different color scheme, please open an issue.
+  Furthermore, any operation that involves running the Chrome-generated file through Ghostscript
+  (PDF/A conversion, concatenation) will **remove all structural information**, so that `pdfinfo`
+  reports `Tagged: no`, and thereby prevent assistive tools from proper functioning.
   """
 
   use ChromicPDF.Supervisor
