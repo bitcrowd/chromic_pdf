@@ -293,9 +293,10 @@ defmodule ChromicPDF do
   default](https://blog.chromium.org/2020/07/using-chrome-to-generate-more.html).  These files
   contain structural information about the document, i.e. type information about the nodes
   (headings, paragraph, etc.), as well as metadata like node attributes (e.g., image alt texts).
-  This information allows assistive tools like screen readers to do their job. `pdfinfo`
-  identifiers these files as `Tagged: yes`, and you may review some of the contained information
-  with the `pdfinfo -struct-text <file>` command.
+  This information allows assistive tools like screen readers to do their job, at the cost of
+  (at times significantly) increasing the file size. To check whether a PDF file is tagged, you
+  can use the `pdfinfo` utility, it reports these files as `Tagged: yes`. You can review some of
+  the contained information with the `pdfinfo -struct-text <file>` command.
 
   However, at the time of writing, Chrome's most recent beta version 109 does not generate files
   compliant to the PDF/UA standard (ISO 14289-1:2014). Both the ["PAC 2021" accessibility
