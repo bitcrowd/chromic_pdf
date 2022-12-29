@@ -402,6 +402,10 @@ defmodule ChromicPDF.Supervisor do
       Each source emits the normal `:print_to_pdf` telemetry events. The final concatenation emits
       `:join_pdfs` events.
 
+      Please note that running PDF files through Ghostscript removes all structural annotations
+      ("Tags") and hence disables accessibility features of assistive technologies. See
+      [On Accessibility / PDF/UA](#module-on-accessibility-pdf-ua) section for details.
+
       ## Custom options for `Page.printToPDF`
 
       You can provide custom options for the [`Page.printToPDF`](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-printToPDF)
@@ -586,6 +590,9 @@ defmodule ChromicPDF.Supervisor do
 
           ChromicPDF.convert_to_pdfa("some_pdf_file.pdf", pdfa_version: "2")
 
+      Generated files pass the [verapdf](https://verapdf.org/) validation. When you verify this,
+      please pass the corresponding profile arguments (`-f 2b` or `-f 3b`).
+
       ## Specifying PDF metadata
 
       The converter is able to transfer PDF metadata (the `Info` dictionary) from the original
@@ -624,6 +631,18 @@ defmodule ChromicPDF.Supervisor do
             "some_pdf_file.pdf",
             pdfa_def_ext: "[/Title (OverriddenTitle) /DOCINFO pdfmark",
           )
+
+      ## Embedded color scheme
+
+      Since it is required to embed a color scheme into PDF/A files, ChromicPDF ships with a copy of
+      the royalty-free [`eciRGB_V2`](http://www.eci.org/) scheme by the European Color Initiative.
+      If you need to to use a different color scheme, please open an issue.
+
+      ## Accessibility
+
+      Please note that running a PDF file through Ghostscript removes all structural annotations
+      ("Tags") and hence disables accessibility features of assistive technologies. See
+      [On Accessibility / PDF/UA](#module-on-accessibility-pdf-ua) section for details.
       """
       @spec convert_to_pdfa(path()) :: export_return()
       @spec convert_to_pdfa(path(), [pdfa_option()]) :: export_return()

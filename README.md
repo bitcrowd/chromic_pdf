@@ -13,12 +13,12 @@ ChromicPDF is a HTML-to-PDF renderer for Elixir, based on headless Chrome.
 
 * **Node-free**: In contrast to [many other](https://hex.pm/packages?search=pdf&sort=recent_downloads) packages, it does not use [puppeteer](https://github.com/puppeteer/puppeteer), and hence does not require Node.js. It communicates directly with Chrome's [DevTools API](https://chromedevtools.github.io/devtools-protocol/) over pipes, offering the same performance as puppeteer, if not better.
 * **Header/Footer**: Using the DevTools API allows to apply the full set of options of the [`printToPDF`](https://chromedevtools.github.io/devtools-protocol/tot/Page#method-printToPDF) function. Most notably, it supports header and footer HTML templates.
-* **PDF/A**: It can convert printed files to PDF/A using Ghostscript, inspired by the `pdf2archive` script originally created by [@matteosecli](https://github.com/matteosecli/pdf2archive) and later enhanced by [@JaimeChavarriaga](https://github.com/JaimeChavarriaga/pdf2archive/tree/feature/support_pdf2b). Created PDF/A-2b and PDF/A-3b files pass the [verapdf](https://verapdf.org/) compliance checks.
+* **PDF/A**: It can convert printed files to PDF/A using Ghostscript. Converted files pass the [verapdf](https://verapdf.org/) validator.
 
 ## Requirements
 
 * Chromium or Chrome
-* Ghostscript (optional, for PDF/A support)
+* Ghostscript (optional, for PDF/A support and concatenation of multiple sources)
 
 ## Installation
 
@@ -82,7 +82,7 @@ convenient API. See the documentation for details.
 
 ### Multiple sources
 
-Multiple sources can be automatically concatenated.
+Multiple sources can be automatically concatenated using Ghostscript.
 
 ```elixir
 ChromicPDF.print_to_pdf([{:html, "page 1"}, {:html, "page 2"}], output: "joined.pdf")
@@ -99,6 +99,10 @@ For running the full suite of integration tests, please install and have in your
 * [`verapdf`](https://verapdf.org/)
 * For `pdfinfo` and `pdftotext`, you need `poppler-utils` (most Linux distributions) or [Xpdf](https://www.xpdfreader.com/) (OSX)
 * For the odd ZUGFeRD test in [`zugferd_test.exs`](https://github.com/bitcrowd/chromic_pdf/tree/main/test/integration/zugferd_test.exs), you need to download [ZUV](https://github.com/ZUGFeRD/ZUV) and set the `$ZUV_JAR` environment variable.
+
+## Acknowledgements
+
+* The PDF/A conversion is inspired by the `pdf2archive` script originally created by [@matteosecli](https://github.com/matteosecli/pdf2archive) and later enhanced by [@JaimeChavarriaga](https://github.com/JaimeChavarriaga/pdf2archive/tree/feature/support_pdf2b).
 
 ## Copyright and License
 
