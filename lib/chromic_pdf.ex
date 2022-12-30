@@ -296,7 +296,8 @@ defmodule ChromicPDF do
   This information allows assistive tools like screen readers to do their job, at the cost of
   (at times significantly) increasing the file size. To check whether a PDF file is tagged, you
   can use the `pdfinfo` utility, it reports these files as `Tagged: yes`. You can review some of
-  the contained information with the `pdfinfo -struct-text <file>` command.
+  the contained information with the `pdfinfo -struct-text <file>` command. Tagging may be
+  disabled by passing the `--disable-pdf-tagging` argument to Chrome via the `chrome_args` option.
 
   However, at the time of writing, Chrome's most recent beta version 109 does not generate files
   compliant to the PDF/UA standard (ISO 14289-1:2014). Both the ["PAC 2021" accessibility
