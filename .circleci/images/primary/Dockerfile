@@ -23,7 +23,7 @@ RUN wget http://downloads.verapdf.org/rel/verapdf-installer.zip \
   && unzip verapdf-installer.zip \
   && mv verapdf-greenfield* verapdf-greenfield \
   && chmod +x verapdf-greenfield/verapdf-install
-COPY auto-install.xml /opt/verapdf/verapdf-greenfield
+COPY .circleci/images/primary/auto-install.xml /opt/verapdf/verapdf-greenfield
 RUN ./verapdf-greenfield/verapdf-install auto-install.xml
 
 WORKDIR /opt/zuv
