@@ -15,6 +15,9 @@ on:
   # TODO: Find the right events?
   push:
     branches: ['main']
+    paths:
+    - ".github/workflows/publish-image.yml"
+    - ".github/docker/*"
   pull_request:
     branches: ['main']
 
@@ -24,6 +27,7 @@ env:
 
 jobs:
   build-and-push-image:
+    name: Build 'Dockerfile_${{ matrix.dockerfile }}' and publish to Github Packages
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -47,8 +51,8 @@ jobs:
         id: meta
         uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-test-image-${{matrix.dockerfile}}
-          flavor: latest=true
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-test-image
+          tags: ${{matrix.dockerfile}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
