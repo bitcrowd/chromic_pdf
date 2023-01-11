@@ -23,7 +23,7 @@ RUN wget http://downloads.verapdf.org/rel/verapdf-installer.zip \
   && unzip verapdf-installer.zip \
   && mv verapdf-greenfield* verapdf-greenfield \
   && chmod +x verapdf-greenfield/verapdf-install
-COPY auto-install.xml /opt/verapdf/verapdf-greenfield
+COPY .github/docker/auto-install.xml /opt/verapdf/verapdf-greenfield
 RUN ./verapdf-greenfield/verapdf-install auto-install.xml
 
 WORKDIR /opt/zuv
@@ -35,9 +35,5 @@ RUN apt-get remove -y \
     unzip \
   && apt-get autoremove -y \
 	&& rm -rf /var/lib/apt/lists/*
-
-RUN adduser --disabled-password --gecos "" circleci
-USER circleci
-WORKDIR /home/circleci
 
 RUN mix local.hex --force && mix local.rebar
