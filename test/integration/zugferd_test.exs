@@ -32,7 +32,8 @@ defmodule ChromicPDF.ZUGFeRDTest do
         )
 
       pdfa_opts = [
-        pdfa_def_ext: embed_xml_ps
+        pdfa_def_ext: embed_xml_ps,
+        permit_read: @zugferd_invoice_xml
       ]
 
       print_to_pdfa(pdfa_opts, fn file ->

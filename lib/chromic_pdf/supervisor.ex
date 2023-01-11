@@ -198,6 +198,7 @@ defmodule ChromicPDF.Supervisor do
       @type pdfa_option ::
               {:pdfa_version, binary()}
               | {:pdfa_def_ext, binary()}
+              | {:permit_read, binary()}
               | info_option()
 
       @type capture_screenshot_option ::
@@ -630,6 +631,16 @@ defmodule ChromicPDF.Supervisor do
           ChromicPDF.convert_to_pdfa(
             "some_pdf_file.pdf",
             pdfa_def_ext: "[/Title (OverriddenTitle) /DOCINFO pdfmark",
+          )
+
+      If your extra Postscript requires read permissions for additional files, pass the
+      `:permit_read` option.
+
+          ChromicPDF.convert_to_pdfa(
+            "some_pdf_file.pdf",
+            pdfa_def_ext: "custom-postscript",
+            permit_read: "/some/path",
+            permit_read: "/some/other/path"
           )
 
       ## Embedded color scheme
