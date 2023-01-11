@@ -19,6 +19,9 @@ on:
     - ".github/docker/*"
   pull_request:
     branches: ['main']
+    paths:
+    - ".github/workflows/publish-image.yml"
+    - ".github/docker/*"
 
 env:
   REGISTRY: ghcr.io
@@ -33,7 +36,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        dockerfile: ['debian-bullseye']
+        dockerfile: ['debian-buster']
 
     steps:
       - name: Checkout repository
