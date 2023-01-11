@@ -1,0 +1,40 @@
+FROM hexpm/elixir:1.14.0-erlang-25.1-debian-bullseye-20220801
+
+USER root
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    chromium \
+    chromium-sandbox \
+    # Will install ghostscript 9.27
+    ghostscript \
+    # for verapdf & ZUV
+    openjdk-11-jre \
+    # for pdftotext & friends
+    poppler-utils \
+    # for 'kill'
+    procps \
+    # temporary for installation below
+    wget \
+    unzip
+
+RUN mkdir /opt/verapdf
+WORKDIR /opt/verapdf
+RUN wget http://downloads.verapdf.org/rel/verapdf-installer.zip \
+  && unzip verapdf-installer.zip \
+  && mv verapdf-greenfield* verapdf-greenfield \
+  && chmod +x verapdf-greenfield/verapdf-install
+COPY .github/docker/auto-install.xml /opt/verapdf/verapdf-greenfield
+RUN ./verapdf-greenfield/verapdf-install auto-install.xml
+
+WORKDIR /opt/zuv
+RUN wget https://github.com/ZUGFeRD/ZUV/releases/download/v0.8.3/ZUV-0.8.3.jar
+ENV ZUV_JAR /opt/zuv/ZUV-0.8.3.jar
+
+RUN apt-get remove -y \
+    wget \
+    unzip \
+  && apt-get autoremove -y \
+	&& rm -rf /var/lib/apt/lists/*
+
+RUN mix local.hex --force && mix local.rebar

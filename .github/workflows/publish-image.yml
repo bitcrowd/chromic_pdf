@@ -36,7 +36,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        dockerfile: ['debian-buster']
+        dockerfile: ['debian-buster', 'debian-bullseye']
 
     steps:
       - name: Checkout repository
