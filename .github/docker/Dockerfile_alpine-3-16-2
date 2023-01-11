@@ -1,15 +1,14 @@
-FROM hexpm/elixir:1.14.0-erlang-25.1-debian-bullseye-20220801
+FROM hexpm/elixir:1.14.0-erlang-25.1-alpine-3.16.2
 
 USER root
 
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
+RUN apk update \
+  && apk add --no-cache \
     chromium \
-    chromium-sandbox \
-    # Will install ghostscript 9.53
+    # Will install ghostscript 9.56
     ghostscript \
-    # for verapdf & ZUV
-    openjdk-11-jre \
+    # # for verapdf & ZUV
+    openjdk11-jre \
     # for pdftotext & friends
     poppler-utils \
     # for 'kill'
@@ -31,10 +30,9 @@ WORKDIR /opt/zuv
 RUN wget https://github.com/ZUGFeRD/ZUV/releases/download/v0.8.3/ZUV-0.8.3.jar
 ENV ZUV_JAR /opt/zuv/ZUV-0.8.3.jar
 
-RUN apt-get remove -y \
+RUN apk del \
     wget \
     unzip \
-  && apt-get autoremove -y \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN mix local.hex --force && mix local.rebar

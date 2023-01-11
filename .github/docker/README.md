@@ -9,9 +9,8 @@
 ## Build new image for local test
 
 ```
-cd .github/docker
 <make your changes>
-docker build -t bitcrowd/chromic_pdf-test-image:x.y.z .
+docker build -t bitcrowd/chromic_pdf-test-image:x.y.z -f .github/docker/[DOCKERFILE] .
 ```
 
 ## Test the image
