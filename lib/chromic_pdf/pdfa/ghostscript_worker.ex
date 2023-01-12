@@ -63,12 +63,15 @@ defmodule ChromicPDF.GhostscriptWorker do
       pdfa_def_ps_path
     ]
 
-    pdfa_opts = [
-      version: Keyword.get(params, :pdfa_version, 3),
-      icc_path: priv_asset("eciRGB_v2.icc")
+    opts = [
+      pdfa: [
+        version: Keyword.get(params, :pdfa_version, 3),
+        icc_path: priv_asset("eciRGB_v2.icc")
+      ],
+      permit_read: Keyword.get_values(params, :permit_read)
     ]
 
-    :ok = GhostscriptRunner.pdfwrite(paths, output_path, pdfa: pdfa_opts)
+    :ok = GhostscriptRunner.pdfwrite(paths, output_path, opts)
   end
 
   defp pdfinfo(pdf_path) do

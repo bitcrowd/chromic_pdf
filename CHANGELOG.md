@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Added
+
+- Add `permit_read` option to `convert_to_pdfa/2` and `print_to_pdfa/2` to allow adding user-provided `--permit-file-read` options.
+
 ### Changed
 
 - Removed unnecessary Ghostscript step to embed fonts. Instead, the relevant arguments are now part of our default set of `pdfwrite` arguments, and hence are also applied to the PDF concatenation added in 1.5.0.

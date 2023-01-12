@@ -60,6 +60,7 @@ defmodule ChromicPDF.GhostscriptRunner do
       ]
     }
     |> maybe_add_pdfa_args(opts)
+    |> add_user_permit_reads(opts)
     |> ghostscript_cmd!()
 
     :ok
@@ -83,6 +84,12 @@ defmodule ChromicPDF.GhostscriptRunner do
     else
       command
     end
+  end
+
+  defp add_user_permit_reads(command, opts) do
+    values = Keyword.get(opts, :permit_read, [])
+
+    %{command | read: values ++ command.read}
   end
 
   defp ghostscript_cmd!(command) do
