@@ -13,8 +13,6 @@ defmodule ChromicPDF.Connection do
     @callback send_msg(port(), msg :: binary()) :: :ok
   end
 
-  @chrome Application.compile_env(:chromic_pdf, :chrome, ChromicPDF.ChromeRunner)
-
   @type state :: %{
           port: port(),
           parent_pid: pid(),
@@ -43,11 +41,14 @@ defmodule ChromicPDF.Connection do
 
   @impl GenServer
   def init({parent_pid, opts}) do
-    {:ok, port} = spawn_chrome(opts)
+    chrome_runner = Keyword.get(opts, :chrome_runner, ChromicPDF.ChromeRunner)
+
+    {:ok, port} = spawn_chrome(chrome_runner, opts)
 
     Process.flag(:trap_exit, true)
 
     state = %{
+      chrome_runner: chrome_runner,
       port: port,
       parent_pid: parent_pid,
       tokenizer: Tokenizer.init(),
@@ -57,15 +58,19 @@ defmodule ChromicPDF.Connection do
     {:ok, state}
   end
 
-  defp spawn_chrome(opts) do
+  defp spawn_chrome(chrome_runner, opts) do
     opts
     |> Keyword.take([:chrome_args, :discard_stderr, :no_sandbox, :chrome_executable])
-    |> @chrome.spawn()
+    |> chrome_runner.spawn()
   end
 
   @impl GenServer
-  def handle_call({:dispatch_call, call}, _from, %{port: port, next_call_id: call_id} = state) do
-    @chrome.send_msg(port, JsonRPC.encode(call, call_id))
+  def handle_call(
+        {:dispatch_call, call},
+        _from,
+        %{chrome_runner: chrome_runner, port: port, next_call_id: call_id} = state
+      ) do
+    chrome_runner.send_msg(port, JsonRPC.encode(call, call_id))
 
     {:reply, call_id, %{state | next_call_id: call_id + 1}}
   end
@@ -115,10 +120,10 @@ defmodule ChromicPDF.Connection do
     """)
   end
 
-  def terminate(:shutdown, %{port: port, next_call_id: call_id}) do
+  def terminate(:shutdown, %{chrome_runner: chrome_runner, port: port, next_call_id: call_id}) do
     # Graceful shutdown: Dispatch the Browser.close call to Chrome which will cause it to detach
     # all debugging sessions and close the port.
-    @chrome.send_msg(port, JsonRPC.encode({"Browser.close", %{}}, call_id))
+    chrome_runner.send_msg(port, JsonRPC.encode({"Browser.close", %{}}, call_id))
 
     # We can't enter the GenServer loop from here, so we need to manually receive the message
     # about the port going down. In case Chrome takes longer than the configured supervision
