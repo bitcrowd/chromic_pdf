@@ -35,5 +35,3 @@ RUN apt-get remove -y \
     unzip \
   && apt-get autoremove -y \
 	&& rm -rf /var/lib/apt/lists/*
-
-RUN mix local.hex --force && mix local.rebar

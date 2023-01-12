@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Fixed
+
+- Filename quoting (like `-sOutputFile="/some/path"`) doesn't work anymore in GS 9.56+. Dropped as we didn't need it anyway. GS 9.56 and 10.0 are supported now.
+
 ### Added
 
 - Add `permit_read` option to `convert_to_pdfa/2` and `print_to_pdfa/2` to allow adding user-provided `--permit-file-read` options.
