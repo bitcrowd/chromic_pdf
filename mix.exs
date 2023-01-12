@@ -12,13 +12,10 @@ defmodule ChromicPdf.MixProject do
       version: @version,
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
-      dialyzer: [plt_add_apps: [:mix], plt_file: {:no_warn, ".plts/dialyzer.plt"}],
+      dialyzer: [plt_add_apps: [:ex_unit, :mix], plt_file: {:no_warn, ".plts/dialyzer.plt"}],
       elixirc_paths: elixirc_paths(Mix.env()),
       deps: deps(),
       aliases: aliases(),
-
-      # ExUnit
-      test_paths: test_paths(Mix.env()),
 
       # hex.pm
       package: package(),
@@ -63,13 +60,8 @@ defmodule ChromicPdf.MixProject do
   end
 
   defp elixirc_paths(:dev), do: ["examples", "lib"]
-  defp elixirc_paths(:integration), do: ["examples", "lib", "test/integration/support"]
-  defp elixirc_paths(:test), do: ["lib", "test/unit/support"]
-  defp elixirc_paths(_env), do: ["lib"]
-
-  defp test_paths(:test), do: ["test/unit"]
-  defp test_paths(:integration), do: ["test/integration"]
-  defp test_paths(_env), do: []
+  defp elixirc_paths(:test), do: ["examples", "lib", "test"]
+  defp elixirc_paths(:prod), do: ["lib"]
 
   defp deps do
     [
@@ -79,12 +71,12 @@ defmodule ChromicPdf.MixProject do
       {:dialyxir, "~> 1.2", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:ex_doc, ">= 0.0.0", only: [:test, :dev], runtime: false},
-      {:junit_formatter, "~> 3.1", only: [:test, :integration]},
+      {:junit_formatter, "~> 3.1", only: [:test]},
       {:mox, "~> 1.0", only: [:test]},
-      {:phoenix, "~> 1.5", only: [:dev, :integration]},
-      {:phoenix_html, "~> 3.0", only: [:dev, :integration]},
-      {:plug, "~> 1.11", only: [:dev, :integration]},
-      {:bandit, "~> 0.5.11", only: [:integration]}
+      {:phoenix, "~> 1.5", only: [:dev, :test]},
+      {:phoenix_html, "~> 3.0", only: [:dev, :test]},
+      {:plug, "~> 1.11", only: [:dev, :test]},
+      {:bandit, "~> 0.5.11", only: [:test]}
     ]
   end
 

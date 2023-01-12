@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule ChromicPDF.ConnectionTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   import Mox
   import ChromicPDF.Connection
   alias ChromicPDF.ChromeRunnerMock
@@ -11,6 +11,7 @@ defmodule ChromicPDF.ConnectionTest do
 
   defp new_state do
     %{
+      chrome_runner: ChromeRunnerMock,
       port: @port,
       parent_pid: self(),
       tokenizer: [],
@@ -25,13 +26,17 @@ defmodule ChromicPDF.ConnectionTest do
   describe "initialization" do
     test "it spawns Chrome and initializes its state" do
       opts = [
+        chrome_runner: ChromeRunnerMock,
         discard_stderr: false,
         no_sandbox: true,
         chrome_executable: "/custom/chrome",
         chrome_args: "--foo"
       ]
 
-      expect(ChromeRunnerMock, :spawn, fn ^opts -> {:ok, @port} end)
+      expected_runner_opts =
+        Keyword.take(opts, [:discard_stderr, :no_sandbox, :chrome_executable, :chrome_args])
+
+      expect(ChromeRunnerMock, :spawn, fn ^expected_runner_opts -> {:ok, @port} end)
       assert init({self(), opts}) == {:ok, new_state()}
     end
   end

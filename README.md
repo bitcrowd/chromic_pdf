@@ -94,6 +94,13 @@ ChromicPDF.print_to_pdf([{:html, "page 1"}, {:html, "page 2"}], output: "joined.
 
 ## Development
 
+This should get you started:
+
+```
+mix deps.get
+mix test
+```
+
 For running the full suite of integration tests, please install and have in your `$PATH`:
 
 * [`verapdf`](https://verapdf.org/)

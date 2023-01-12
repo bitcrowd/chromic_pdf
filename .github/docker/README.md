@@ -28,5 +28,5 @@ Inside container:
 $ cp -r /src .
 $ cd src
 $ mix deps.get
-$ MIX_ENV=integration mix test
+$ mix test
 ```
