@@ -27,7 +27,7 @@ ChromicPDF is a supervision tree (rather than an application). You will need to 
 ```elixir
 def deps do
   [
-    {:chromic_pdf, "~> 1.5"}
+    {:chromic_pdf, "~> 1.6"}
   ]
 end
 ```
