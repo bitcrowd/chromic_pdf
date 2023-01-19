@@ -188,8 +188,9 @@ defmodule ChromicPDF.Browser.SessionPool do
   # Reasons we want to gracefully clean up the target in the Browser:
   # - max_session_uses_reached, our own mechanism for keeping memory bloat in check
   # - error, when an exception is raised in the Channel
+  # - DOWN, client link is broken (reported by a user as "this happens")
   def terminate_worker(reason, worker_state, pool_state)
-      when reason in [:max_session_uses_reached, :error] do
+      when reason in [:max_session_uses_reached, :error, :DOWN] do
     Task.async(fn ->
       protocol = CloseTarget.new(targetId: worker_state.session.target_id)
 
@@ -208,5 +209,5 @@ defmodule ChromicPDF.Browser.SessionPool do
     {:ok, pool_state}
   end
 
-  # Unexpected other terminate reasons: :DOWN | :timeout | :throw | :exit
+  # Unexpected other terminate reasons: :timeout | :throw | :exit
 end
