@@ -151,10 +151,13 @@ defmodule ChromicPDF.Protocol do
     }
 
     def inspect(%ChromicPDF.Protocol{} = protocol, opts) do
-      protocol
-      |> Map.from_struct()
-      |> filter(@allowed_values)
-      |> then(fn map -> struct!(ChromicPDF.Protocol, map) end)
+      map =
+        protocol
+        |> Map.from_struct()
+        |> filter(@allowed_values)
+
+      ChromicPDF.Protocol
+      |> struct!(map)
       |> Inspect.Any.inspect(opts)
     end
 
