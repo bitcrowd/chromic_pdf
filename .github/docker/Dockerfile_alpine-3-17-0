@@ -15,7 +15,9 @@ RUN apk update \
     procps \
     # temporary for installation below
     wget \
-    unzip
+    unzip \
+    # GNU tar needed by actions/cache
+    tar
 
 RUN mkdir /opt/verapdf
 WORKDIR /opt/verapdf
