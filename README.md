@@ -17,8 +17,18 @@ ChromicPDF is a HTML-to-PDF renderer for Elixir, based on headless Chrome.
 
 ## Requirements
 
-* Chromium or Chrome
-* Ghostscript (optional, for PDF/A support and concatenation of multiple sources)
+- Chromium or Chrome
+- Ghostscript (optional, for PDF/A support and concatenation of multiple sources)
+
+ChromicPDF is tested in the following configurations:
+
+| Elixir | Erlang/OTP | Distribution    | Chromium        | Ghostscript |
+| ------ | ---------- | --------------- | --------------- | ----------- |
+| 1.14.0 | 25.1       | Alpine 3.17     | 109.0.5414.74   | 10.0.0      |
+| 1.14.0 | 25.1       | Alpine 3.16     | 102.0.5005.182  | 9.56.1      |
+| 1.14.0 | 25.1       | Debian Bullseye | 108.0.5359.94   | 9.53.3      |
+| 1.14.0 | 25.1       | Debian Buster   | 90.0.4430.212-1 | 9.27        |
+| 1.11.4 | 22.3.4.26  | Debian Buster   | 90.0.4430.212-1 | 9.27        |
 
 ## Installation
 

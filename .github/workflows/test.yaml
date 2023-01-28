@@ -5,12 +5,12 @@ jobs:
     name: ${{ matrix.tag }}
     strategy:
       matrix:
-        tag: ['debian-buster', 'debian-bullseye', 'alpine-3-16-2', 'alpine-3-17-0']
+        tag: ['elixir-1-11', 'debian-buster', 'debian-bullseye', 'alpine-3-16-2', 'alpine-3-17-0']
     env:
       MIX_ENV: test
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/bitcrowd/chromic_pdf-test-image:${{ matrix.tag }}
+      image: ghcr.io/bitcrowd/chromic_pdf:${{ matrix.tag }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}

@@ -10,7 +10,7 @@ defmodule ChromicPdf.MixProject do
     [
       app: :chromic_pdf,
       version: @version,
-      elixir: "~> 1.10",
+      elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
       dialyzer: [plt_add_apps: [:ex_unit, :mix], plt_file: {:no_warn, ".plts/dialyzer.plt"}],
       elixirc_paths: elixirc_paths(Mix.env()),
