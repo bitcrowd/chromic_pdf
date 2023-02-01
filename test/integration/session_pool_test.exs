@@ -127,4 +127,31 @@ defmodule ChromicPDF.SessionPoolTest do
       Task.await(task)
     end
   end
+
+  describe "external termination of client process" do
+    @pool_size 1
+
+    setup do
+      start_supervised!({ChromicPDF, session_pool: [size: @pool_size]})
+
+      :ok
+    end
+
+    test "respawns the target and generates a warning in the logs" do
+      assert capture_log(fn ->
+               assert_target_respawn(@pool_size, fn _ ->
+                 # Not linked to test process.
+                 pid = spawn(fn -> print_to_pdf_delayed(2_000) end)
+
+                 # Wait a little bit so the process has checked out the session.
+                 :timer.sleep(500)
+
+                 # Exit the process with anything but :normal (will be ignored).
+                 # If the process is e.g. a request handler process, it receives a :timeout message.
+                 # :kill works, too.
+                 Process.exit(pid, :boom)
+               end)
+             end) =~ ~r/ChromicPDF received a :DOWN message/
+    end
+  end
 end

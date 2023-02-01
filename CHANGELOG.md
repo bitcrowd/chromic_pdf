@@ -1,3 +1,9 @@
+## Unreleased
+
+### Fixed
+
+- Handle `DOWN` reason in `SessionPool.terminate_worker/3` callback. Fixes [#219](https://github.com/bitcrowd/chromic_pdf/issues/219).
+
 ## [1.6.0] - 2023-01-12
 
 ### Fixed

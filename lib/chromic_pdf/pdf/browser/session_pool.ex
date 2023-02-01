@@ -5,6 +5,7 @@ defmodule ChromicPDF.Browser.SessionPool do
 
   @behaviour NimblePool
 
+  require Logger
   import ChromicPDF.Utils, only: [default_pool_size: 0]
   alias ChromicPDF.Browser
   alias ChromicPDF.Browser.{Channel, ExecutionError}
@@ -188,8 +189,18 @@ defmodule ChromicPDF.Browser.SessionPool do
   # Reasons we want to gracefully clean up the target in the Browser:
   # - max_session_uses_reached, our own mechanism for keeping memory bloat in check
   # - error, when an exception is raised in the Channel
+  # - DOWN, client link is broken (when client process is terminated externally)
   def terminate_worker(reason, worker_state, pool_state)
-      when reason in [:max_session_uses_reached, :error] do
+      when reason in [:max_session_uses_reached, :error, :DOWN] do
+    if reason == :DOWN do
+      Logger.warn("""
+      ChromicPDF received a :DOWN message from the process that called `print_to_pdf/2`!
+
+      This means that the process was terminated externally. For instance, your HTTP server
+      may have terminated your request after it took too long.
+      """)
+    end
+
     Task.async(fn ->
       protocol = CloseTarget.new(targetId: worker_state.session.target_id)
 
@@ -208,5 +219,5 @@ defmodule ChromicPDF.Browser.SessionPool do
     {:ok, pool_state}
   end
 
-  # Unexpected other terminate reasons: :DOWN | :timeout | :throw | :exit
+  # Unexpected other terminate reasons: :timeout | :throw | :exit
 end
