@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Added
+
+- Add `ChromicPDF.put_dynamic_name/1` and `name` option to `ChromicPDF.Supervisor.start_link/2` for dynamic process names. (@dvic)
+
 ### Fixed
 
 - Handle `DOWN` reason in `SessionPool.terminate_worker/3` callback. Fixes [#219](https://github.com/bitcrowd/chromic_pdf/issues/219).
