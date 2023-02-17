@@ -15,7 +15,8 @@ defmodule ChromicPDF.WarmUpTest do
       {:ok, stderr} =
         ChromicPDF.warm_up(discard_stderr: false, chrome_args: "another_positional_arg")
 
-      assert stderr =~ "Open multiple tabs is only supported when remote debugging is enabled"
+      assert stderr =~ "Open multiple tabs is only supported when remote debugging is enabled" ||
+               stderr =~ "Multiple targets are not supported"
     end
   end
 
