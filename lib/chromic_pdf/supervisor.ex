@@ -703,6 +703,7 @@ defmodule ChromicPDF.Supervisor do
       @doc """
       Retrieves the currently set name (set using `put_dynamic_name/1`) or the default name.
       """
+      @spec get_dynamic_name() :: atom()
       def get_dynamic_name do
         Process.get({__MODULE__, :dynamic_name}, __MODULE__)
       end
@@ -711,8 +712,26 @@ defmodule ChromicPDF.Supervisor do
       Activate a particular ChromicPDF instance, which was started with the `name` option.
       After calling this function, all calls in the current process will use this instance of ChromicPDF.
 
+      You can use this function if you need to run ChromicPDF as part of a supervision tree with a
+      particular name, for example:
+
+          defmodule MySupervisor do
+            use Supervisor
+
+            @impl true
+            def init(opts) do
+              children = [
+                # other apps...
+                {ChromicPDF, name: MyName}
+              ]
+
+              Supervisor.init(children, strategy: :one_for_one, name: MyApp.Supervisor)
+            end
+          end
+
       Returns the previously set name or the default name.
       """
+      @spec put_dynamic_name(atom()) :: atom()
       def put_dynamic_name(name) when is_atom(name) do
         Process.put({__MODULE__, :dynamic_name}, name) || __MODULE__
       end
