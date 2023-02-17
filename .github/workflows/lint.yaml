@@ -19,7 +19,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: deps
-          key: ${{ runner.os }}-${{ matrix.mix_env }}-deps-v1-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+          key: ${{ runner.os }}-deps-v1-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
       - name: Build artifacts cache
         id: build-and-plts-cache
         uses: actions/cache@v3
@@ -27,7 +27,7 @@ jobs:
           path: |
             _build
             .plts
-          key: ${{ runner.os }}-${{ matrix.mix_env }}-build-and-plts-v1-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+          key: ${{ runner.os }}-build-and-plts-v1-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
       - run: mix local.hex --force && mix local.rebar
       - run: mix deps.get
       - run: mix compile

@@ -22,13 +22,13 @@ jobs:
         uses: actions/cache@v3
         with:
           path: deps
-          key: ${{ runner.os }}-${{ matrix.mix_env }}-deps-v1-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+          key: ${{ runner.os }}-${{ matrix.tag }}-deps-v1-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
       - name: Build artifacts cache
         id: build-cache
         uses: actions/cache@v3
         with:
           path: _build
-          key: ${{ runner.os }}-${{ matrix.mix_env }}-build-v1-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+          key: ${{ runner.os }}-${{ matrix.tag }}-build-v1-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
       - run: mix local.hex --force && mix local.rebar
       - run: mix deps.get
       - run: mix compile
