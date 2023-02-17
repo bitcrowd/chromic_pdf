@@ -6,7 +6,7 @@ defmodule ChromicPDF.OnDemandTest do
   alias ChromicPDF.GetTargets
 
   test "on_demand is disabled by default" do
-    assert_raise RuntimeError, ~r/ChromicPDF isn't running and no :on_demand config/, fn ->
+    assert_raise RuntimeError, ~r/Can't find a running ChromicPDF instance./, fn ->
       ChromicPDF.print_to_pdf({:html, ""})
     end
   end

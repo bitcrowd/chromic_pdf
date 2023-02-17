@@ -25,6 +25,29 @@ defmodule ChromicPDF do
         end
       end
 
+  ### Running under a supervision tree
+
+  If you need to run ChromicPDF under a dynamic name, as part of a supervision tree, you can do:
+      defmodule MySupervisor do
+        use Supervisor
+
+        @impl true
+        def init(opts) do
+          children = [
+            # other apps...
+            {ChromicPDF, name: MyName}
+          ]
+
+          Supervisor.init(children, strategy: :one_for_one, name: MyApp.Supervisor)
+        end
+      end
+
+  Then, in your code you can activate this instance by running:
+
+      ChromicPDF.put_dynamic_name(MyName)
+
+  After this call, all calls in this process will use the ChromicPDF instance with the name `MyName`.
+
   ### Print a PDF
 
       ChromicPDF.print_to_pdf({:file, "example.html"}, output: "output.pdf")

@@ -38,7 +38,7 @@ defmodule ChromicPDF.Supervisor do
         }
 
   defp on_demand?(config), do: Keyword.get(config, :on_demand, false)
-  defp on_demand_name(chromic), do: Module.concat(chromic, :OnDemand)
+  defp on_demand_name(chromic_name), do: Module.concat(chromic_name, :OnDemand)
 
   @doc """
   Returns a specification to start this module as part of a supervision tree.
@@ -63,6 +63,8 @@ defmodule ChromicPDF.Supervisor do
   @spec start_link(module(), [ChromicPDF.global_option()]) ::
           Supervisor.on_start() | Agent.on_start()
   def start_link(chromic, config \\ []) do
+    chromic_name = Keyword.get(config, :name, chromic)
+
     if on_demand?(config) do
       Agent.start_link(
         fn ->
@@ -71,10 +73,10 @@ defmodule ChromicPDF.Supervisor do
           |> Keyword.update(:ghostscript_pool, [size: 1], &Keyword.put(&1, :size, 1))
           |> Keyword.delete(:on_demand)
         end,
-        name: on_demand_name(chromic)
+        name: on_demand_name(chromic_name)
       )
     else
-      Supervisor.start_link(__MODULE__, config, name: chromic)
+      Supervisor.start_link(__MODULE__, config, name: chromic_name)
     end
   end
 
@@ -106,35 +108,56 @@ defmodule ChromicPDF.Supervisor do
   end
 
   defp with_supervisor(chromic, fun) do
-    with {_, nil} <- {chromic, Process.whereis(chromic)},
-         {_, nil} <- {:on_demand, Process.whereis(on_demand_name(chromic))} do
-      raise("""
-      ChromicPDF isn't running and no :on_demand config loaded.
+    {:found, result} =
+      with :not_found <- try_direct_supervisor(chromic, fun),
+           :not_found <- try_on_demand_supervisor(chromic, fun) do
+        raise("""
+        Can't find a running ChromicPDF instance.
 
-      Please make sure to start its supervisor as part of your application.
+        Please make sure to start its supervisor as part of your application.
 
-          def start(_type, _args) do
-            children = [
-              # other apps...
-              #{__MODULE__ |> to_string() |> String.replace("Elixir.", "")}
-            ]
+            def start(_type, _args) do
+              children = [
+                # other apps...
+                #{__MODULE__ |> to_string() |> String.replace("Elixir.", "")}
+              ]
 
-            Supervisor.start_link(children, strategy: :one_for_one, name: MyApp.Supervisor)
-          end
-      """)
+              Supervisor.start_link(children, strategy: :one_for_one, name: MyApp.Supervisor)
+            end
+        """)
+      end
+
+    result
+  end
+
+  defp try_direct_supervisor(chromic, fun) do
+    name = chromic.get_dynamic_name()
+
+    if pid = Process.whereis(name) do
+      {:found, fun.(pid)}
     else
-      {^chromic, pid} -> fun.(pid)
-      {:on_demand, pid} -> pid |> Agent.get(& &1) |> with_on_demand_supervisor(fun)
+      :not_found
     end
   end
 
-  defp with_on_demand_supervisor(config, fun) do
-    {:ok, sup} = Supervisor.start_link(__MODULE__, config)
+  defp try_on_demand_supervisor(chromic, fun) do
+    chromic_name = chromic.get_dynamic_name()
+    agent_name = on_demand_name(chromic_name)
 
-    try do
-      fun.(sup)
-    after
-      Supervisor.stop(sup)
+    if agent_pid = Process.whereis(agent_name) do
+      config = Agent.get(agent_pid, & &1)
+      {:ok, sup} = Supervisor.start_link(__MODULE__, config)
+
+      result =
+        try do
+          fun.(sup)
+        after
+          Supervisor.stop(sup)
+        end
+
+      {:found, result}
+    else
+      :not_found
     end
   end
 
@@ -675,6 +698,23 @@ defmodule ChromicPDF.Supervisor do
               export_return()
       def print_to_pdfa(source, opts \\ []) do
         with_services(__MODULE__, &API.print_to_pdfa(&1, source, opts))
+      end
+
+      @doc """
+      Retrieves the currently set name (set using `put_dynamic_name/1`) or the default name.
+      """
+      def get_dynamic_name do
+        Process.get({__MODULE__, :dynamic_name}, __MODULE__)
+      end
+
+      @doc """
+      Activate a particular ChromicPDF instance, which was started with the `name` option.
+      After calling this function, all calls in the current process will use this instance of ChromicPDF.
+
+      Returns the previously set name or the default name.
+      """
+      def put_dynamic_name(name) when is_atom(name) do
+        Process.put({__MODULE__, :dynamic_name}, name) || __MODULE__
       end
     end
   end
