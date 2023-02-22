@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changed
+
+- `on_demand` mode is now implemented by means of a `DynamicSupervisor`. The temporary supervisor is not linked to the client process anymore. (See #233)
+
 ## [1.7.0] - 2023-02-17
 
 ### Added

@@ -37,6 +37,12 @@ defmodule ChromicPDF.OnDemandTest do
       :ok
     end
 
+    test "exit of temporary supervisor does not propagate to client" do
+      Process.flag(:trap_exit, true)
+      {:ok, _} = ChromicPDF.print_to_pdf({:html, "test"})
+      refute_receive {:EXIT, _, :normal}
+    end
+
     test "Chrome is spawned dynamically" do
       targets_before = GetTargets.run()
       refute GetTargets.run() == targets_before
