@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changed
+
+- Simplified `on_demand` mode. Instead of spawning the entire supervision tree temporarily, we now only spawn the `Browser` process. Also instead of giving the normal `ChromicPDF` name to the temporary supervisor, which effectively prevented concurrent access to ChromicPDF when configured with `on_demand: true`, the temporary `Browser` process remains anonymous.
+
 ## [1.7.0] - 2023-02-17
 
 ### Added

@@ -28,12 +28,10 @@ defmodule ChromicPDF.DynamicNameTest do
 
     start_supervised!(
       {ChromicPDF, name: Foo, on_demand: on_demand, session_pool: [size: ctx.pool_size]}
-      |> with_id(Foo)
     )
 
     start_supervised!(
       {ChromicPDF, name: Bar, on_demand: on_demand, session_pool: [size: ctx.pool_size]}
-      |> with_id(Bar)
     )
 
     :ok
@@ -51,9 +49,5 @@ defmodule ChromicPDF.DynamicNameTest do
     assert_raise RuntimeError, ~r/Can't find a running ChromicPDF instance./, fn ->
       ChromicPDF.print_to_pdf({:html, ""})
     end
-  end
-
-  defp with_id(child_spec, id) do
-    Supervisor.child_spec(child_spec, id: id)
   end
 end
