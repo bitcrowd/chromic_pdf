@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Added
+
+- Add `unhandled_runtime_exceptions` option that allows to raise on unhandled JavaScript exceptions in templates. Default to warn about them in log.
+
 ### Changed
 
 - Simplified `on_demand` mode. Instead of spawning the entire supervision tree temporarily, we now only spawn the `Browser` process. Also instead of giving the normal `ChromicPDF` name to the temporary supervisor, which effectively prevented concurrent access to ChromicPDF when configured with `on_demand: true`, the temporary `Browser` process remains anonymous.

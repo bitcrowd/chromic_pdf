@@ -9,7 +9,7 @@ defmodule ChromicPDF.Browser.SessionPool do
   import ChromicPDF.Utils, only: [default_pool_size: 0]
   alias ChromicPDF.Browser
   alias ChromicPDF.Browser.{Channel, ExecutionError}
-  alias ChromicPDF.{CloseTarget, Protocol, SpawnSession}
+  alias ChromicPDF.{CloseTarget, SpawnSession}
 
   @default_init_timeout 5000
   @default_timeout 5000
@@ -19,10 +19,7 @@ defmodule ChromicPDF.Browser.SessionPool do
 
   @type pool_state :: %{
           browser: pid(),
-          spawn_protocol: Protocol.t(),
-          max_session_uses: non_neg_integer(),
-          init_timeout: timeout(),
-          timeout: timeout()
+          args: keyword()
         }
 
   @type worker_state :: %{
@@ -58,11 +55,8 @@ defmodule ChromicPDF.Browser.SessionPool do
     NimblePool.checkout!(
       pid,
       command(params),
-      fn _, {channel, %{session_id: session_id}, timeout} ->
-        protocol = protocol_mod.new(session_id, params)
-        result = Channel.run_protocol(channel, protocol, timeout)
-
-        {result, :ok}
+      fn _, {pool_state, session} ->
+        do_run_protocol(protocol_mod, params, pool_state, session)
       end,
       @checkout_timeout
     )
@@ -110,19 +104,30 @@ defmodule ChromicPDF.Browser.SessionPool do
     end
   end
 
+  defp do_run_protocol(protocol_mod, params, %{browser: browser, args: args}, %{
+         session_id: session_id
+       }) do
+    protocol = protocol_mod.new(session_id, Keyword.merge(args, params))
+
+    result =
+      browser
+      |> Browser.channel()
+      |> Channel.run_protocol(protocol, timeout(args))
+
+    {result, :ok}
+  end
+
   # ------------ Callbacks -----------
 
   @impl NimblePool
-  @spec init_pool({pid(), keyword()}) :: {:ok, pool_state()}
   def init_pool({browser, args}) do
-    {:ok,
-     %{
-       browser: browser,
-       spawn_protocol: spawn_protocol(args),
-       max_session_uses: max_session_uses(args),
-       init_timeout: init_timeout(args),
-       timeout: timeout(args)
-     }}
+    args =
+      args
+      |> Keyword.put_new(:offline, false)
+      |> Keyword.put_new(:ignore_certificate_errors, false)
+      |> Keyword.put_new(:unhandled_runtime_exceptions, :log)
+
+    {:ok, %{browser: browser, args: args}}
   end
 
   defp timeout(args) do
@@ -137,27 +142,16 @@ defmodule ChromicPDF.Browser.SessionPool do
     Keyword.get(args, :max_session_uses, @default_max_session_uses)
   end
 
-  defp spawn_protocol(args) do
-    args
-    |> Keyword.put_new(:offline, false)
-    |> Keyword.put_new(:ignore_certificate_errors, false)
-    |> SpawnSession.new()
-  end
-
   @impl NimblePool
-  @spec init_worker(pool_state()) :: {:async, (() -> worker_state()), pool_state()}
-  def init_worker(
-        %{browser: browser, spawn_protocol: spawn_protocol, init_timeout: init_timeout} =
-          pool_state
-      ) do
-    {:async, fn -> do_init_worker(browser, spawn_protocol, init_timeout) end, pool_state}
+  def init_worker(pool_state) do
+    {:async, fn -> do_init_worker(pool_state) end, pool_state}
   end
 
-  defp do_init_worker(browser, spawn_protocol, timeout) do
+  defp do_init_worker(%{browser: browser, args: args}) do
     {:ok, %{"sessionId" => sid, "targetId" => tid}} =
       browser
       |> Browser.channel()
-      |> Channel.run_protocol(spawn_protocol, timeout)
+      |> Channel.run_protocol(SpawnSession.new(args), init_timeout(args))
 
     %{session: %{session_id: sid, target_id: tid}, uses: 0}
   end
@@ -168,8 +162,7 @@ defmodule ChromicPDF.Browser.SessionPool do
   end
 
   def handle_checkout(:checkout, _from, worker_state, pool_state) do
-    client_state = {Browser.channel(pool_state.browser), worker_state.session, pool_state.timeout}
-    {:ok, client_state, worker_state, pool_state}
+    {:ok, {pool_state, worker_state.session}, worker_state, pool_state}
   end
 
   defp increment_uses_count(%{uses: uses} = worker_state) do
@@ -178,7 +171,7 @@ defmodule ChromicPDF.Browser.SessionPool do
 
   @impl NimblePool
   def handle_checkin(:ok, _from, worker_state, pool_state) do
-    if worker_state.uses >= pool_state.max_session_uses do
+    if worker_state.uses >= max_session_uses(pool_state.args) do
       {:remove, :max_session_uses_reached, pool_state}
     else
       {:ok, worker_state, pool_state}

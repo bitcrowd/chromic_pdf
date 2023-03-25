@@ -287,6 +287,19 @@ defmodule ChromicPDF do
 
   * `[:chromic_pdf, :join_pdfs, :start | :stop | exception]`
 
+  ## Further options
+
+  ### Debugging unhandled runtime exceptions
+
+  By default, runtime exceptions thrown in JavaScript execution contexts are logged. You may
+  choose to instead convert them into an Elixir exception by passing the following option:
+
+      defp chromic_pdf_opts do
+        [unhandled_runtime_exceptions: :raise]
+      end
+
+  Alternatively, you can pass `:ignore` to silence the log statement.
+
   ## On Accessibility / PDF/UA
 
   Since its version 85, Chrome generates "Tagged PDF" files [by

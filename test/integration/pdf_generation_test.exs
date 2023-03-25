@@ -276,6 +276,53 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
   end
 
+  @html_with_runtime_exception """
+  <html>
+    <body id="print-ready">
+      <script>doesnotexist();</script>
+    </body>
+  </html>
+  """
+
+  describe "unhandled runtime exceptions" do
+    setup do
+      start_supervised!(ChromicPDF)
+      :ok
+    end
+
+    test "are logged by default" do
+      assert capture_log(fn ->
+               assert print_to_pdf({:html, @html_with_runtime_exception}) == :ok
+             end) =~ ~r/Unhandled exception in JS runtime/
+    end
+  end
+
+  describe "unhandled runtime exceptions with unhandled_runtime_exceptions: :ignore option" do
+    setup do
+      start_supervised!({ChromicPDF, unhandled_runtime_exceptions: :ignore})
+      :ok
+    end
+
+    test "are ignored" do
+      assert capture_log(fn ->
+               assert print_to_pdf({:html, @html_with_runtime_exception}) == :ok
+             end) == ""
+    end
+  end
+
+  describe "unhandled runtime exceptions with unhandled_runtime_exceptions: :raise option" do
+    setup do
+      start_supervised!({ChromicPDF, unhandled_runtime_exceptions: :raise})
+      :ok
+    end
+
+    test "raise nicely formatted errors" do
+      assert_raise ChromicPDF.ChromeError, ~r/Unhandled exception in JS runtime/, fn ->
+        print_to_pdf({:html, @html_with_runtime_exception})
+      end
+    end
+  end
+
   describe "a cookie can be set when printing" do
     @cookie %{
       name: "foo",

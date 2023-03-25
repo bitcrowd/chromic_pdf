@@ -15,17 +15,18 @@ defmodule ChromicPDF.Protocol do
   @type message :: JsonRPC.message()
   @type dispatch :: (JsonRPC.call() -> JsonRPC.call_id())
 
-  @type state :: map()
   @type error :: {:error, term()}
+  @type state :: map() | error()
   @type step :: call_step() | await_step() | output_step()
 
   # A protocol knows three types of steps: calls, awaits, and output.
   # * The call step is a protocol call to send to the browser. Multiple call steps in sequence
   #   are executed sequentially until the next await step is found.
   # * Await steps are steps that try to match on messages received from the browser. When a
-  #   message is matched, the await step is removed from the queue. Multiple await steps in
-  #   sequence are matched **out of order** as messages from the browser are often received out
-  #   of order as well, from different OS processes.
+  #   message is matched, the await step can be removed from the queue (depending on the second
+  #   element of the return tuple, `:keep | :remove`). Multiple await steps in sequence are
+  #   matched **out of order** as messages from the browser are often received out of order as
+  #   well, from different OS processes.
   # * The output step is a simple function executed at the end of a protocol to fetch the result
   #   of the operation from the state. The result is then passed to the client in the channel.
   #   If no output step exists, the protocol returns `:ok`.
@@ -34,13 +35,14 @@ defmodule ChromicPDF.Protocol do
   @type call_fun :: (state(), dispatch() -> state() | error())
   @type call_step :: {:call, call_fun()}
 
-  @type await_fun :: (state(), message() -> :no_match | {:match, state()} | error())
+  @type await_fun ::
+          (state(), message() -> :no_match | {:match, :keep | :remove, state()} | error())
   @type await_step :: {:await, await_fun()}
 
   @type output_fun :: (state() -> any())
   @type output_step :: {:output, output_fun()}
 
-  @type result :: :ok | {:ok, any()} | {:error, term()}
+  @type result :: :ok | {:ok, any()} | error()
 
   @callback new(keyword()) :: __MODULE__.t()
   @callback new(JsonRPC.session_id(), keyword()) :: __MODULE__.t()
@@ -82,9 +84,14 @@ defmodule ChromicPDF.Protocol do
     {awaits, rest} = Enum.split_while(steps, fn {type, _fun} -> type == :await end)
 
     case do_match_chrome_message(awaits, [], state, msg) do
-      :no_match -> :no_match
-      {:error, error} -> {:match, %{protocol | state: {:error, error}}}
-      {new_head, new_state} -> {:match, %{protocol | steps: new_head ++ rest, state: new_state}}
+      :no_match ->
+        :no_match
+
+      {:error, error} ->
+        {:match, %{protocol | state: {:error, error}}}
+
+      {new_head, new_state} ->
+        {:match, %{protocol | steps: new_head ++ rest, state: new_state}}
     end
   end
 
@@ -92,9 +99,17 @@ defmodule ChromicPDF.Protocol do
 
   defp do_match_chrome_message([{:await, fun} | rest], acc, state, msg) do
     case fun.(state, msg) do
-      :no_match -> do_match_chrome_message(rest, acc ++ [{:await, fun}], state, msg)
-      {:match, new_state} -> {acc ++ rest, new_state}
-      {:error, error} -> {:error, error}
+      :no_match ->
+        do_match_chrome_message(rest, acc ++ [{:await, fun}], state, msg)
+
+      {:match, :keep, new_state} ->
+        {acc ++ [{:await, fun}] ++ rest, new_state}
+
+      {:match, :remove, new_state} ->
+        {acc ++ rest, new_state}
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

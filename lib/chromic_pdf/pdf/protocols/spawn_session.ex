@@ -43,6 +43,12 @@ defmodule ChromicPDF.SpawnSession do
       # Intentionally not awaiting the response to speed up session spawning.
     end
 
+    # Enable Runtime (JS) events, mostly for Runtime.exceptionThrown.
+    # Again, no need to wait for result.
+    if_option {:unhandled_runtime_exceptions, [:log, :raise]} do
+      call(:runtime_enable, "Runtime.enable", [], %{})
+    end
+
     if_option :disable_scripts do
       call(
         :disable_scripts,
