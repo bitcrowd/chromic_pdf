@@ -40,7 +40,7 @@ defmodule ChromicPDF do
   This prints the same PDF with Chrome and afterwards passes it to Ghostscript to convert it to a
   PDF/A. Please see `ChromicPDF.print_to_pdfa/2` or `ChromicPDF.convert_to_pdfa/2` for details.
 
-  ## Security Considerations
+  ## Security considerations
 
   By default, ChromicPDF will allow Chrome to make use of its own ["sandbox" process jail](https://chromium.googlesource.com/chromium/src/+/master/docs/design/sandbox.md).
   The sandbox tries to limit system resource access of the renderer processes to the minimum
@@ -177,7 +177,7 @@ defmodule ChromicPDF do
 
   ## Chrome zombies
 
-  > Help, a Chrome army tries to take over my memory!
+  > Help, a Chrome army tries to take over my system!
 
   ChromicPDF tries its best to gracefully close the external Chrome process when its supervisor
   is terminated. Unfortunately, when the BEAM is not shutdown gracefully, Chrome processes will
@@ -235,7 +235,7 @@ defmodule ChromicPDF do
   the `prod` environment. However, obviously you won't be able to print PDFs in development or
   test then.
 
-  ## Chrome Options
+  ## Chrome options
 
   ### Custom command line switches
 
@@ -307,7 +307,7 @@ defmodule ChromicPDF do
   rule violations concerning mandatory metadata.
 
   So, if your use-case requires you to generate fully PDF/UA-compliant files, at the moment Chrome
-  - and by extension, ChromicPDF - is not going fulfill your needs.
+  (and by extension, ChromicPDF) is not going fulfill your needs.
 
   Furthermore, any operation that involves running the Chrome-generated file through Ghostscript
   (PDF/A conversion, concatenation) will **remove all structural information**, so that `pdfinfo`
