@@ -26,10 +26,7 @@ defmodule ChromicPDF.Supervisor do
       end
   """
 
-  # disables the @doc for child_spec/1
-  @doc false
-  use Supervisor
-  import ChromicPDF.Utils, only: [find_supervisor_child: 2]
+  import ChromicPDF.Utils, only: [find_supervisor_child: 2, find_supervisor_child!: 2]
   alias ChromicPDF.{Browser, GhostscriptPool}
 
   @type services :: %{
@@ -37,80 +34,42 @@ defmodule ChromicPDF.Supervisor do
           ghostscript_pool: pid()
         }
 
-  defp on_demand?(config), do: Keyword.get(config, :on_demand, false)
-  defp on_demand_name(chromic_name), do: Module.concat(chromic_name, :OnDemand)
-
-  @doc """
-  Returns a specification to start this module as part of a supervision tree.
-  """
   @spec child_spec([ChromicPDF.global_option()]) :: Supervisor.child_spec()
-  def child_spec(chromic, config) do
-    type =
-      if on_demand?(config) do
-        :worker
-      else
-        :supervisor
-      end
-
+  def child_spec(config) do
     %{
-      id: chromic,
-      start: {chromic, :start_link, [config]},
-      type: type
+      id: Keyword.fetch!(config, :name),
+      start: {__MODULE__, :start_link, [config]},
+      type: :supervisor
     }
   end
 
   @doc false
-  @spec start_link(module(), [ChromicPDF.global_option()]) ::
-          Supervisor.on_start() | Agent.on_start()
-  def start_link(chromic, config \\ []) do
-    chromic_name = Keyword.get(config, :name, chromic)
+  @spec start_link([ChromicPDF.global_option()]) :: Supervisor.on_start()
+  def start_link(config) do
+    name = Keyword.fetch!(config, :name)
 
-    if on_demand?(config) do
-      Agent.start_link(
-        fn ->
-          config
-          |> Keyword.update(:session_pool, [size: 1], &Keyword.put(&1, :size, 1))
-          |> Keyword.update(:ghostscript_pool, [size: 1], &Keyword.put(&1, :size, 1))
-          |> Keyword.delete(:on_demand)
-        end,
-        name: on_demand_name(chromic_name)
-      )
-    else
-      Supervisor.start_link(__MODULE__, config, name: chromic_name)
-    end
-  end
-
-  @doc false
-  @impl Supervisor
-  def init(config) do
     children = [
-      {Browser, config},
+      if Keyword.get(config, :on_demand, false) do
+        {Agent, fn -> config end}
+      else
+        {Browser, config}
+      end,
       {GhostscriptPool, config}
     ]
 
-    Supervisor.init(children, strategy: :one_for_one)
+    Supervisor.start_link(children, strategy: :one_for_one, name: name)
   end
 
   @doc """
   Fetches pids of the supervisor's services and passes them to the given callback function.
 
-  If the supervisor has not been started but configured to run in `on_demand` mode, this will
-  start a temporary supervision tree.
+  If ChromicPDF has been configured to run in `on_demand` mode, this will start a temporary
+  browser instance.
   """
-  @spec with_services(module(), (services() -> any())) :: any()
-  def with_services(chromic, fun) do
-    with_supervisor(chromic, fn supervisor ->
-      fun.(%{
-        browser: find_supervisor_child(supervisor, Browser),
-        ghostscript_pool: find_supervisor_child(supervisor, GhostscriptPool)
-      })
-    end)
-  end
-
-  defp with_supervisor(chromic, fun) do
-    {:found, result} =
-      with :not_found <- try_direct_supervisor(chromic, fun),
-           :not_found <- try_on_demand_supervisor(chromic, fun) do
+  @spec with_services(atom(), (services() -> any())) :: any()
+  def with_services(name, fun) do
+    supervisor =
+      Process.whereis(name) ||
         raise("""
         Can't find a running ChromicPDF instance.
 
@@ -125,39 +84,37 @@ defmodule ChromicPDF.Supervisor do
               Supervisor.start_link(children, strategy: :one_for_one, name: MyApp.Supervisor)
             end
         """)
-      end
 
-    result
+    with_browser(supervisor, fn browser ->
+      fun.(%{
+        browser: browser,
+        ghostscript_pool: find_supervisor_child!(supervisor, GhostscriptPool)
+      })
+    end)
   end
 
-  defp try_direct_supervisor(chromic, fun) do
-    name = chromic.get_dynamic_name()
-
-    if pid = Process.whereis(name) do
-      {:found, fun.(pid)}
+  defp with_browser(supervisor, fun) do
+    if browser = find_supervisor_child(supervisor, Browser) do
+      fun.(browser)
     else
-      :not_found
+      with_on_demand_browser(supervisor, fun)
     end
   end
 
-  defp try_on_demand_supervisor(chromic, fun) do
-    chromic_name = chromic.get_dynamic_name()
-    agent_name = on_demand_name(chromic_name)
+  defp with_on_demand_browser(supervisor, fun) do
+    config =
+      supervisor
+      |> find_supervisor_child!(Agent)
+      |> Agent.get(& &1)
+      |> Keyword.update(:session_pool, [size: 1], &Keyword.put(&1, :size, 1))
+      |> Keyword.delete(:on_demand)
 
-    if agent_pid = Process.whereis(agent_name) do
-      config = Agent.get(agent_pid, & &1)
-      {:ok, sup} = Supervisor.start_link(__MODULE__, config)
+    {:ok, browser} = Browser.start_link(config)
 
-      result =
-        try do
-          fun.(sup)
-        after
-          Supervisor.stop(sup)
-        end
-
-      {:found, result}
-    else
-      :not_found
+    try do
+      fun.(browser)
+    after
+      Process.exit(browser, :normal)
     end
   end
 
@@ -242,7 +199,8 @@ defmodule ChromicPDF.Supervisor do
               | {:chrome_executable, binary()}
 
       @type global_option ::
-              {:offline, boolean()}
+              {:name, atom()}
+              | {:offline, boolean()}
               | {:disable_scripts, boolean()}
               | {:max_session_uses, non_neg_integer()}
               | {:session_pool, [session_pool_option()]}
@@ -255,18 +213,37 @@ defmodule ChromicPDF.Supervisor do
       Returns a specification to start this module as part of a supervision tree.
       """
       @spec child_spec([global_option()]) :: Supervisor.child_spec()
-      def child_spec(config), do: ChromicPDF.Supervisor.child_spec(__MODULE__, config)
+      def child_spec(config) do
+        id = Keyword.get(config, :name, __MODULE__)
+
+        %{
+          id: id,
+          start: {__MODULE__, :start_link, [config]},
+          type: :supervisor
+        }
+      end
 
       @doc """
       Starts ChromicPDF.
 
-      If the given config includes the `on_demand: true` flag, this will instead spawn an
-      Agent process that holds this configuration until a PDF operation is triggered which
-      will then launch a supervisor temporarily, process the operation, and proceed to perform
-      a graceful shutdown.
+      ## "On Demand" mode
+
+      If the given config includes the `on_demand: true` flag, this will not spawn a Chrome
+      instance but instead hold the configuration in an Agent until a PDF print job is triggered.
+      The print job will launch a temporary browser process and perform a graceful shutdown at
+      the end.
+
+      Please note that the browser process is spawned from your client process and that these
+      processes are linked. If your client process is trapping `EXIT` signals, you will receive
+      a message when the browser is terminated.
       """
-      @spec start_link([global_option()]) :: Supervisor.on_start() | Agent.on_start()
-      def start_link(config \\ []), do: ChromicPDF.Supervisor.start_link(__MODULE__, config)
+      @spec start_link() :: Supervisor.on_start()
+      @spec start_link([global_option()]) :: Supervisor.on_start()
+      def start_link(config \\ []) do
+        config
+        |> Keyword.put_new(:name, __MODULE__)
+        |> ChromicPDF.Supervisor.start_link()
+      end
 
       @doc ~S'''
       Prints a PDF.
@@ -562,7 +539,7 @@ defmodule ChromicPDF.Supervisor do
       @spec print_to_pdf(source() | [source()], [pdf_option() | export_option()]) ::
               export_return()
       def print_to_pdf(source, opts \\ []) do
-        with_services(__MODULE__, &API.print_to_pdf(&1, source, opts))
+        with_services(&API.print_to_pdf(&1, source, opts))
       end
 
       @doc """
@@ -592,7 +569,7 @@ defmodule ChromicPDF.Supervisor do
       @spec capture_screenshot(source(), [capture_screenshot_option() | export_option()]) ::
               export_return()
       def capture_screenshot(source, opts \\ []) do
-        with_services(__MODULE__, &API.capture_screenshot(&1, source, opts))
+        with_services(&API.capture_screenshot(&1, source, opts))
       end
 
       @doc """
@@ -681,7 +658,7 @@ defmodule ChromicPDF.Supervisor do
       @spec convert_to_pdfa(path()) :: export_return()
       @spec convert_to_pdfa(path(), [pdfa_option()]) :: export_return()
       def convert_to_pdfa(pdf_path, opts \\ []) do
-        with_services(__MODULE__, &API.convert_to_pdfa(&1, pdf_path, opts))
+        with_services(&API.convert_to_pdfa(&1, pdf_path, opts))
       end
 
       @doc """
@@ -697,7 +674,7 @@ defmodule ChromicPDF.Supervisor do
       @spec print_to_pdfa(source() | [source()], [pdf_option() | pdfa_option() | export_option()]) ::
               export_return()
       def print_to_pdfa(source, opts \\ []) do
-        with_services(__MODULE__, &API.print_to_pdfa(&1, source, opts))
+        with_services(&API.print_to_pdfa(&1, source, opts))
       end
 
       @doc """
@@ -734,6 +711,10 @@ defmodule ChromicPDF.Supervisor do
       @spec put_dynamic_name(atom()) :: atom()
       def put_dynamic_name(name) when is_atom(name) do
         Process.put({__MODULE__, :dynamic_name}, name) || __MODULE__
+      end
+
+      defp with_services(fun) do
+        ChromicPDF.Supervisor.with_services(get_dynamic_name(), fun)
       end
     end
   end
