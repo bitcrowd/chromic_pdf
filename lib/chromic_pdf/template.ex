@@ -29,12 +29,10 @@ defmodule ChromicPDF.Template do
 
   require EEx
 
-  @type blob :: iodata()
-
   @type content_option ::
-          {:content, blob()}
-          | {:header, blob()}
-          | {:footer, blob()}
+          {:content, iodata()}
+          | {:header, iodata()}
+          | {:footer, iodata()}
 
   @type paper_size ::
           {float(), float()}
@@ -263,7 +261,7 @@ defmodule ChromicPDF.Template do
   when explicit page dimensions are given. Hence, we provide a `landscape` option here that
   swaps the page dimensions (e.g. it turns 11.7x8.3" A4 into 8.3"x11.7").
   """
-  @spec styles([style_option()]) :: blob()
+  @spec styles([style_option()]) :: binary()
   def styles(opts \\ []), do: do_styles(opts)
 
   defp do_styles(opts) do
