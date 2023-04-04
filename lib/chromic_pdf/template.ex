@@ -29,7 +29,7 @@ defmodule ChromicPDF.Template do
 
   require EEx
 
-  @type blob :: binary()
+  @type blob :: iodata()
 
   @type content_option ::
           {:content, blob()}
