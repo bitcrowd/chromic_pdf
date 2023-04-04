@@ -127,14 +127,13 @@ defmodule ChromicPDF.Supervisor do
 
       @type url :: binary()
       @type path :: binary()
-      @type blob :: iodata()
 
-      @type source_tuple :: {:url, url()} | {:html, blob()}
+      @type source_tuple :: {:url, url()} | {:html, iodata()}
       @type source_and_options :: %{source: source_tuple(), opts: [pdf_option()]}
       @type source :: source() | source_and_options()
 
       @type output_function_result :: any()
-      @type output_function :: (blob() -> output_function_result())
+      @type output_function :: (binary() -> output_function_result())
       @type output_option :: {:output, binary()} | {:output, output_function()}
 
       @type telemetry_metadata_option :: {:telemetry_metadata, map()}
