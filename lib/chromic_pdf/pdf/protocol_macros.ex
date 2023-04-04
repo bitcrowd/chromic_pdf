@@ -3,6 +3,9 @@
 defmodule ChromicPDF.ProtocolMacros do
   @moduledoc false
 
+  require Logger
+  alias ChromicPDF.Connection.JsonRPC
+
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defmacro steps(do: block) do
     quote do
@@ -64,7 +67,7 @@ defmodule ChromicPDF.ProtocolMacros do
       end
 
       defp do_build_steps([{:if_option, key, value} | rest], acc, opts) do
-        if Keyword.get(opts, key) == value do
+        if Keyword.get(opts, key) in List.wrap(value) do
           do_build_steps(rest, acc, opts)
         else
           skip_branch(rest, acc, opts)
@@ -148,6 +151,22 @@ defmodule ChromicPDF.ProtocolMacros do
     fetch_param_for_call(state, {key, key})
   end
 
+  defmacro defawait({name, _, args} = fundef, do: block) do
+    quote generated: true do
+      @steps {:await, unquote(name), unquote(length(args))}
+
+      def unquote(fundef) do
+        case intercept_exception_thrown(unquote_splicing(args)) do
+          :no_match ->
+            unquote(block)
+
+          error ->
+            error
+        end
+      end
+    end
+  end
+
   defmacro await_response(name, put_keys, do: block) do
     quote generated: true do
       await_response(unquote(name), unquote(put_keys))
@@ -167,13 +186,10 @@ defmodule ChromicPDF.ProtocolMacros do
     cb_name = :"#{name}_callback"
 
     quote do
-      @steps {:await, unquote(name), 2}
-
-      def unquote(name)(state, msg) do
+      defawait unquote(name)(state, msg) do
         last_call_id = Map.fetch!(state, :last_call_id)
 
-        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-        if ChromicPDF.Connection.JsonRPC.is_response?(msg, last_call_id) do
+        if JsonRPC.is_response?(msg, last_call_id) do
           if function_exported?(__MODULE__, unquote(cb_name), 2) do
             apply(__MODULE__, unquote(cb_name), [state, msg])
           else
@@ -182,7 +198,7 @@ defmodule ChromicPDF.ProtocolMacros do
           |> case do
             :ok ->
               state = extract_from_payload(msg, "result", unquote(put_keys), state)
-              {:match, state}
+              {:match, :remove, state}
 
             {:error, error} ->
               {:error, error}
@@ -196,19 +212,43 @@ defmodule ChromicPDF.ProtocolMacros do
 
   defmacro await_notification(name, method, match_keys, put_keys) do
     quote do
-      @steps {:await, unquote(name), 2}
-      def unquote(name)(state, msg) do
-        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-        with true <- ChromicPDF.Connection.JsonRPC.is_notification?(msg, unquote(method)),
+      defawait unquote(name)(state, msg) do
+        with true <- JsonRPC.is_notification?(msg, unquote(method)),
              true <- state["sessionId"] == msg["sessionId"],
              true <- Enum.all?(unquote(match_keys), &notification_matches?(state, msg, &1)) do
           state = extract_from_payload(msg, "params", unquote(put_keys), state)
 
-          {:match, state}
+          {:match, :remove, state}
         else
           _ -> :no_match
         end
       end
+    end
+  end
+
+  def intercept_exception_thrown(state, msg) do
+    with true <- JsonRPC.is_notification?(msg, "Runtime.exceptionThrown"),
+         true <- state["sessionId"] == msg["sessionId"] do
+      exception = get_in!(msg, ["params", "exceptionDetails"])
+
+      case Map.get(state, :unhandled_runtime_exceptions, :log) do
+        :ignore ->
+          :no_match
+
+        :log ->
+          Logger.warn("""
+          [ChromicPDF] Unhandled exception in JS runtime
+
+          #{get_in!(exception, ["exception", "description"])}
+          """)
+
+          {:match, :keep, state}
+
+        :raise ->
+          {:error, {:exception_thrown, exception}}
+      end
+    else
+      _ -> :no_match
     end
   end
 
