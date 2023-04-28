@@ -66,4 +66,8 @@ defmodule ChromicPDF.Connection.JsonRPC do
   def is_notification?(msg, method) do
     Map.has_key?(msg, "method") && msg["method"] == method
   end
+
+  def is_error_message?(msg) do
+    Map.has_key?(msg, "error")
+  end
 end

@@ -323,6 +323,19 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
   end
 
+  describe "handle errors returned by chrome" do
+    setup do
+      start_supervised!(ChromicPDF)
+      :ok
+    end
+
+    test "raise nicely formatted errors" do
+      assert_raise ChromicPDF.ChromeError, ~r/Chrome returned an error/, fn ->
+        print_to_pdf({:html, test_html()}, print_to_pdf: %{pageRanges: "2-3"})
+      end
+    end
+  end
+
   describe "a cookie can be set when printing" do
     @cookie %{
       name: "foo",

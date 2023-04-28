@@ -156,10 +156,10 @@ defmodule ChromicPDF.ProtocolMacros do
       @steps {:await, unquote(name), unquote(length(args))}
 
       def unquote(fundef) do
-        case intercept_exception_thrown(unquote_splicing(args)) do
-          :no_match ->
-            unquote(block)
-
+        with :no_match <- intercept_error_returned(unquote_splicing(args)),
+             :no_match <- intercept_exception_thrown(unquote_splicing(args)) do
+          unquote(block)
+        else
           error ->
             error
         end
@@ -247,6 +247,17 @@ defmodule ChromicPDF.ProtocolMacros do
         :raise ->
           {:error, {:exception_thrown, exception}}
       end
+    else
+      _ -> :no_match
+    end
+  end
+
+  def intercept_error_returned(state, msg) do
+    with true <- JsonRPC.is_error_message?(msg),
+         true <- state["sessionId"] == msg["sessionId"] do
+      error = msg["error"]
+
+      {:error, {:error_returned, error}}
     else
       _ -> :no_match
     end
