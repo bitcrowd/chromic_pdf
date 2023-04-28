@@ -323,6 +323,19 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
   end
 
+  describe "generic handling of protocol response errors" do
+    setup do
+      start_supervised!(ChromicPDF)
+      :ok
+    end
+
+    test "response errors raise nicely formatted errors" do
+      assert_raise ChromicPDF.ChromeError, ~r/Page range exceeds page count/, fn ->
+        print_to_pdf({:html, test_html()}, print_to_pdf: %{pageRanges: "2-3"})
+      end
+    end
+  end
+
   describe "a cookie can be set when printing" do
     @cookie %{
       name: "foo",
@@ -402,8 +415,8 @@ defmodule ChromicPDF.PDFGenerationTest do
       ]
 
       assert capture_log(fn ->
-               assert_raise ChromicPDF.Browser.ExecutionError,
-                            ~r/Timeout in Channel.run_protocol/,
+               assert_raise ChromicPDF.ChromeError,
+                            ~r/Printing failed/,
                             fn ->
                               ChromicPDF.print_to_pdf({:html, ""}, params)
                             end

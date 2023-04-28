@@ -190,10 +190,15 @@ defmodule ChromicPDF.ProtocolMacros do
         last_call_id = Map.fetch!(state, :last_call_id)
 
         if JsonRPC.response?(msg, last_call_id) do
-          if function_exported?(__MODULE__, unquote(cb_name), 2) do
-            apply(__MODULE__, unquote(cb_name), [state, msg])
-          else
-            :ok
+          cond do
+            function_exported?(__MODULE__, unquote(cb_name), 2) ->
+              apply(__MODULE__, unquote(cb_name), [state, msg])
+
+            JsonRPC.is_error?(msg) ->
+              {:error, JsonRPC.extract_error(msg)}
+
+            true ->
+              :ok
           end
           |> case do
             :ok ->

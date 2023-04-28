@@ -59,11 +59,22 @@ defmodule ChromicPDF.Connection.JsonRPC do
 
   @spec response?(message(), call_id()) :: boolean()
   def response?(msg, call_id) do
-    Map.has_key?(msg, "result") && msg["id"] == call_id
+    (Map.has_key?(msg, "result") or Map.has_key?(msg, "error")) and
+      msg["id"] == call_id
   end
 
   @spec notification?(message(), method()) :: boolean()
   def notification?(msg, method) do
     Map.has_key?(msg, "method") && msg["method"] == method
+  end
+
+  @spec is_error?(message()) :: boolean()
+  def is_error?(msg) do
+    Map.has_key?(msg, "error")
+  end
+
+  @spec extract_error(message()) :: String.t()
+  def extract_error(%{"error" => error}) do
+    "#{error["message"]} (Code #{error["code"]})"
   end
 end

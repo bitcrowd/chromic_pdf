@@ -1,5 +1,10 @@
+## Unreleased
 
-## [1.8.1] - 2023-04-20 
+### Added
+
+- Error handling responses in protocol steps, e.g. invalid options for printToPDF. (@tonnenpinguin)
+
+## [1.8.1] - 2023-04-20
 
 - Allow nimbe_pool 1.0.
 
