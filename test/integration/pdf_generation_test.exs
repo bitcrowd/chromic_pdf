@@ -415,8 +415,8 @@ defmodule ChromicPDF.PDFGenerationTest do
       ]
 
       assert capture_log(fn ->
-               assert_raise ChromicPDF.Browser.ExecutionError,
-                            ~r/Timeout in Channel.run_protocol/,
+               assert_raise ChromicPDF.ChromeError,
+                            ~r/Chrome returned an error/,
                             fn ->
                               ChromicPDF.print_to_pdf({:html, ""}, params)
                             end
