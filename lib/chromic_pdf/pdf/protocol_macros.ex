@@ -156,9 +156,10 @@ defmodule ChromicPDF.ProtocolMacros do
       @steps {:await, unquote(name), unquote(length(args))}
 
       def unquote(fundef) do
-        with :no_match <- intercept_exception_thrown(unquote_splicing(args)) do
-          unquote(block)
-        else
+        case intercept_exception_thrown(unquote_splicing(args)) do
+          :no_match ->
+            unquote(block)
+
           error ->
             error
         end
