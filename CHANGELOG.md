@@ -2,7 +2,7 @@
 
 ### Added
 
-- Error handling responses in protocol steps, e.g. invalid options for printToPDF. (@tonnenpinguin)
+- Error handling for call responses in protocol steps, e.g. invalid options for printToPDF. (@tonnenpinguin)
 
 ## [1.8.1] - 2023-04-20
 
