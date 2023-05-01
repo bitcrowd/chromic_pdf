@@ -323,13 +323,13 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
   end
 
-  describe "handle errors returned by chrome" do
+  describe "generic handling of protocol response errors" do
     setup do
       start_supervised!(ChromicPDF)
       :ok
     end
 
-    test "raise nicely formatted errors" do
+    test "response errors raise nicely formatted errors" do
       assert_raise ChromicPDF.ChromeError, ~r/Page range exceeds page count/, fn ->
         print_to_pdf({:html, test_html()}, print_to_pdf: %{pageRanges: "2-3"})
       end
