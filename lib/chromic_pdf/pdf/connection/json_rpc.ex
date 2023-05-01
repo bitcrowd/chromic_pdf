@@ -74,7 +74,7 @@ defmodule ChromicPDF.Connection.JsonRPC do
   end
 
   @spec extract_error(message()) :: String.t()
-  def extract_error(%{"error" => %{"message" => message, "code" => code}}) do
-    "#{message} (Code #{code})"
+  def extract_error(%{"error" => error}) do
+    "#{error["message"]} (Code #{error["code"]})"
   end
 end
