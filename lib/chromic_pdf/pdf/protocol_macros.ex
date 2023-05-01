@@ -189,7 +189,7 @@ defmodule ChromicPDF.ProtocolMacros do
       defawait unquote(name)(state, msg) do
         last_call_id = Map.fetch!(state, :last_call_id)
 
-        if JsonRPC.is_response?(msg, last_call_id) do
+        if JsonRPC.response?(msg, last_call_id) do
           if function_exported?(__MODULE__, unquote(cb_name), 2) do
             apply(__MODULE__, unquote(cb_name), [state, msg])
           else
@@ -213,7 +213,7 @@ defmodule ChromicPDF.ProtocolMacros do
   defmacro await_notification(name, method, match_keys, put_keys) do
     quote do
       defawait unquote(name)(state, msg) do
-        with true <- JsonRPC.is_notification?(msg, unquote(method)),
+        with true <- JsonRPC.notification?(msg, unquote(method)),
              true <- state["sessionId"] == msg["sessionId"],
              true <- Enum.all?(unquote(match_keys), &notification_matches?(state, msg, &1)) do
           state = extract_from_payload(msg, "params", unquote(put_keys), state)
@@ -227,7 +227,7 @@ defmodule ChromicPDF.ProtocolMacros do
   end
 
   def intercept_exception_thrown(state, msg) do
-    with true <- JsonRPC.is_notification?(msg, "Runtime.exceptionThrown"),
+    with true <- JsonRPC.notification?(msg, "Runtime.exceptionThrown"),
          true <- state["sessionId"] == msg["sessionId"] do
       exception = get_in!(msg, ["params", "exceptionDetails"])
 

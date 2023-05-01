@@ -57,13 +57,13 @@ defmodule ChromicPDF.Connection.JsonRPC do
   @spec decode(binary()) :: message()
   def decode(data), do: @jason.decode!(data)
 
-  @spec is_response?(message(), call_id()) :: boolean()
-  def is_response?(msg, call_id) do
+  @spec response?(message(), call_id()) :: boolean()
+  def response?(msg, call_id) do
     Map.has_key?(msg, "result") && msg["id"] == call_id
   end
 
-  @spec is_notification?(message(), method()) :: boolean()
-  def is_notification?(msg, method) do
+  @spec notification?(message(), method()) :: boolean()
+  def notification?(msg, method) do
     Map.has_key?(msg, "method") && msg["method"] == method
   end
 end
