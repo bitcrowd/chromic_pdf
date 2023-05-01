@@ -402,7 +402,7 @@ defmodule ChromicPDF.PDFGenerationTest do
 
   describe "crashed targets (Inspector.targetCrashed message)" do
     setup do
-      start_supervised!({ChromicPDF, session_pool: [timeout: 300]})
+      start_supervised!(ChromicPDF)
       :ok
     end
 
@@ -420,6 +420,9 @@ defmodule ChromicPDF.PDFGenerationTest do
                             fn ->
                               ChromicPDF.print_to_pdf({:html, ""}, params)
                             end
+
+               # Allow some more time for the targetCrashed message to arrive.
+               Process.sleep(100)
              end) =~ "received an 'Inspector.targetCrashed' message"
     end
   end
