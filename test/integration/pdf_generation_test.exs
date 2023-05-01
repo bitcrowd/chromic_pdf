@@ -330,7 +330,7 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     test "raise nicely formatted errors" do
-      assert_raise ChromicPDF.ChromeError, ~r/Chrome returned an error/, fn ->
+      assert_raise ChromicPDF.ChromeError, ~r/Page range exceeds page count/, fn ->
         print_to_pdf({:html, test_html()}, print_to_pdf: %{pageRanges: "2-3"})
       end
     end
@@ -416,7 +416,7 @@ defmodule ChromicPDF.PDFGenerationTest do
 
       assert capture_log(fn ->
                assert_raise ChromicPDF.ChromeError,
-                            ~r/Chrome returned an error/,
+                            ~r/Printing failed/,
                             fn ->
                               ChromicPDF.print_to_pdf({:html, ""}, params)
                             end

@@ -156,8 +156,7 @@ defmodule ChromicPDF.ProtocolMacros do
       @steps {:await, unquote(name), unquote(length(args))}
 
       def unquote(fundef) do
-        with :no_match <- intercept_error_returned(unquote_splicing(args)),
-             :no_match <- intercept_exception_thrown(unquote_splicing(args)) do
+        with :no_match <- intercept_exception_thrown(unquote_splicing(args)) do
           unquote(block)
         else
           error ->
@@ -190,10 +189,15 @@ defmodule ChromicPDF.ProtocolMacros do
         last_call_id = Map.fetch!(state, :last_call_id)
 
         if JsonRPC.is_response?(msg, last_call_id) do
-          if function_exported?(__MODULE__, unquote(cb_name), 2) do
-            apply(__MODULE__, unquote(cb_name), [state, msg])
-          else
-            :ok
+          cond do
+            function_exported?(__MODULE__, unquote(cb_name), 2) ->
+              apply(__MODULE__, unquote(cb_name), [state, msg])
+
+            JsonRPC.is_error_message?(msg) ->
+              {:error, JsonRPC.extract_error(msg)}
+
+            true ->
+              :ok
           end
           |> case do
             :ok ->
@@ -247,17 +251,6 @@ defmodule ChromicPDF.ProtocolMacros do
         :raise ->
           {:error, {:exception_thrown, exception}}
       end
-    else
-      _ -> :no_match
-    end
-  end
-
-  def intercept_error_returned(state, msg) do
-    with true <- JsonRPC.is_error_message?(msg),
-         true <- state["sessionId"] == msg["sessionId"] do
-      error = msg["error"]
-
-      {:error, {:error_returned, error}}
     else
       _ -> :no_match
     end

@@ -16,10 +16,6 @@ defmodule ChromicPDF.ChromeError do
     """
   end
 
-  defp title_for_error({:error_returned, _error}) do
-    "Chrome returned an error"
-  end
-
   defp title_for_error({:exception_thrown, _error}) do
     "Unhandled exception in JS runtime"
   end
@@ -52,17 +48,6 @@ defmodule ChromicPDF.ChromeError do
     can disable certificate verification by passing the `:ignore_certificate_errors` flag.
 
         {ChromicPDF, ignore_certificate_errors: true}
-    """
-  end
-
-  defp hint_for_error({:error_returned, error}, _opts) do
-    %{"code" => code, "message" => message} = error
-
-    """
-    Error:
-
-    #{indent("Code: #{code}")}
-    #{indent(message)}
     """
   end
 
