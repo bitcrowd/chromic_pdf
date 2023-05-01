@@ -69,12 +69,12 @@ defmodule ChromicPDF.Browser.Channel do
   # Data packets coming in from connection.
   @impl GenServer
   def handle_info({:chrome_message, msg}, state) do
-    warn_on_inspector_crash!(msg)
+    warn_on_inspector_crash(msg)
 
     {:noreply, handle_chrome_message(msg, state)}
   end
 
-  defp warn_on_inspector_crash!(msg) do
+  defp warn_on_inspector_crash(msg) do
     if match?(%{"method" => "Inspector.targetCrashed"}, msg) do
       Logger.error("""
       ChromicPDF received an 'Inspector.targetCrashed' message.
