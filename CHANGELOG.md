@@ -1,3 +1,5 @@
+## Unreleased
+- Handle errors (for example due to incorrect parameters) returned by Chromium right away [#244](https://github.com/bitcrowd/chromic_pdf/pull/244)
 
 ## [1.8.1] - 2023-04-20 
 
