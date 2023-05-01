@@ -193,7 +193,7 @@ defmodule ChromicPDF.ProtocolMacros do
             function_exported?(__MODULE__, unquote(cb_name), 2) ->
               apply(__MODULE__, unquote(cb_name), [state, msg])
 
-            JsonRPC.is_error_message?(msg) ->
+            JsonRPC.is_error?(msg) ->
               {:error, JsonRPC.extract_error(msg)}
 
             true ->
