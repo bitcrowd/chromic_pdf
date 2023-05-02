@@ -400,6 +400,8 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
   end
 
+  # extremely unreliable on CI, see #224
+  @tag :skip
   describe "crashed targets (Inspector.targetCrashed message)" do
     setup do
       start_supervised!({ChromicPDF, session_pool: [timeout: 300]})
