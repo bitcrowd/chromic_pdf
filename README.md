@@ -37,7 +37,7 @@ ChromicPDF is a supervision tree (rather than an application). You will need to 
 ```elixir
 def deps do
   [
-    {:chromic_pdf, "~> 1.8"}
+    {:chromic_pdf, "~> 1.9"}
   ]
 end
 ```
@@ -123,6 +123,6 @@ For running the full suite of integration tests, please install and have in your
 
 ## Copyright and License
 
-Copyright (c) 2019–2022 Bitcrowd GmbH
+Copyright (c) 2019–2023 Bitcrowd GmbH
 
 Licensed under the Apache License 2.0. See [LICENSE](LICENSE) file for details.
