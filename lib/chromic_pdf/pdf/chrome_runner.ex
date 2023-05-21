@@ -3,24 +3,12 @@
 defmodule ChromicPDF.ChromeRunner do
   @moduledoc false
 
-  @behaviour ChromicPDF.Connection.ChromeRunner
-
-  @impl true
-  def spawn(opts) do
+  @spec port_open(keyword()) :: port()
+  def port_open(opts) do
     port_opts = append_if([:binary], :nouse_stdio, !discard_stderr?(opts))
     port_cmd = shell_command("--remote-debugging-pipe", opts)
 
-    port = Port.open({:spawn, port_cmd}, port_opts)
-    Port.monitor(port)
-
-    {:ok, port}
-  end
-
-  @impl true
-  def send_msg(port, msg) do
-    send(port, {self(), {:command, msg <> "\0"}})
-
-    :ok
+    Port.open({:spawn, port_cmd}, port_opts)
   end
 
   @spec warm_up(keyword()) :: {:ok, binary()}

@@ -72,7 +72,6 @@ defmodule ChromicPdf.MixProject do
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:ex_doc, ">= 0.0.0", only: [:test, :dev], runtime: false},
       {:junit_formatter, "~> 3.1", only: [:test]},
-      {:mox, "~> 1.0", only: [:test]},
       {:phoenix, "~> 1.5", only: [:dev, :test]},
       {:phoenix_html, "~> 3.0", only: [:dev, :test]},
       {:plug, "~> 1.11", only: [:dev, :test]},

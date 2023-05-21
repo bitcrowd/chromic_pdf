@@ -3,7 +3,7 @@
 defmodule ChromicPDF.Protocol do
   @moduledoc false
 
-  alias ChromicPDF.Connection.JsonRPC
+  alias ChromicPDF.JsonRPC
 
   # A protocol is a sequence of JsonRPC calls and responses/notifications.
   #
@@ -13,7 +13,6 @@ defmodule ChromicPDF.Protocol do
   # * Besides, a protocol has a `state` map of arbitrary values.
 
   @type message :: JsonRPC.message()
-  @type dispatch :: (JsonRPC.call() -> JsonRPC.call_id())
 
   @type error :: {:error, term()}
   @type state :: map() | error()
@@ -32,7 +31,7 @@ defmodule ChromicPDF.Protocol do
   #   If no output step exists, the protocol returns `:ok`.
   #   Output step has to be the last step of the protocol.
 
-  @type call_fun :: (state(), dispatch() -> state() | error())
+  @type call_fun :: (state() -> {state(), JsonRPC.call()})
   @type call_step :: {:call, call_fun()}
 
   @type await_fun ::
@@ -44,42 +43,47 @@ defmodule ChromicPDF.Protocol do
 
   @type result :: :ok | {:ok, any()} | error()
 
-  @callback new(keyword()) :: __MODULE__.t()
-  @callback new(JsonRPC.session_id(), keyword()) :: __MODULE__.t()
+  @callback new(keyword()) :: t()
+  @callback new(JsonRPC.session_id(), keyword()) :: t()
 
-  @type t :: %__MODULE__{steps: [step()], state: state()}
+  @type t :: %__MODULE__{
+          steps: [step()],
+          state: state()
+        }
 
   @enforce_keys [:steps, :state]
   defstruct [:steps, :state]
 
-  @spec new([step()], state()) :: __MODULE__.t()
+  @spec new([step()], state()) :: t()
   def new(steps, initial_state \\ %{}) do
     %__MODULE__{steps: steps, state: initial_state}
   end
 
-  # Runs protocol instructions until all done or await instruction reached.
-  @spec run(__MODULE__.t(), dispatch()) :: {:await, __MODULE__.t()} | {:halt, result()}
-  def run(%__MODULE__{state: {:error, error}}, _dispatch) do
-    {:halt, {:error, error}}
+  # Steps a single :call instruction until all done or await instruction reached.
+  @spec step(t(), JsonRPC.call_id()) ::
+          {t(), {:call, JsonRPC.call()} | :await | {:halt, result()}}
+  def step(%__MODULE__{state: {:error, error}} = protocol, _call_id) do
+    {protocol, {:halt, {:error, error}}}
   end
 
-  def run(%__MODULE__{steps: []}, _dispatch), do: {:halt, :ok}
+  def step(%__MODULE__{steps: []} = protocol, _call_id), do: {protocol, {:halt, :ok}}
 
-  def run(%__MODULE__{steps: [{:await, _fun} | _rest]} = protocol, _dispatch),
-    do: {:await, protocol}
+  def step(%__MODULE__{steps: [{:await, _fun} | _rest]} = protocol, _call_id),
+    do: {protocol, :await}
 
-  def run(%__MODULE__{steps: [{:call, fun} | rest], state: state} = protocol, dispatch) do
-    state = fun.(state, dispatch)
-    run(%{protocol | steps: rest, state: state}, dispatch)
+  def step(%__MODULE__{steps: [{:call, fun} | rest], state: state} = protocol, call_id) do
+    {state, call} = fun.(state, call_id)
+
+    {%{protocol | steps: rest, state: state}, {:call, call}}
   end
 
-  def run(%__MODULE__{steps: [{:output, output_fun}], state: state}, _dispatch) do
-    {:halt, {:ok, output_fun.(state)}}
+  def step(%__MODULE__{steps: [{:output, output_fun}], state: state} = protocol, _call_id) do
+    {protocol, {:halt, {:ok, output_fun.(state)}}}
   end
 
   # Returns updated protocol if message could be matched, :no_match otherwise.
-  @spec match_chrome_message(__MODULE__.t(), JsonRPC.message()) ::
-          :no_match | {:match, __MODULE__.t()}
+  @spec match_chrome_message(t(), JsonRPC.message()) ::
+          :no_match | {:match, t()}
   def match_chrome_message(%__MODULE__{steps: steps, state: state} = protocol, msg) do
     {awaits, rest} = Enum.split_while(steps, fn {type, _fun} -> type == :await end)
 
