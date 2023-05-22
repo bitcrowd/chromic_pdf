@@ -1,4 +1,4 @@
-FROM hexpm/elixir:1.14.0-erlang-25.1-alpine-3.17.0
+FROM hexpm/elixir:1.14.5-erlang-25.3.1-alpine-3.17.3
 
 USER root
 

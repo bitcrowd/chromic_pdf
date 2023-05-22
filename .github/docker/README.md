@@ -4,7 +4,8 @@
 
 - Create a new Dockerfile, named `Dockerfile_${relevant suffix(es)}`
 - Edit `.github/workflows/publish-image.yml` and add the suffixes to the `strategy.matrix.dockerfile` list
-- Open your PR. The workflow `publish-image` should be triggered, and you should see in the Github Actions its status. If it's green, your image will be available in https://github.com/bitcrowd/chromic_pdf/pkgs/container/chromic_pdf-test-image
+- Open your PR and merge it.
+- On push to `main`, the workflow `publish-image` should be triggered, and you should see its status in the Github Actions tab. If it's green, your image will be available in the [package registry](https://github.com/bitcrowd/chromic_pdf/pkgs/container/chromic_pdf)
 
 ## Build new image for local test
 
