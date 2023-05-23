@@ -118,10 +118,13 @@ defmodule ChromicPDF.ChromeRunner do
     "--use-mock-keychain"
   ]
 
+  @spec default_args() :: [binary()]
+  def default_args, do: @default_args
+
   # NOTE: The redirection is needed due to obscure behaviour of Ports that use more than 2 FDs.
   # https://github.com/bitcrowd/chromic_pdf/issues/76
   defp args(extra, opts) do
-    @default_args
+    default_args()
     |> append_if("--no-sandbox --no-zygote", no_sandbox?(opts))
     |> append_if(to_string(opts[:chrome_args]), !!opts[:chrome_args])
     |> Kernel.++(List.wrap(extra))

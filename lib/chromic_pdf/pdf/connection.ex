@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# credo:disable-for-this-file Credo.Check.Design.AliasUsage
 defmodule ChromicPDF.Connection do
   @moduledoc false
 
@@ -12,9 +13,26 @@ defmodule ChromicPDF.Connection do
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
-    strategy = Keyword.get(opts, :connection_strategy, ChromicPDF.Connection.Local)
+    if Keyword.has_key?(opts, :chrome_address) do
+      start_inet(opts)
+    else
+      ChromicPDF.Connection.Local.start_link(opts)
+    end
+  end
 
-    strategy.start_link(opts)
+  if Code.ensure_loaded?(WebSockex) do
+    defp start_inet(opts), do: ChromicPDF.Connection.Inet.start_link(opts)
+  else
+    defp start_inet(_opts) do
+      raise("""
+      `:chrome_address` flag given but websockex is not present.
+
+      Please add :websockex to your application's list of dependencies. Afterwards, please
+      recompile ChromicPDF.
+
+          mix deps.compile --force chromic_pdf
+      """)
+    end
   end
 
   @spec send_msg(pid(), binary()) :: :ok

@@ -192,11 +192,19 @@ defmodule ChromicPDF.Supervisor do
 
       @type ghostscript_pool_option :: {:size, non_neg_integer()}
 
-      @type chrome_runner_option ::
+      @typedoc """
+      These options apply to local Chrome instances only.
+      """
+      @type local_chrome_option ::
               {:no_sandbox, boolean()}
               | {:discard_stderr, boolean()}
               | {:chrome_args, binary()}
               | {:chrome_executable, binary()}
+
+      @typedoc """
+      These options apply to local Chrome instances only.
+      """
+      @type inet_chrome_option :: {:chrome_address, {host :: binary(), port :: non_neg_integer()}}
 
       @type global_option ::
               {:name, atom()}
@@ -208,7 +216,8 @@ defmodule ChromicPDF.Supervisor do
               | {:ignore_certificate_errors, boolean()}
               | {:ghostscript_pool, [ghostscript_pool_option()]}
               | {:on_demand, boolean()}
-              | chrome_runner_option()
+              | local_chrome_option()
+              | inet_chrome_option()
 
       @doc """
       Returns a specification to start this module as part of a supervision tree.

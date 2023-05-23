@@ -110,6 +110,10 @@ defmodule ChromicPDF do
         [no_sandbox: true]
       end
 
+  > #### Only local Chrome instances {: .neutral}
+  >
+  > This option is available only for local Chrome instances.
+
   ### SSL connections
 
   In you are fetching your print source from a `https://` URL, as usual Chrome verifies the
@@ -237,6 +241,8 @@ defmodule ChromicPDF do
 
   ## Chrome options
 
+  By default, ChromicPDF will try to run a Chrome instance in the local environment. The following options allow to customize the generated command line.
+
   ### Custom command line switches
 
   The `:chrome_args` option allows to pass arbitrary options to the Chrome/Chromium executable.
@@ -259,6 +265,40 @@ defmodule ChromicPDF do
       defp chromic_pdf_opts do
         [discard_stderr: false]
       end
+
+  ### Remote Chrome
+
+  Instead of running a local Chrome instance, you may connect to an external Chrome instance via its websocket-based debugging interface. For example, you can run a headless Chrome inside a docker container using the minimalistic [Zenika/alpine-chrome](https://github.com/Zenika/alpine-chrome) images:
+
+      $ docker run --rm -p 9222:9222       \\
+        zenika/alpine-chrome:114           \\
+        --no-sandbox                       \\
+        --headless                         \\
+        --remote-debugging-port=9222       \\
+        --remote-debugging-address=0.0.0.0
+
+  See the [`ChromicPDF.ChromeRunner`](https://github.com/bitcrowd/chromic_pdf/blob/main/lib/chromic_pdf/pdf/chrome_runner.ex) module for a list of command line arguments that may improve your headless Chrome experience.
+
+  To enable remote connections to Chrome, you need to specify the hostname and port of the running Chrome instance using the `:chrome_address` option. Setting this option will disable the command line-related options discussed above.
+
+      defp chromic_pdf_opts do
+        [chrome_address: {"localhost", 9222}]
+      end
+
+  To communicate with Chrome through its the websocket interface, ChromicPDF has an optional dependency on the [websockex](https://github.com/Azolo/websockex/) package, which you need to explicitly add it to your `mix.exs`:
+
+      def deps do
+        [
+          {:chromic_pdf, "~> 1.10"},
+          {:websockex, "~> 0.4.3"}
+        ]
+      end
+
+  In case you have added `websockex` after `chromic_pdf` had already been compiled, you need to force a recompilation with `mix deps.compile --force chromic_pdf`.
+
+  > #### Experimental {: .warning}
+  >
+  > Please note that support for remote connections is considered experimental. Be aware that between restarts ChromicPDF may leave tabs behind and your external Chrome process may leak memory.
 
   ## Telemetry support
 
@@ -371,7 +411,7 @@ defmodule ChromicPDF do
 
   """
   @spec warm_up() :: {:ok, binary()}
-  @spec warm_up([ChromicPDF.chrome_runner_option()]) :: {:ok, binary()}
+  @spec warm_up([ChromicPDF.local_chrome_option()]) :: {:ok, binary()}
   def warm_up(opts \\ []) do
     ChromicPDF.ChromeRunner.warm_up(opts)
   end
