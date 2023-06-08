@@ -48,6 +48,14 @@ defmodule ChromicPDF.TemplateTest do
     end
 
     @tag :pdftotext
+    test "`source_and_options/1` can be used as the source param for `capture_screenshot/2`" do
+      assert {:ok, _} =
+               [content: "<p>Hello</p>"]
+               |> ChromicPDF.Template.source_and_options()
+               |> ChromicPDF.capture_screenshot()
+    end
+
+    @tag :pdftotext
     test "`source_and_options/1` can be used as the source param for `print_to_pdfa/2`" do
       assert_print_fun_accepts_source_and_options(&ChromicPDF.print_to_pdfa/2)
     end
