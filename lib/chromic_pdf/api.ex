@@ -50,6 +50,11 @@ defmodule ChromicPDF.API do
           ChromicPDF.capture_screenshot_option() | ChromicPDF.export_option()
         ]) ::
           ChromicPDF.export_return()
+  def capture_screenshot(services, %{source: source, opts: opts}, overrides)
+      when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
+    capture_screenshot(services, source, Keyword.merge(opts, overrides))
+  end
+
   def capture_screenshot(services, source, opts) when tuple_size(source) == 2 and is_list(opts) do
     chrome_export(services, :capture_screenshot, source, opts)
   end

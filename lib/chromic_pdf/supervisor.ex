@@ -564,6 +564,9 @@ defmodule ChromicPDF.Supervisor do
           )
 
       For navigational options (source, cookies, evaluating scripts) see `print_to_pdf/2`.
+
+      You may also use `ChromicPDF.Template` as an input source for `capture_screenshot/2`, yet
+      keep in mind that many of the page-related styles do not take effect for screenshots.
       """
       @spec capture_screenshot(source()) :: export_return()
       @spec capture_screenshot(source(), [capture_screenshot_option() | export_option()]) ::
