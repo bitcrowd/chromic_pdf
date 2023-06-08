@@ -1,6 +1,6 @@
-## Unreleased
+## [1.9.1] - 2024-06-08
 
-### Added
+### Fixed
 
 - Handle `ChromicPDF.Template.source_and_options/1` tuples in `ChromicPDF.capture_screenshot/2`.
 
