@@ -11,6 +11,8 @@ RUN apk update \
     openjdk11-jre \
     # for pdftotext & friends
     poppler-utils \
+    # for identifying images
+    imagemagick \
     # for 'kill'
     procps \
     # temporary for installation below

@@ -12,6 +12,8 @@ RUN apt-get update \
     openjdk-11-jre \
     # for pdftotext & friends
     poppler-utils \
+    # for identifying images
+    imagemagick \
     # for 'kill'
     procps \
     # temporary for installation below

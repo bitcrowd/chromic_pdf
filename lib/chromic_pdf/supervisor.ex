@@ -182,6 +182,7 @@ defmodule ChromicPDF.Supervisor do
 
       @type capture_screenshot_option ::
               {:capture_screenshot, map()}
+              | {:full_page, boolean()}
               | navigate_option()
 
       @type session_pool_option ::
@@ -567,6 +568,16 @@ defmodule ChromicPDF.Supervisor do
 
       You may also use `ChromicPDF.Template` as an input source for `capture_screenshot/2`, yet
       keep in mind that many of the page-related styles do not take effect for screenshots.
+
+      ## Full page screenshots
+
+      You can pass the `:full_page` option to make ChromicPDF increase the viewport dimensions to
+      fit the entire content.
+
+          ChromicPDF.capture_screenshot(
+            {:url, "file:///very-long-content.html"},
+            full_page: true
+          )
       """
       @spec capture_screenshot(source()) :: export_return()
       @spec capture_screenshot(source(), [capture_screenshot_option() | export_option()]) ::

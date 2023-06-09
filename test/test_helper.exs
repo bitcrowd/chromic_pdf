@@ -7,7 +7,7 @@ excludes =
         true
       else
         IO.puts("""
-        Excluding verapdf validation tests.
+        Excluding '@tag :verapdf' tests.
         If you want to run verapdf-based PDF/A tests, make sure verapdf is in your $PATH.
         """)
 
@@ -19,7 +19,7 @@ excludes =
         true
       else
         IO.puts("""
-        Excluding pdfinfo metadata tests.
+        Excluding '@tag :pdfinfo' tests.
         If you want to run pdfinfo-based PDF/A tests, please install poppler-utils / xpdf.
         """)
 
@@ -31,7 +31,7 @@ excludes =
         true
       else
         IO.puts("""
-        Excluding pdftotext tests.
+        Excluding '@tag :pdftotext' tests.
         If you want to run pdftotext-based PDF tests, please install poppler-utils / xpdf.
         """)
 
@@ -43,10 +43,22 @@ excludes =
         true
       else
         IO.puts("""
-        Excluding ZUV (ZUGFeRD validator) validation tests.
+        Excluding '@tag :zuv' tests.
         If you want to run ZUV-based PDF/A tests, please download ZUV from
         https://github.com/ZUGFeRD/ZUV/releases and set the $ZUV_JAR
         environment variable to the container .jar file.
+        """)
+
+        false
+      end
+    end,
+    identify: fn ->
+      if System.find_executable("identify") do
+        true
+      else
+        IO.puts("""
+        Excluding '@tag :identify' tests.
+        If you want to run identify-based image tests, please install imagemagick.
         """)
 
         false
