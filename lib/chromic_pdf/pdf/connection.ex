@@ -3,134 +3,54 @@
 defmodule ChromicPDF.Connection do
   @moduledoc false
 
-  use GenServer
-  alias ChromicPDF.Connection.{ConnectionLostError, JsonRPC, Tokenizer}
+  @type state :: map()
+  @type msg :: binary()
 
-  defmodule ChromeRunner do
-    @moduledoc false
+  @callback start_link(keyword()) :: {:ok, pid()}
+  @callback handle_init(keyword()) :: {:ok, state()}
+  @callback handle_msg(msg(), state()) :: :ok
 
-    @callback spawn(keyword()) :: {:ok, port()}
-    @callback send_msg(port(), msg :: binary()) :: :ok
+  @spec start_link(keyword()) :: GenServer.on_start()
+  def start_link(opts) do
+    strategy = Keyword.get(opts, :connection_strategy, ChromicPDF.Connection.Local)
+
+    strategy.start_link(opts)
   end
 
-  @type state :: %{
-          port: port(),
-          parent_pid: pid(),
-          tokenizer: Tokenizer.t(),
-          next_call_id: pos_integer()
-        }
-
-  # ------------- API ----------------
-
-  @spec start_link(pid(), keyword()) :: GenServer.on_start()
-  def start_link(parent_pid, opts) do
-    GenServer.start_link(__MODULE__, {parent_pid, opts})
+  @spec send_msg(pid(), binary()) :: :ok
+  def send_msg(pid, msg) do
+    :ok = GenServer.cast(pid, {:msg, msg})
   end
 
-  @spec dispatch_call(pid(), binary()) :: :ok
-  def dispatch_call(pid, msg) do
-    GenServer.call(pid, {:dispatch_call, msg})
-  end
+  defmacro __using__(_) do
+    quote do
+      use GenServer
+      alias ChromicPDF.Connection
 
-  @spec port_info(pid) :: keyword()
-  def port_info(pid) do
-    GenServer.call(pid, :port_info)
-  end
+      @behaviour Connection
 
-  # ------------ Server --------------
+      @impl Connection
+      def start_link(opts) do
+        GenServer.start_link(__MODULE__, {self(), opts})
+      end
 
-  @impl GenServer
-  def init({parent_pid, opts}) do
-    chrome_runner = Keyword.get(opts, :chrome_runner, ChromicPDF.ChromeRunner)
+      @impl GenServer
+      def init({channel_pid, opts}) do
+        {:ok, state} = handle_init(opts)
 
-    {:ok, port} = spawn_chrome(chrome_runner, opts)
+        {:ok, Map.put(state, :channel_pid, channel_pid)}
+      end
 
-    Process.flag(:trap_exit, true)
+      @impl GenServer
+      def handle_cast({:msg, msg}, state) do
+        :ok = handle_msg(msg, state)
 
-    state = %{
-      chrome_runner: chrome_runner,
-      port: port,
-      parent_pid: parent_pid,
-      tokenizer: Tokenizer.init(),
-      next_call_id: 1
-    }
+        {:noreply, state}
+      end
 
-    {:ok, state}
-  end
-
-  defp spawn_chrome(chrome_runner, opts) do
-    opts
-    |> Keyword.take([:chrome_args, :discard_stderr, :no_sandbox, :chrome_executable])
-    |> chrome_runner.spawn()
-  end
-
-  @impl GenServer
-  def handle_call(
-        {:dispatch_call, call},
-        _from,
-        %{chrome_runner: chrome_runner, port: port, next_call_id: call_id} = state
-      ) do
-    chrome_runner.send_msg(port, JsonRPC.encode(call, call_id))
-
-    {:reply, call_id, %{state | next_call_id: call_id + 1}}
-  end
-
-  def handle_call(:port_info, _from, %{port: port} = state) do
-    {:reply, Port.info(port), state}
-  end
-
-  @impl GenServer
-  # Message from Chrome through the port.
-  def handle_info({_port, {:data, data}}, state) do
-    {msgs, tokenizer} = Tokenizer.tokenize(data, state.tokenizer)
-
-    for msg <- msgs do
-      send(state.parent_pid, {:chrome_message, JsonRPC.decode(msg)})
-    end
-
-    {:noreply, %{state | tokenizer: tokenizer}}
-  end
-
-  # Message triggered by Port.monitor/1.
-  # This is unlikely to happen outside terminate/2 (:shutdown).
-  def handle_info({:DOWN, _ref, :port, _port, _exit_state}, state) do
-    {:noreply, state}
-  end
-
-  # EXIT signal from port process since we trap signals.
-  def handle_info({:EXIT, _port, _reason}, state) do
-    # Chrome has crashed or was terminated externally.
-    {:stop, :connection_lost, state}
-  end
-
-  @impl GenServer
-  def terminate(:normal, _state), do: :ok
-
-  def terminate(:connection_lost, _state) do
-    raise(ConnectionLostError, """
-    Chrome has stopped or was terminated by an external program.
-
-    If this happened while you were printing a PDF, this may be a problem with Chrome itelf.
-    If this happens at startup and you are running inside a Docker container with a Linux-based
-    image, please see the "Chrome Sandbox in Docker containers" section of the documentation.
-
-    Either way, to see Chrome's error output, configure ChromicPDF with the option
-
-        discard_stderr: false
-    """)
-  end
-
-  def terminate(:shutdown, %{chrome_runner: chrome_runner, port: port, next_call_id: call_id}) do
-    # Graceful shutdown: Dispatch the Browser.close call to Chrome which will cause it to detach
-    # all debugging sessions and close the port.
-    chrome_runner.send_msg(port, JsonRPC.encode({"Browser.close", %{}}, call_id))
-
-    # We can't enter the GenServer loop from here, so we need to manually receive the message
-    # about the port going down. In case Chrome takes longer than the configured supervision
-    # shutdown time, we'll receive a :brutal_kill and exit immediately, so no need for a timeout.
-    receive do
-      {:DOWN, _ref, :port, _port, _exit_state} ->
-        :ok
+      defp send_msg_to_channel(msg, %{channel_pid: channel_pid} = state) do
+        send(channel_pid, {:msg, msg})
+      end
     end
   end
 end

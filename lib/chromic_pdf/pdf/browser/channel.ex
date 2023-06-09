@@ -7,6 +7,7 @@ defmodule ChromicPDF.Browser.Channel do
   require Logger
   alias ChromicPDF.Browser.ExecutionError
   alias ChromicPDF.{Connection, Protocol}
+  alias ChromicPDF.JsonRPC
 
   # ------------- API ----------------
 
@@ -45,9 +46,14 @@ defmodule ChromicPDF.Browser.Channel do
 
   @impl GenServer
   def init(args) do
-    {:ok, conn} = Connection.start_link(self(), args)
+    {:ok, conn_pid} = Connection.start_link(args)
 
-    {:ok, %{conn: conn, waitlist: []}}
+    {:ok,
+     %{
+       conn_pid: conn_pid,
+       waitlist: [],
+       next_call_id: 1
+     }}
   end
 
   # Starts protocol processing, asynchronously sends result message when done.
@@ -68,10 +74,23 @@ defmodule ChromicPDF.Browser.Channel do
 
   # Data packets coming in from connection.
   @impl GenServer
-  def handle_info({:chrome_message, msg}, state) do
+  def handle_info({:msg, msg}, state) do
+    msg = JsonRPC.decode(msg)
+
     warn_on_inspector_crash(msg)
 
     {:noreply, handle_chrome_message(msg, state)}
+  end
+
+  @impl GenServer
+  def terminate(:normal, _state), do: :ok
+
+  def terminate(:shutdown, %{conn_pid: conn_pid, next_call_id: next_call_id}) do
+    # Graceful shutdown: Dispatch the Browser.close call to Chrome which will cause it to detach
+    # all debugging sessions and close the port.
+    Connection.send_msg(conn_pid, JsonRPC.encode({"Browser.close", %{}}, next_call_id))
+
+    :ok
   end
 
   defp warn_on_inspector_crash(msg) do
@@ -99,14 +118,24 @@ defmodule ChromicPDF.Browser.Channel do
   # -------- Task execution ----------
 
   # "Runs" the protocol processing until done or await instruction reached.
-  defp handle_run_protocol(task, %{conn: conn} = state) do
-    case Protocol.run(task.protocol, &Connection.dispatch_call(conn, &1)) do
+  defp handle_run_protocol(task, %{conn_pid: conn_pid, next_call_id: next_call_id} = state) do
+    {protocol, result} = Protocol.step(task.protocol, next_call_id)
+
+    # For simplicity, we update next_call_id regardless of whether call was sent.
+    task = %{task | protocol: protocol}
+    state = %{state | next_call_id: next_call_id + 1}
+
+    case result do
+      {:call, call} ->
+        :ok = Connection.send_msg(conn_pid, JsonRPC.encode(call, next_call_id))
+        handle_run_protocol(task, state)
+
+      :await ->
+        push_to_waitlist(state, task)
+
       {:halt, result} ->
         GenServer.reply(task.from, result)
         state
-
-      {:await, protocol} ->
-        push_to_waitlist(state, %{task | protocol: protocol})
     end
   end
 

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-defmodule ChromicPDF.Connection.JsonRPC do
+defmodule ChromicPDF.JsonRPC do
   @moduledoc false
 
   @type call_id :: integer()

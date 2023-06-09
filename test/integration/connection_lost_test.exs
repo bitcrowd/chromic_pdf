@@ -3,14 +3,14 @@
 defmodule ChromicPDF.ConnectionLostTest do
   use ExUnit.Case, async: false
   alias ChromicPDF.Connection
-  alias ChromicPDF.Connection.ConnectionLostError
+  alias ChromicPDF.Connection.{ConnectionLostError, Local}
 
-  describe "when the Chrome process fails at startup or is killed externally" do
+  describe "when the local Chrome process fails at startup or is killed externally" do
     @tag :capture_log
     test "an exception with a nice error message is raised" do
-      {:ok, pid} = Connection.start_link(self(), [])
+      {:ok, pid} = Connection.start_link([])
 
-      port_info = Connection.port_info(pid)
+      port_info = Local.port_info(pid)
 
       Process.unlink(pid)
       Process.monitor(pid)

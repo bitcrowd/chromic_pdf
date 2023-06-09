@@ -4,12 +4,12 @@ defmodule ChromicPDF.ProtocolMacros do
   @moduledoc false
 
   require Logger
-  alias ChromicPDF.Connection.JsonRPC
+  alias ChromicPDF.JsonRPC
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defmacro steps(do: block) do
     quote do
-      alias ChromicPDF.Connection.JsonRPC
+      alias ChromicPDF.JsonRPC
       alias ChromicPDF.Protocol
 
       @behaviour Protocol
@@ -116,7 +116,7 @@ defmodule ChromicPDF.ProtocolMacros do
   defmacro call(name, method, params_from_state, default_params) do
     quote do
       @steps {:call, unquote(name), 2}
-      def unquote(name)(state, dispatch) do
+      def unquote(name)(state, call_id) do
         params =
           fetch_params_for_call(
             state,
@@ -124,13 +124,13 @@ defmodule ChromicPDF.ProtocolMacros do
             unquote(default_params)
           )
 
-        call_id =
+        call =
           case Map.get(state, "sessionId") do
-            nil -> dispatch.({unquote(method), params})
-            session_id -> dispatch.({session_id, unquote(method), params})
+            nil -> {unquote(method), params}
+            session_id -> {session_id, unquote(method), params}
           end
 
-        Map.put(state, :last_call_id, call_id)
+        {Map.put(state, :last_call_id, call_id), call}
       end
     end
   end
