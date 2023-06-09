@@ -36,6 +36,19 @@ defmodule ChromicPDF.ChromeRunner do
     {:ok, stderr}
   end
 
+  @spec version() :: [non_neg_integer()]
+  def version do
+    "#{executable()} --version"
+    |> String.to_charlist()
+    |> :os.cmd()
+    |> to_string()
+    |> String.trim()
+    |> String.split(" ")
+    |> List.last()
+    |> String.split(".")
+    |> Enum.map(&String.to_integer/1)
+  end
+
   defp shell_command(extra_args, opts) do
     Enum.join([~s("#{executable(opts)}") | args(extra_args, opts)], " ")
   end
@@ -51,7 +64,7 @@ defmodule ChromicPDF.ChromeRunner do
     "/Applications/Chromium.app/Contents/MacOS/Chromium"
   ]
 
-  defp executable(opts) do
+  defp executable(opts \\ []) do
     executable =
       Keyword.get_lazy(opts, :chrome_executable, fn ->
         @default_executables

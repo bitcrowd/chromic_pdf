@@ -3,6 +3,7 @@
 defmodule ChromicPDF.ScreenshotTest do
   use ExUnit.Case, async: false
   import ChromicPDF.Utils
+  import ChromicPDF.ChromeRunner, only: [version: 0]
 
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)
   @large_html Path.expand("../fixtures/large.html", __ENV__.file)
@@ -50,13 +51,20 @@ defmodule ChromicPDF.ScreenshotTest do
 
     @tag :identify
     test ":full_page resizes the the device dimensions to fit the content" do
-      {_, _, height} = capture_screenshot_and_identify(source: {:url, "file://#{@large_html}"})
-      assert height < 4000
+      [major | _] = version()
 
-      {_, _, height} =
-        capture_screenshot_and_identify(source: {:url, "file://#{@large_html}"}, full_page: true)
+      if major >= 91 do
+        {_, _, height} = capture_screenshot_and_identify(source: {:url, "file://#{@large_html}"})
+        assert height < 4000
 
-      assert height >= 4000
+        {_, _, height} =
+          capture_screenshot_and_identify(
+            source: {:url, "file://#{@large_html}"},
+            full_page: true
+          )
+
+        assert height >= 4000
+      end
     end
   end
 end
