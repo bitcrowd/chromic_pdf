@@ -572,7 +572,7 @@ defmodule ChromicPDF.Supervisor do
       ## Full page screenshots
 
       You can pass the `:full_page` option to make ChromicPDF increase the viewport dimensions to
-      fit the entire content.
+      fit the entire content. This option only works with Chrome version 91 or greater.
 
           ChromicPDF.capture_screenshot(
             {:url, "file:///very-long-content.html"},
