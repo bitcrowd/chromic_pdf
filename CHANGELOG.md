@@ -4,6 +4,10 @@
 
 - Add `:full_page` option to `ChromicPDF.capture_screenshot/2` to increase the viewport size to match the content.
 
+### Fixed
+
+- Add `--hide-scrollbars` command line option to hide scrollbars on screenshots.
+
 ## [1.9.1] - 2024-06-08
 
 ### Fixed
