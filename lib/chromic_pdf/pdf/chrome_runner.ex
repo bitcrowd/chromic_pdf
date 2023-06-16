@@ -109,6 +109,7 @@ defmodule ChromicPDF.ChromeRunner do
     "--enable-features=NetworkServiceInProcess2",
     "--export-tagged-pdf",
     "--force-color-profile=srgb",
+    "--hide-scrollbars",
     "--metrics-recording-only",
     "--no-default-browser-check",
     "--no-first-run",
