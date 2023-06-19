@@ -285,7 +285,7 @@ defmodule ChromicPDF do
         [chrome_address: {"localhost", 9222}]
       end
 
-  To communicate with Chrome through its the websocket interface, ChromicPDF has an optional dependency on the [websockex](https://github.com/Azolo/websockex/) package, which you need to explicitly add it to your `mix.exs`:
+  To communicate with Chrome through its the websocket interface, ChromicPDF has an optional dependency on the [websockex](https://github.com/Azolo/websockex/) package, which you need to explicitly add to your `mix.exs`:
 
       def deps do
         [
