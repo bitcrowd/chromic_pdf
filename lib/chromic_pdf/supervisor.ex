@@ -202,7 +202,7 @@ defmodule ChromicPDF.Supervisor do
               | {:chrome_executable, binary()}
 
       @typedoc """
-      These options apply to local Chrome instances only.
+      These options apply to remote Chrome instances only.
       """
       @type inet_chrome_option :: {:chrome_address, {host :: binary(), port :: non_neg_integer()}}
 
