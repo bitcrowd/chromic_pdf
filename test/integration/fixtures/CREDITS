@@ -7,3 +7,7 @@ authored by Reinhard Nißl, found in GS bugtracker: https://bugs.ghostscript.com
 * zugferd-invoice.xml
 
 Found in the ZUGFeRD corpus: https://github.com/ZUGFeRD/corpus/blob/master/ZUGFeRDv2/correct/xml/ZUGFeRD-invoice_rabatte_4_abschlag_taxbasistotalamount.xml
+
+* chrome-seccomp.json
+
+https://github.com/Zenika/alpine-chrome/blob/master/chrome.json

@@ -63,6 +63,18 @@ excludes =
 
         false
       end
+    end,
+    docker: fn ->
+      if System.find_executable("docker") do
+        true
+      else
+        IO.puts("""
+        Excluding '@tag :docker' tests.
+        If you want to run docker-based image tests, please install docker.
+        """)
+
+        false
+      end
     end
   ]
   |> Enum.reject(fn {_, check} -> check.() end)

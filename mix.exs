@@ -12,7 +12,10 @@ defmodule ChromicPdf.MixProject do
       version: @version,
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
-      dialyzer: [plt_add_apps: [:ex_unit, :mix], plt_file: {:no_warn, ".plts/dialyzer.plt"}],
+      dialyzer: [
+        plt_add_apps: [:ex_unit, :mix, :websockex, :inets],
+        plt_file: {:no_warn, ".plts/dialyzer.plt"}
+      ],
       elixirc_paths: elixirc_paths(Mix.env()),
       deps: deps(),
       aliases: aliases(),
@@ -43,7 +46,7 @@ defmodule ChromicPdf.MixProject do
 
   def application do
     [
-      extra_applications: [:eex, :logger]
+      extra_applications: [:eex, :inets, :logger]
     ]
   end
 
@@ -68,6 +71,7 @@ defmodule ChromicPdf.MixProject do
       {:jason, "~> 1.1"},
       {:nimble_pool, "~> 0.2 or ~> 1.0"},
       {:telemetry, "~> 0.4 or ~> 1.0"},
+      {:websockex, ">= 0.4.3", optional: true},
       {:dialyxir, "~> 1.2", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:ex_doc, ">= 0.0.0", only: [:test, :dev], runtime: false},

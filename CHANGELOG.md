@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Added
+
+- Add experimental support for connecting to running chrome instances via inet-based debugging (usually on port 9222). Controlled by option `:chrome_address`. Requires optional `websockex` dependency.
+
 ### Fixed
 
 - Add `--hide-scrollbars` to default command line options, to hide scrollbars on screenshots.
