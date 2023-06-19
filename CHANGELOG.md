@@ -2,7 +2,7 @@
 
 ### Fixed
 
-- Add `--hide-scrollbars` command line option to hide scrollbars on screenshots.
+- Add `--hide-scrollbars` to default command line options, to hide scrollbars on screenshots.
 
 ## [1.10.0] - 2024-6-09
 
