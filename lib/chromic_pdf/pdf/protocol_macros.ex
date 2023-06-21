@@ -241,7 +241,7 @@ defmodule ChromicPDF.ProtocolMacros do
           :no_match
 
         :log ->
-          Logger.warn("""
+          Logger.warning("""
           [ChromicPDF] Unhandled exception in JS runtime
 
           #{get_in!(exception, ["exception", "description"])}

@@ -186,7 +186,7 @@ defmodule ChromicPDF.Browser.SessionPool do
   def terminate_worker(reason, worker_state, pool_state)
       when reason in [:max_session_uses_reached, :error, :DOWN] do
     if reason == :DOWN do
-      Logger.warn("""
+      Logger.warning("""
       ChromicPDF received a :DOWN message from the process that called `print_to_pdf/2`!
 
       This means that the process was terminated externally. For instance, your HTTP server
