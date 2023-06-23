@@ -257,6 +257,15 @@ defmodule ChromicPDF do
         [chrome_executable: "/usr/bin/google-chrome-beta"]
       end
 
+  ### Font rendering issues on Linux
+
+  On Linux, Chrome and its rendering engine Skia have longstanding issues with rendering certain fonts for print media, especially with regards to letter kerning. See [this issue](https://github.com/puppeteer/puppeteer/issues/2410) in puppeteer for a discussion. If your documents suffer from incorrectly spaced letters, you can try some of the following:
+
+  - Apply the `text-rendering: geometricPrecision` CSS rule. In our tests, this has shown to be the most reliable option. Besides, it is also the most flexible option as you can apply it to individual elements depending on the font-face they use. Recommended.
+  - Set `--font-render-hinting=none` or `--disable-font-subpixel-positioning` command line switches (see `:chrome_args` option above). While this generally improved text rendering in all our tests, it is a bit of a mallet method.
+
+  See also [this blog post](https://www.browserless.io/blog/2020/09/30/puppeteer-print/) for more hints.
+
   ### Debugging Chrome errors
 
   Chrome's stderr logging is silently discarded to not obscure your logfiles. In case you would

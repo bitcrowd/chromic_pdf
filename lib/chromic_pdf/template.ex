@@ -60,6 +60,7 @@ defmodule ChromicPDF.Template do
           | {:footer_font_size, binary()}
           | {:footer_zoom, binary()}
           | {:webkit_print_color_adjust, binary()}
+          | {:text_rendering, binary()}
           | {:landscape, boolean()}
 
   @paper_sizes_in_inch %{
@@ -204,6 +205,7 @@ defmodule ChromicPDF.Template do
   <style>
     * {
       -webkit-print-color-adjust: <%= @webkit_print_color_adjust %>;
+      text-rendering: <%= @text_rendering %>;
     }
 
     @page {
@@ -276,7 +278,8 @@ defmodule ChromicPDF.Template do
       footer_font_size: Keyword.get(opts, :footer_font_size, "10pt"),
       header_zoom: Keyword.get(opts, :header_zoom, "0.75"),
       footer_zoom: Keyword.get(opts, :footer_zoom, "0.75"),
-      webkit_print_color_adjust: Keyword.get(opts, :webkit_print_color_adjust, "exact")
+      webkit_print_color_adjust: Keyword.get(opts, :webkit_print_color_adjust, "exact"),
+      text_rendering: Keyword.get(opts, :text_rendering, "auto")
     ]
 
     render_styles(assigns)
