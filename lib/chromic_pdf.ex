@@ -298,7 +298,7 @@ defmodule ChromicPDF do
 
       def deps do
         [
-          {:chromic_pdf, "~> 1.11"},
+          {:chromic_pdf, "..."},
           {:websockex, "~> 0.4.3"}
         ]
       end

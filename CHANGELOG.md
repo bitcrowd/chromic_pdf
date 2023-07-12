@@ -1,4 +1,4 @@
-## Unreleased
+## [1.12.0] - 2024-07-12
 
 ### Added
 
@@ -15,7 +15,7 @@
 
 - Add `--hide-scrollbars` to default command line options, to hide scrollbars on screenshots.
 
-## [1.10.0] - 2024-6-09
+## [1.10.0] - 2024-06-09
 
 ### Added
 
