@@ -165,6 +165,8 @@ defmodule ChromicPDF.Protocol do
         :ignore_certificate_errors => true,
         :ghostscript_pool => true,
         :on_demand => true,
+        :unhandled_runtime_exceptions => true,
+        :console_api_calls => true,
         :__protocol__ => true
       }
     }
