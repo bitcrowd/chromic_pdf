@@ -1,0 +1,3 @@
+# locked to the versions we use in the lint CI job
+elixir 1.14.0
+erlang 25.1

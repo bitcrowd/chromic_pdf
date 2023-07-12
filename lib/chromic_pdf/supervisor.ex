@@ -211,6 +211,7 @@ defmodule ChromicPDF.Supervisor do
               | {:offline, boolean()}
               | {:disable_scripts, boolean()}
               | {:unhandled_runtime_exceptions, :ignore | :log | :raise}
+              | {:console_api_calls, :ignore | :log | :raise}
               | {:max_session_uses, non_neg_integer()}
               | {:session_pool, [session_pool_option()]}
               | {:ignore_certificate_errors, boolean()}

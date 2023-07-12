@@ -338,16 +338,25 @@ defmodule ChromicPDF do
 
   ## Further options
 
-  ### Debugging unhandled runtime exceptions
+  ### Debugging JavaScript errors & warnings
 
-  By default, runtime exceptions thrown in JavaScript execution contexts are logged. You may
-  choose to instead convert them into an Elixir exception by passing the following option:
+  By default, unhandled runtime exceptions thrown in JavaScript execution contexts are logged.
+  You may choose to instead convert them into an Elixir exception by passing the following option:
 
       defp chromic_pdf_opts do
+        # :ignore | :log (default) | :raise
         [unhandled_runtime_exceptions: :raise]
       end
 
   Alternatively, you can pass `:ignore` to silence the log statement.
+
+  Calls to `console.log` & friends are ignored by default, and can be configured to be logged
+  like this:
+
+      defp chromic_pdf_opts do
+        # :ignore (default) | :log | :raise
+        [console_api_calls: :log]
+      end
 
   ## On Accessibility / PDF/UA
 

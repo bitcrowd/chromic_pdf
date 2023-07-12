@@ -323,6 +323,53 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
   end
 
+  @html_with_console_api_call """
+  <html>
+    <body id="print-ready">
+      <script>console.log("test");</script>
+    </body>
+  </html>
+  """
+
+  describe "Console API calls" do
+    setup do
+      start_supervised!(ChromicPDF)
+      :ok
+    end
+
+    test "are ignored by default" do
+      assert capture_log(fn ->
+               assert print_to_pdf({:html, @html_with_console_api_call}) == :ok
+             end) == ""
+    end
+  end
+
+  describe "Console API calls with console_api_calls: :log option" do
+    setup do
+      start_supervised!({ChromicPDF, console_api_calls: :log})
+      :ok
+    end
+
+    test "are logged by default" do
+      assert capture_log(fn ->
+               assert print_to_pdf({:html, @html_with_console_api_call}) == :ok
+             end) =~ "console.log called in JS runtime"
+    end
+  end
+
+  describe "Console API calls with console_api_calls: :raise option" do
+    setup do
+      start_supervised!({ChromicPDF, console_api_calls: :raise})
+      :ok
+    end
+
+    test "raise nicely formatted errors" do
+      assert_raise ChromicPDF.ChromeError, ~r/Console API called in JS runtime/, fn ->
+        print_to_pdf({:html, @html_with_console_api_call})
+      end
+    end
+  end
+
   describe "generic handling of protocol response errors" do
     setup do
       start_supervised!(ChromicPDF)

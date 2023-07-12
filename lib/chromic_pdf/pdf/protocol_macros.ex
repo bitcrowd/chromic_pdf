@@ -156,12 +156,9 @@ defmodule ChromicPDF.ProtocolMacros do
       @steps {:await, unquote(name), unquote(length(args))}
 
       def unquote(fundef) do
-        case intercept_exception_thrown(unquote_splicing(args)) do
-          :no_match ->
-            unquote(block)
-
-          error ->
-            error
+        with :no_match <- intercept_exception_thrown(unquote_splicing(args)),
+             :no_match <- intercept_console_api_called(unquote_splicing(args)) do
+          unquote(block)
         end
       end
     end
@@ -235,22 +232,50 @@ defmodule ChromicPDF.ProtocolMacros do
     with true <- JsonRPC.notification?(msg, "Runtime.exceptionThrown"),
          true <- state["sessionId"] == msg["sessionId"] do
       exception = get_in!(msg, ["params", "exceptionDetails"])
+      description = get_in!(exception, ["exception", "description"])
 
       case Map.get(state, :unhandled_runtime_exceptions, :log) do
         :ignore ->
-          :no_match
+          {:match, :keep, state}
 
         :log ->
           Logger.warning("""
           [ChromicPDF] Unhandled exception in JS runtime
 
-          #{get_in!(exception, ["exception", "description"])}
+          #{description}
           """)
 
           {:match, :keep, state}
 
         :raise ->
-          {:error, {:exception_thrown, exception}}
+          {:error, {:exception_thrown, description}}
+      end
+    else
+      _ -> :no_match
+    end
+  end
+
+  def intercept_console_api_called(state, msg) do
+    with true <- JsonRPC.notification?(msg, "Runtime.consoleAPICalled"),
+         true <- state["sessionId"] == msg["sessionId"] do
+      type = get_in!(msg, ["params", "type"])
+      args = get_in!(msg, ["params", "args"]) |> Jason.encode!(pretty: true)
+
+      case Map.get(state, :console_api_calls, :ignore) do
+        :ignore ->
+          {:match, :keep, state}
+
+        :log ->
+          Logger.warning("""
+          [ChromicPDF] console.#{type} called in JS runtime
+
+          #{args}
+          """)
+
+          {:match, :keep, state}
+
+        :raise ->
+          {:error, {:console_api_called, {type, args}}}
       end
     else
       _ -> :no_match

@@ -16,11 +16,15 @@ defmodule ChromicPDF.ChromeError do
     """
   end
 
-  defp title_for_error({:exception_thrown, _error}) do
+  defp title_for_error({:exception_thrown, _}) do
     "Unhandled exception in JS runtime"
   end
 
-  defp title_for_error({:evaluate, _error}) do
+  defp title_for_error({:console_api_called, _}) do
+    "Console API called in JS runtime"
+  end
+
+  defp title_for_error({:evaluate, _}) do
     "Exception in :evaluate expression"
   end
 
@@ -51,13 +55,19 @@ defmodule ChromicPDF.ChromeError do
     """
   end
 
-  defp hint_for_error({:exception_thrown, error}, _opts) do
-    %{"exception" => %{"description" => description}} = error
-
+  defp hint_for_error({:exception_thrown, description}, _opts) do
     """
     Exception:
 
     #{indent(description)}
+    """
+  end
+
+  defp hint_for_error({:console_api_called, {type, args}}, _opts) do
+    """
+    console.#{type} called:
+
+    #{indent(args)}
     """
   end
 

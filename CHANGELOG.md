@@ -2,6 +2,7 @@
 
 ### Added
 
+- Add `:console_api_calls` option to configure handling of `console.foo` calls in JS runtime (ignore, log, raise).
 - Document fixes for font rendering issues, and give `ChromicPDF.Template` a `text_rendering` option to allow applying `text-rendering: geometricPrecision;` on all elements.
 
 ## [1.11.0] - 2024-06-19
