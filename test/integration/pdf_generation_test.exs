@@ -226,9 +226,18 @@ defmodule ChromicPDF.PDFGenerationTest do
         end
       )
     end
+
+    @tag :pdftotext
+    test "scripts are not evaluated" do
+      params = [disable_scripts: true]
+
+      print_to_pdf({:html, test_dynamic_html()}, params, fn text ->
+        refute String.contains?(text, "Dynamic content from Javascript")
+      end)
+    end
   end
 
-  describe "with disable_scripts: true" do
+  describe "with disable_scripts: true in supervisor" do
     setup do
       start_supervised!({ChromicPDF, disable_scripts: true})
       :ok

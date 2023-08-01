@@ -165,10 +165,13 @@ defmodule ChromicPDF.Supervisor do
                  required(:attribute) => binary()
                }}
 
+      @type disable_scripts_option :: {:disable_scripts, boolean()}
+
       @type navigate_option ::
               {:set_cookie, map()}
               | evaluate_option()
               | wait_for_option()
+              | disable_scripts_option()
 
       @type pdf_option ::
               {:print_to_pdf, map()}
@@ -209,7 +212,6 @@ defmodule ChromicPDF.Supervisor do
       @type global_option ::
               {:name, atom()}
               | {:offline, boolean()}
-              | {:disable_scripts, boolean()}
               | {:unhandled_runtime_exceptions, :ignore | :log | :raise}
               | {:console_api_calls, :ignore | :log | :raise}
               | {:max_session_uses, non_neg_integer()}
@@ -217,6 +219,7 @@ defmodule ChromicPDF.Supervisor do
               | {:ignore_certificate_errors, boolean()}
               | {:ghostscript_pool, [ghostscript_pool_option()]}
               | {:on_demand, boolean()}
+              | disable_scripts_option()
               | local_chrome_option()
               | inet_chrome_option()
 
