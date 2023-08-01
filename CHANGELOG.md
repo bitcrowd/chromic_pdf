@@ -1,3 +1,9 @@
+## Unreleased
+
+### Added
+
+- Add `:disable_scripts` non-global option. (@osbre)
+
 ## [1.12.0] - 2024-07-12
 
 ### Added
