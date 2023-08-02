@@ -77,7 +77,7 @@ defmodule ChromicPDF do
       end
 
   Note that this doesn't prevent other features like the `evaluate` option from working, it
-  solely applies to scripts being supplied by the rendered page itself.
+  solely applies to scripts being supplied by the rendered page itself. Also, you can override this global option by passing the `disable_scripts` option to `print_to_pdf/2` or `print_to_pdfa/2` directly.
 
   ### Running in offline mode
 
