@@ -267,6 +267,17 @@ defmodule ChromicPDF.PDFGenerationTest do
         assert String.contains?(text, "hello from script")
       end)
     end
+
+    @tag :pdftotext
+    test "scripts are evaluated when local option is set" do
+      params = [
+        disable_scripts: false,
+      ]
+
+      print_to_pdf({:html, test_dynamic_html()}, params, fn text ->
+        refute String.contains?(text, "Javascript is disabled")
+      end)
+    end
   end
 
   describe "offline mode" do
