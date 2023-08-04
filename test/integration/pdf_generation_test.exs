@@ -271,7 +271,7 @@ defmodule ChromicPDF.PDFGenerationTest do
     @tag :pdftotext
     test "scripts are evaluated when local option is set" do
       params = [
-        disable_scripts: false,
+        disable_scripts: false
       ]
 
       print_to_pdf({:html, test_dynamic_html()}, params, fn text ->
