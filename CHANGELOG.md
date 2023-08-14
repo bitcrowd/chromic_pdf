@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Added
+
+- Add support for *named session pools*. These can be used to give persistent session options (`offline`, `disable_scripts`, ...) different values, for example to have one template that is not allowed to execute JavaScript and while others can use JavaScript.
+
 ### Changed
 
 - Deprecate `:max_session_uses` option in favor of `session_pool: [max_uses: ...]`.

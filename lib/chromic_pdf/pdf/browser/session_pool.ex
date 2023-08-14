@@ -17,9 +17,11 @@ defmodule ChromicPDF.Browser.SessionPool do
   @close_timeout 1000
   @default_max_uses 1000
 
+  @default_pool_name :default
+
   @type pool_state :: %{
           browser: pid(),
-          args: keyword()
+          config: keyword()
         }
 
   @type worker_state :: %{
@@ -30,24 +32,40 @@ defmodule ChromicPDF.Browser.SessionPool do
 
   # ------------- API ----------------
 
-  @spec child_spec(keyword()) :: Supervisor.child_spec()
-  def child_spec(args) do
+  # Normalizes global :session_pool option (keywords for default pool or map of named pools) into
+  # a list of supervisor ids and pool options as combined from globals and named pool overrides.
+  @spec pools_from_config(keyword()) :: [{__MODULE__, keyword()}]
+  def pools_from_config(config) do
+    named_pools =
+      case Keyword.get(config, :session_pool, []) do
+        opts when is_list(opts) -> %{@default_pool_name => opts}
+        named_pools when is_map(named_pools) -> named_pools
+      end
+
+    for {name, opts} <- named_pools do
+      {name, Keyword.merge(config, opts)}
+    end
+  end
+
+  @spec pool_name_from_params(keyword()) :: atom()
+  def pool_name_from_params(pdf_params) do
+    Keyword.get(pdf_params, :session_pool, @default_pool_name)
+  end
+
+  @spec child_spec({atom(), keyword()}) :: Supervisor.child_spec()
+  def child_spec({id, config}) do
     %{
-      id: __MODULE__,
-      start: {__MODULE__, :start_link, [self(), args]}
+      id: {__MODULE__, id},
+      start: {__MODULE__, :start_link, [self(), config]}
     }
   end
 
   @spec start_link(pid(), Keyword.t()) :: GenServer.on_start()
-  def start_link(browser_pid, args) do
+  def start_link(browser_pid, config) do
     NimblePool.start_link(
-      worker: {__MODULE__, {browser_pid, args}},
-      pool_size: pool_size(args)
+      worker: {__MODULE__, {browser_pid, config}},
+      pool_size: Keyword.get(config, :size, default_pool_size())
     )
-  end
-
-  defp pool_size(args) do
-    get_in(args, [:session_pool, :size]) || default_pool_size()
   end
 
   @spec run_protocol(pid(), module(), keyword()) :: {:ok, any()} | {:error, term()}
@@ -104,15 +122,15 @@ defmodule ChromicPDF.Browser.SessionPool do
     end
   end
 
-  defp do_run_protocol(protocol_mod, params, %{browser: browser, args: args}, %{
+  defp do_run_protocol(protocol_mod, params, %{browser: browser, config: config}, %{
          session_id: session_id
        }) do
-    protocol = protocol_mod.new(session_id, Keyword.merge(args, params))
+    protocol = protocol_mod.new(session_id, Keyword.merge(config, params))
 
     result =
       browser
       |> Browser.channel()
-      |> Channel.run_protocol(protocol, timeout(args))
+      |> Channel.run_protocol(protocol, timeout(config))
 
     {result, :ok}
   end
@@ -120,30 +138,30 @@ defmodule ChromicPDF.Browser.SessionPool do
   # ------------ Callbacks -----------
 
   @impl NimblePool
-  def init_pool({browser, args}) do
-    args =
-      args
+  def init_pool({browser, config}) do
+    config =
+      config
       |> Keyword.put_new(:offline, false)
       |> Keyword.put_new(:ignore_certificate_errors, false)
       |> Keyword.put_new(:unhandled_runtime_exceptions, :log)
 
-    {:ok, %{browser: browser, args: args}}
+    {:ok, %{browser: browser, config: config}}
   end
 
-  defp timeout(args) do
-    get_in(args, [:session_pool, :timeout]) || @default_timeout
+  defp timeout(config) do
+    Keyword.get(config, :timeout, @default_timeout)
   end
 
-  defp init_timeout(args) do
-    get_in(args, [:session_pool, :init_timeout]) || @default_init_timeout
+  defp init_timeout(config) do
+    Keyword.get(config, :init_timeout, @default_init_timeout)
   end
 
-  defp max_uses(args) do
-    get_in(args, [:session_pool, :max_uses]) || max_session_uses(args) || @default_max_uses
+  defp max_uses(config) do
+    Keyword.get(config, :max_uses) || max_session_uses(config) || @default_max_uses
   end
 
-  defp max_session_uses(args) do
-    if max_session_uses = Keyword.get(args, :max_session_uses) do
+  defp max_session_uses(config) do
+    if max_session_uses = Keyword.get(config, :max_session_uses) do
       IO.warn("""
       [ChromicPDF] :max_session_uses option is deprecated, change your config to:
 
@@ -159,11 +177,11 @@ defmodule ChromicPDF.Browser.SessionPool do
     {:async, fn -> do_init_worker(pool_state) end, pool_state}
   end
 
-  defp do_init_worker(%{browser: browser, args: args}) do
+  defp do_init_worker(%{browser: browser, config: config}) do
     {:ok, %{"sessionId" => sid, "targetId" => tid}} =
       browser
       |> Browser.channel()
-      |> Channel.run_protocol(SpawnSession.new(args), init_timeout(args))
+      |> Channel.run_protocol(SpawnSession.new(config), init_timeout(config))
 
     %{session: %{session_id: sid, target_id: tid}, uses: 0}
   end
@@ -183,7 +201,7 @@ defmodule ChromicPDF.Browser.SessionPool do
 
   @impl NimblePool
   def handle_checkin(:ok, _from, worker_state, pool_state) do
-    if worker_state.uses >= max_uses(pool_state.args) do
+    if worker_state.uses >= max_uses(pool_state.config) do
       {:remove, :max_uses_reached, pool_state}
     else
       {:ok, worker_state, pool_state}

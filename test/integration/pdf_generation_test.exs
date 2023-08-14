@@ -276,14 +276,6 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
   end
 
-  @html_with_runtime_exception """
-  <html>
-    <body id="print-ready">
-      <script>doesnotexist();</script>
-    </body>
-  </html>
-  """
-
   describe "unhandled runtime exceptions" do
     setup do
       start_supervised!(ChromicPDF)
@@ -292,7 +284,7 @@ defmodule ChromicPDF.PDFGenerationTest do
 
     test "are logged by default" do
       assert capture_log(fn ->
-               assert print_to_pdf({:html, @html_with_runtime_exception}) == :ok
+               assert print_to_pdf({:html, test_exception_html()}) == :ok
              end) =~ ~r/Unhandled exception in JS runtime/
     end
   end
@@ -305,7 +297,7 @@ defmodule ChromicPDF.PDFGenerationTest do
 
     test "are ignored" do
       assert capture_log(fn ->
-               assert print_to_pdf({:html, @html_with_runtime_exception}) == :ok
+               assert print_to_pdf({:html, test_exception_html()}) == :ok
              end) == ""
     end
   end
@@ -318,7 +310,7 @@ defmodule ChromicPDF.PDFGenerationTest do
 
     test "raise nicely formatted errors" do
       assert_raise ChromicPDF.ChromeError, ~r/Unhandled exception in JS runtime/, fn ->
-        print_to_pdf({:html, @html_with_runtime_exception})
+        print_to_pdf({:html, test_exception_html()})
       end
     end
   end

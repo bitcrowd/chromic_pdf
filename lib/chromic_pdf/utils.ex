@@ -69,20 +69,27 @@ defmodule ChromicPDF.Utils do
   end
 
   @spec find_supervisor_child(pid() | atom(), module()) :: pid() | nil
-  def find_supervisor_child(supervisor, module) when is_atom(supervisor) do
+  def find_supervisor_child(supervisor, module) do
     supervisor
-    |> Process.whereis()
-    |> find_supervisor_child(module)
+    |> supervisor_children(module)
+    |> case do
+      [] -> nil
+      [{_id, pid}] -> pid
+    end
   end
 
-  def find_supervisor_child(supervisor, module) when is_pid(supervisor) do
+  @spec supervisor_children(pid() | atom(), module()) :: [{term(), pid()}]
+  def supervisor_children(supervisor, module) when is_atom(supervisor) do
+    supervisor
+    |> Process.whereis()
+    |> supervisor_children(module)
+  end
+
+  def supervisor_children(supervisor, module) when is_pid(supervisor) do
     supervisor
     |> Supervisor.which_children()
-    |> Enum.find(fn {mod, _, _, _} -> mod == module end)
-    |> case do
-      nil -> nil
-      {_, pid, _, _} -> pid
-    end
+    |> Enum.filter(fn {_, _, _, [mod | _]} -> mod == module end)
+    |> Enum.map(fn {id, pid, _, _} -> {id, pid} end)
   end
 
   @spec priv_asset(binary()) :: binary()

@@ -106,8 +106,7 @@ defmodule ChromicPDF.Supervisor do
       supervisor
       |> find_supervisor_child!(Agent)
       |> Agent.get(& &1)
-      |> Keyword.update(:session_pool, [size: 1], &Keyword.put(&1, :size, 1))
-      |> Keyword.delete(:on_demand)
+      |> Keyword.update(:session_pool, [size: 1], &limit_session_pool/1)
 
     {:ok, browser} = Browser.start_link(config)
 
@@ -116,6 +115,18 @@ defmodule ChromicPDF.Supervisor do
     after
       Process.exit(browser, :normal)
     end
+  end
+
+  defp limit_session_pool(opts) when is_list(opts), do: Keyword.put(opts, :size, 1)
+
+  # For multiple named session pools, we initialize one target *per* pool. Alternatively, we could
+  # peek into the PDF job params at this time and only start the desired pool, but the added code
+  # complexity outweighs the potential performance gain, esp. considering `on_demand` is used in
+  # dev & test only.
+  defp limit_session_pool(named_session_pools) when is_map(named_session_pools) do
+    Map.new(named_session_pools, fn {name, opts} ->
+      {name, limit_session_pool(opts)}
+    end)
   end
 
   @doc false
@@ -185,11 +196,21 @@ defmodule ChromicPDF.Supervisor do
               | {:full_page, boolean()}
               | navigate_option()
 
+      @type session_option ::
+              {:offline, boolean()}
+              | {:disable_scripts, boolean()}
+              | {:unhandled_runtime_exceptions, :ignore | :log | :raise}
+              | {:console_api_calls, :ignore | :log | :raise}
+              | {:ignore_certificate_errors, boolean()}
+
       @type session_pool_option ::
-              {:size, non_neg_integer()}
+              session_option()
+              | {:size, non_neg_integer()}
               | {:max_uses, non_neg_integer()}
               | {:init_timeout, timeout()}
               | {:timeout, timeout()}
+
+      @type named_session_pools :: %{atom() => [session_pool_option()]}
 
       @type ghostscript_pool_option :: {:size, non_neg_integer()}
 
@@ -211,14 +232,11 @@ defmodule ChromicPDF.Supervisor do
 
       @type global_option ::
               {:name, atom()}
-              | {:offline, boolean()}
-              | {:disable_scripts, boolean()}
-              | {:unhandled_runtime_exceptions, :ignore | :log | :raise}
-              | {:console_api_calls, :ignore | :log | :raise}
-              | {:session_pool, [session_pool_option()]}
-              | {:ignore_certificate_errors, boolean()}
-              | {:ghostscript_pool, [ghostscript_pool_option()]}
               | {:on_demand, boolean()}
+              | session_option()
+              | {:session_pool, [session_pool_option()]}
+              | {:session_pool, named_session_pools()}
+              | {:ghostscript_pool, [ghostscript_pool_option()]}
               | local_chrome_option()
               | inet_chrome_option()
               | deprecated_max_session_uses_option()
