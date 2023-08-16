@@ -2,6 +2,7 @@
 
 defmodule ChromicPDF.SessionPoolTest do
   use ExUnit.Case, async: false
+  import ExUnit.CaptureIO
   import ExUnit.CaptureLog
   import ChromicPDF.Assertions
   import ChromicPDF.TestAPI
@@ -27,12 +28,7 @@ defmodule ChromicPDF.SessionPoolTest do
   describe "sessions automatically restart after a number of operations" do
     @pool_size 3
 
-    setup do
-      start_supervised!({ChromicPDF, max_session_uses: 2, session_pool: [size: @pool_size]})
-      :ok
-    end
-
-    test "session restart spawns a new session process" do
+    defp assert_automatic_session_termination_after_max_uses do
       assert_target_respawn(@pool_size, fn targets_before ->
         # After the first print operation, the targetIds should remain exactly the same.
         print_to_pdf()
@@ -43,8 +39,25 @@ defmodule ChromicPDF.SessionPoolTest do
 
         # After the second print operation, we expect the Session to have restarted its target
         # process, so exactly one targetId should have changed.
-        {:ok, _blob} = ChromicPDF.print_to_pdf({:html, ""})
+        print_to_pdf()
       end)
+    end
+
+    test "session restart spawns a new session process" do
+      start_supervised!({ChromicPDF, session_pool: [max_uses: 2, size: @pool_size]})
+
+      assert_automatic_session_termination_after_max_uses()
+    end
+
+    test ":session_max_uses option is supported but deprecated" do
+      # This silences stderr but does not capture the warning as it comes from another process.
+      assert capture_io(:stderr, fn ->
+               start_supervised!(
+                 {ChromicPDF, max_session_uses: 2, session_pool: [size: @pool_size]}
+               )
+
+               assert_automatic_session_termination_after_max_uses()
+             end) =~ "deprecated"
     end
   end
 

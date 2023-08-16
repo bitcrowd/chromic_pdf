@@ -15,7 +15,7 @@ defmodule ChromicPDF.Browser.SessionPool do
   @default_timeout 5000
   @checkout_timeout 5000
   @close_timeout 1000
-  @default_max_session_uses 1000
+  @default_max_uses 1000
 
   @type pool_state :: %{
           browser: pid(),
@@ -138,8 +138,20 @@ defmodule ChromicPDF.Browser.SessionPool do
     get_in(args, [:session_pool, :init_timeout]) || @default_init_timeout
   end
 
+  defp max_uses(args) do
+    get_in(args, [:session_pool, :max_uses]) || max_session_uses(args) || @default_max_uses
+  end
+
   defp max_session_uses(args) do
-    Keyword.get(args, :max_session_uses, @default_max_session_uses)
+    if max_session_uses = Keyword.get(args, :max_session_uses) do
+      IO.warn("""
+      [ChromicPDF] :max_session_uses option is deprecated, change your config to:
+
+          [session_pool: [max_uses: #{max_session_uses}]]
+      """)
+
+      max_session_uses
+    end
   end
 
   @impl NimblePool
@@ -171,8 +183,8 @@ defmodule ChromicPDF.Browser.SessionPool do
 
   @impl NimblePool
   def handle_checkin(:ok, _from, worker_state, pool_state) do
-    if worker_state.uses >= max_session_uses(pool_state.args) do
-      {:remove, :max_session_uses_reached, pool_state}
+    if worker_state.uses >= max_uses(pool_state.args) do
+      {:remove, :max_uses_reached, pool_state}
     else
       {:ok, worker_state, pool_state}
     end
@@ -180,11 +192,11 @@ defmodule ChromicPDF.Browser.SessionPool do
 
   @impl NimblePool
   # Reasons we want to gracefully clean up the target in the Browser:
-  # - max_session_uses_reached, our own mechanism for keeping memory bloat in check
+  # - max_uses_reached, our own mechanism for keeping memory bloat in check
   # - error, when an exception is raised in the Channel
   # - DOWN, client link is broken (when client process is terminated externally)
   def terminate_worker(reason, worker_state, pool_state)
-      when reason in [:max_session_uses_reached, :error, :DOWN] do
+      when reason in [:max_uses_reached, :error, :DOWN] do
     if reason == :DOWN do
       Logger.warning("""
       ChromicPDF received a :DOWN message from the process that called `print_to_pdf/2`!
