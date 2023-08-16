@@ -2,7 +2,10 @@
 
 ### Changed
 
-- Deprecated `:max_session_uses` option in favor of `session_pool: [max_uses: ...]`.
+- Deprecate `:max_session_uses` option in favor of `session_pool: [max_uses: ...]`.
+- Drop `--no-zygote` command line switch when using `no_sandbox: true` option. The switch causes session crashes in recent Chrome versions and was never needed for `--no-sandbox` in the first place. See #270.
+
+⚠️ In case you are using `no_sandbox: true`, dropping `--no-zygote` means Chrome will spawn an additional OS process (the "zygote" process), which could be considered a break of backwards compatibility. Please monitor your next deployment. However, we believe this change is safe, meaning except for the additional process, it will not be noticable. Hence we concluded to drop the switch without a major version bump, in order not to disturb too many people. If you are not using `:no_sandbox`, this does not affect you.
 
 ## [1.12.0] - 2024-07-12
 

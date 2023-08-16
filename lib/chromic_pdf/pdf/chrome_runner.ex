@@ -125,7 +125,7 @@ defmodule ChromicPDF.ChromeRunner do
   # https://github.com/bitcrowd/chromic_pdf/issues/76
   defp args(extra, opts) do
     default_args()
-    |> append_if("--no-sandbox --no-zygote", no_sandbox?(opts))
+    |> append_if("--no-sandbox", no_sandbox?(opts))
     |> append_if(to_string(opts[:chrome_args]), !!opts[:chrome_args])
     |> Kernel.++(List.wrap(extra))
     |> append_if("2>/dev/null 3<&0 4>&1", discard_stderr?(opts))
