@@ -187,6 +187,7 @@ defmodule ChromicPDF.Supervisor do
 
       @type session_pool_option ::
               {:size, non_neg_integer()}
+              | {:max_uses, non_neg_integer()}
               | {:init_timeout, timeout()}
               | {:timeout, timeout()}
 
@@ -206,19 +207,21 @@ defmodule ChromicPDF.Supervisor do
       """
       @type inet_chrome_option :: {:chrome_address, {host :: binary(), port :: non_neg_integer()}}
 
+      @type deprecated_max_session_uses_option :: {:max_session_uses, non_neg_integer()}
+
       @type global_option ::
               {:name, atom()}
               | {:offline, boolean()}
               | {:disable_scripts, boolean()}
               | {:unhandled_runtime_exceptions, :ignore | :log | :raise}
               | {:console_api_calls, :ignore | :log | :raise}
-              | {:max_session_uses, non_neg_integer()}
               | {:session_pool, [session_pool_option()]}
               | {:ignore_certificate_errors, boolean()}
               | {:ghostscript_pool, [ghostscript_pool_option()]}
               | {:on_demand, boolean()}
               | local_chrome_option()
               | inet_chrome_option()
+              | deprecated_max_session_uses_option()
 
       @doc """
       Returns a specification to start this module as part of a supervision tree.

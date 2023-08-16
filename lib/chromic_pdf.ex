@@ -173,10 +173,12 @@ defmodule ChromicPDF do
 
   By default, ChromicPDF will restart sessions within the Chrome process after 1000 operations.
   This helps to prevent infinite growth in Chrome's memory consumption. The "max age" of a session
-  can be configured with the `:max_session_uses` option.
+  can be configured with the `:max_uses` option.
 
       defp chromic_pdf_opts do
-        [max_session_uses: 1000]
+        [
+          session_pool: [max_uses: 1000]
+        ]
       end
 
   ## Chrome zombies

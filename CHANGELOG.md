@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changed
+
+- Deprecated `:max_session_uses` option in favor of `session_pool: [max_uses: ...]`.
+
 ## [1.12.0] - 2024-07-12
 
 ### Added
