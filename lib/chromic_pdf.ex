@@ -182,7 +182,7 @@ defmodule ChromicPDF do
   ### Multiple session pools
 
   ChromicPDF supports running multiple named session pools to allow varying session configuration.
-  For example, this makes it possible to one pool that is not allowed to execute JavaScript while
+  For example, this makes it possible to have one pool that is not allowed to execute JavaScript while
   others can use JavaScript.
 
       defp chromic_pdf_opts do
