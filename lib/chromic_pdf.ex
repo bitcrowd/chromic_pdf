@@ -129,22 +129,20 @@ defmodule ChromicPDF do
         [ignore_certificate_errors: true]
       end
 
-  ## Worker pools
+  ## Session pool
 
-  ChromicPDF spawns two worker pools, the session pool and the ghostscript pool. By default, it
-  will create as many sessions (browser tabs) as schedulers are online, and allow the same number
-  of concurrent Ghostscript processes to run.
+  ChromicPDF spawns a pool of targets (= tabs) inside the launched Chrome process. These are held
+  in memory to reduce initialization time in the PDF print jobs.
 
   ### Concurrency
 
   To increase or limit the number of concurrent workers, you can pass pool configuration to the
-  supervisor. Please note that these are non-queueing worker pools. If you intend to max them out,
+  supervisor. Please note that this is a non-queueing session pool. If you intend to max it out,
   you will need a job queue as well.
 
       defp chromic_pdf_opts do
         [
           session_pool: [size: 3]
-          ghostscript_pool: [size: 10]
         ]
       end
 
@@ -180,6 +178,28 @@ defmodule ChromicPDF do
           session_pool: [max_uses: 1000]
         ]
       end
+
+  ### Multiple session pools
+
+  ChromicPDF supports running multiple named session pools to allow varying session configuration.
+  For example, this makes it possible to have one pool that is not allowed to execute JavaScript while
+  others can use JavaScript.
+
+      defp chromic_pdf_opts do
+        [
+          session_pool: %{
+            with_scripts: [],
+            without_scripts: [disabled_scripts: true]
+          }
+        ]
+      end
+
+  When you define multiple session pools, you need to assign the pool to use in each PDF job:
+
+      ChromicPDF.print_to_pdf(..., session_pool: :without_scripts)
+
+  Global options are used as defaults for each configured pool. See
+  `t:ChromicPDF.session_option/0` for a list of options for the session pools.
 
   ## Chrome zombies
 
@@ -310,6 +330,18 @@ defmodule ChromicPDF do
   > #### Experimental {: .warning}
   >
   > Please note that support for remote connections is considered experimental. Be aware that between restarts ChromicPDF may leave tabs behind and your external Chrome process may leak memory.
+
+  ## Ghostscript pool
+
+  In addition to the session pool, a pool of ghostscript "executors" is started, in order to limit
+  this resource as well. By default, ChromicPDF allows the same number of concurrent Ghostscript
+  processes to run as it spawns sessions in Chrome itself.
+
+      defp chromic_pdf_opts do
+        [
+          ghostscript_pool: [size: 10]
+        ]
+      end
 
   ## Telemetry support
 

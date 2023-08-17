@@ -12,8 +12,8 @@ defmodule ChromicPDF.Browser.Channel do
   # ------------- API ----------------
 
   @spec start_link(Keyword.t()) :: GenServer.on_start()
-  def start_link(args) do
-    GenServer.start_link(__MODULE__, args)
+  def start_link(config) do
+    GenServer.start_link(__MODULE__, config)
   end
 
   @spec run_protocol(pid(), Protocol.t(), timeout()) :: {:ok, any()} | {:error, term()}
@@ -45,8 +45,8 @@ defmodule ChromicPDF.Browser.Channel do
   # ----------- Callbacks ------------
 
   @impl GenServer
-  def init(args) do
-    {:ok, conn_pid} = Connection.start_link(args)
+  def init(config) do
+    {:ok, conn_pid} = Connection.start_link(config)
 
     {:ok,
      %{
@@ -109,7 +109,7 @@ defmodule ChromicPDF.Browser.Channel do
          Docker runtime provides only 64 MB to containers by default.
 
          Pass --disable-dev-shm-usage as a Chrome flag to use /tmp for this purpose instead
-         (via the chrome_args option), or increase the amount of shared memory available to
+         (via the chrome_config option), or increase the amount of shared memory available to
          the container (see --shm-size for Docker).
       """)
     end

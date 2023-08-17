@@ -8,6 +8,7 @@ defmodule ChromicPDF.TestAPI do
 
   @test_html Path.expand("../../fixtures/test.html", __ENV__.file)
   @test_dynamic_html Path.expand("../../fixtures/test_dynamic.html", __ENV__.file)
+  @test_exception_html Path.expand("../../fixtures/test_exception.html", __ENV__.file)
   @test_image Path.expand("../../fixtures/image_with_text.svg", __ENV__.file)
 
   @output Path.expand("../../test.pdf", __ENV__.file)
@@ -17,6 +18,9 @@ defmodule ChromicPDF.TestAPI do
 
   def test_dynamic_html_path, do: @test_dynamic_html
   def test_dynamic_html, do: File.read!(test_dynamic_html_path())
+
+  defp test_exception_html_path, do: @test_exception_html
+  def test_exception_html, do: File.read!(test_exception_html_path())
 
   def test_image_path, do: @test_image
 

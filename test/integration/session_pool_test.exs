@@ -167,4 +167,55 @@ defmodule ChromicPDF.SessionPoolTest do
              end) =~ ~r/ChromicPDF received a :DOWN message/
     end
   end
+
+  describe "named session pools" do
+    setup do
+      start_supervised!(
+        {ChromicPDF,
+         session_pool: %{
+           raise: [unhandled_runtime_exceptions: :raise],
+           ignore: [unhandled_runtime_exceptions: :ignore]
+         }}
+      )
+
+      :ok
+    end
+
+    test "raises a descriptive error when pool does not exist" do
+      assert_raise ChromicPDF.Browser.ExecutionError, ~r/Could not find session pool/, fn ->
+        print_to_pdf({:html, "test"})
+      end
+    end
+
+    test "named pools can be configured with different session options" do
+      print_to_pdf({:html, test_exception_html()}, session_pool: :ignore)
+
+      assert_raise ChromicPDF.ChromeError, ~r/Unhandled exception/, fn ->
+        print_to_pdf({:html, test_exception_html()}, session_pool: :raise)
+      end
+    end
+  end
+
+  describe "global options cascading into session pool options" do
+    setup do
+      start_supervised!(
+        {ChromicPDF,
+         unhandled_runtime_exceptions: :raise,
+         session_pool: %{
+           raise: [],
+           ignore: [unhandled_runtime_exceptions: :ignore]
+         }}
+      )
+
+      :ok
+    end
+
+    test "global options are propagated and can be overridden" do
+      print_to_pdf({:html, test_exception_html()}, session_pool: :ignore)
+
+      assert_raise ChromicPDF.ChromeError, ~r/Unhandled exception/, fn ->
+        print_to_pdf({:html, test_exception_html()}, session_pool: :raise)
+      end
+    end
+  end
 end
