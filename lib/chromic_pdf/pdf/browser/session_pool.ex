@@ -21,7 +21,7 @@ defmodule ChromicPDF.Browser.SessionPool do
           uses: non_neg_integer()
         }
 
-  @type checkout_option :: {:skip_session_use_count, boolean()} | {:timeout, non_neg_integer()}
+  @type checkout_option :: {:skip_session_use_count, boolean()} | {:timeout, timeout()}
   @type checkout_result :: any()
 
   @spec child_spec({atom(), keyword()}) :: Supervisor.child_spec()
