@@ -69,7 +69,7 @@ defmodule ChromicPDF.API do
 
     with_telemetry(protocol, opts, fn ->
       services.browser
-      |> Browser.run_protocol(Map.fetch!(@export_protocols, protocol), opts)
+      |> Browser.new_protocol(Map.fetch!(@export_protocols, protocol), opts)
       |> ExportOptions.feed_chrome_data_into_output(opts)
     end)
   end

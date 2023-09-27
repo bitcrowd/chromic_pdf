@@ -15,7 +15,7 @@ defmodule ChromicPDF.GetTargets do
   def run do
     {:ok, target_infos} =
       ChromicPDF.Supervisor.with_services(ChromicPDF, fn services ->
-        ChromicPDF.Browser.run_protocol(services.browser, __MODULE__, skip_session_use_count: true)
+        ChromicPDF.Browser.new_protocol(services.browser, __MODULE__, skip_session_use_count: true)
       end)
 
     for %{"targetId" => target_id, "url" => url} <- target_infos,
