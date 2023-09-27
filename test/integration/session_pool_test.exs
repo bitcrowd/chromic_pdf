@@ -115,16 +115,15 @@ defmodule ChromicPDF.SessionPoolTest do
     end
   end
 
-  describe "failed worker checkout" do
+  describe "checkout timeout" do
     setup do
-      # Setting the job timeout to 10s to be sure we run into the checkout error.
-      start_supervised!({ChromicPDF, session_pool: [size: 1, timeout: 10_000]})
+      start_supervised!({ChromicPDF, session_pool: [size: 1, checkout_timeout: 500]})
 
       :ok
     end
 
     test "generates a nice error message" do
-      task = Task.async(fn -> print_to_pdf_delayed(7_000) end)
+      task = Task.async(fn -> print_to_pdf_delayed(1_000) end)
 
       # Wait for a little bit to make sure the task acquires the worker.
       :timer.sleep(300)

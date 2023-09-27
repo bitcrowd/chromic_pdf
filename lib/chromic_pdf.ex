@@ -134,18 +134,6 @@ defmodule ChromicPDF do
   ChromicPDF spawns a pool of targets (= tabs) inside the launched Chrome process. These are held
   in memory to reduce initialization time in the PDF print jobs.
 
-  ### Concurrency
-
-  To increase or limit the number of concurrent workers, you can pass pool configuration to the
-  supervisor. Please note that this is a non-queueing session pool. If you intend to max it out,
-  you will need a job queue as well.
-
-      defp chromic_pdf_opts do
-        [
-          session_pool: [size: 3]
-        ]
-      end
-
   ### Operation timeouts
 
   By default, ChromicPDF allows the print process to take 5 seconds to finish. In case you are
@@ -158,14 +146,31 @@ defmodule ChromicPDF do
         ]
       end
 
-  In addition, there is the `init_timeout` option, which controls the timeout when the session pool
-  initializes (defaults also to 5 seconds).
+  ### Concurrency
+
+  ChromicPDF depends on the [NimblePool](https://hexdocs.pm/nimble_pool) library to manage the
+  browser sessions in a pool. To increase or limit the number of concurrent sessions, you can
+  pass pool configuration to the supervisor.
 
       defp chromic_pdf_opts do
         [
-          session_pool: [init_timeout: 10_000]   # in milliseconds
+          session_pool: [size: 3]
         ]
       end
+
+  NimblePool performs simple queueing of operations. The maximum time an operation is allowed to
+  wait in the queue is configurable with the `:checkout_timeout` option, and defaults to 5 seconds.
+
+      defp chromic_pdf_opts do
+        [
+          session_pool: [checkout_timeout: 5_000]
+        ]
+      end
+
+  Please note that this is not a persistent queue. If your concurrent demand exceeds the configured
+  concurrency, your jobs will begin to time out. In this case, an asynchronous approach backed by a
+  persistent job processor like Oban will give you better results, and likely improve your
+  application's UX.
 
   ### Automatic session restarts to avoid memory drain
 

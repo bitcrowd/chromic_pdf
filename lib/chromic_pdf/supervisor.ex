@@ -208,6 +208,7 @@ defmodule ChromicPDF.Supervisor do
               | {:size, non_neg_integer()}
               | {:max_uses, non_neg_integer()}
               | {:init_timeout, timeout()}
+              | {:checkout_timeout, timeout()}
               | {:timeout, timeout()}
 
       @type named_session_pools :: %{atom() => [session_pool_option()]}

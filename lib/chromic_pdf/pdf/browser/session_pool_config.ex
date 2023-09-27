@@ -8,6 +8,7 @@ defmodule ChromicPDF.Browser.SessionPoolConfig do
   @default_timeout 5000
   @default_init_timeout 5000
   @default_close_timeout 1000
+  @default_checkout_timeout 5000
   @default_max_uses 1000
 
   @default_pool_name :default
@@ -37,6 +38,7 @@ defmodule ChromicPDF.Browser.SessionPoolConfig do
         |> Keyword.put_new(:timeout, @default_timeout)
         |> Keyword.put_new(:init_timeout, @default_init_timeout)
         |> Keyword.put_new(:close_timeout, @default_close_timeout)
+        |> Keyword.put_new(:checkout_timeout, @default_checkout_timeout)
         |> put_default_max_uses()
         |> Keyword.put_new(:offline, false)
         |> Keyword.put_new(:ignore_certificate_errors, false)
