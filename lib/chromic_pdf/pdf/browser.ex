@@ -21,7 +21,7 @@ defmodule ChromicPDF.Browser do
 
     checkout_opts = [
       skip_session_use_count: Keyword.get(params, :skip_session_use_count, false),
-      timeout: 5000
+      timeout: Keyword.fetch!(pool_config, :checkout_timeout)
     ]
 
     SessionPool.checkout!(session_pool, checkout_opts, fn %{session_id: session_id} ->

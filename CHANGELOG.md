@@ -1,3 +1,9 @@
+## Unreleased
+
+### Added
+
+- Configurable pool checkout timeout via new global option `:checkout_timeout`.
+
 ## [1.13.0] - 2024-08-17
 
 ### Added

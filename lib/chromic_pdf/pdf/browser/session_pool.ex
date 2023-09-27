@@ -83,13 +83,7 @@ defmodule ChromicPDF.Browser.SessionPool do
            To fix this, you need to increase your resources, e.g. by increasing the number
            of workers with the `session_pool: [size: ...]` option.
 
-           However, please be aware that while ChromicPDF (by virtue of the underlying
-           NimblePool worker pool) does perform simple queueing of worker checkouts,
-           it is not suitable as a proper job queue. If you expect peaks in your load
-           leading to a high level of concurrent use of your PDF printing component,
-           a job queue like Oban will provide a better experience.
-
-        Please also consult the worker pool section in the documentation.
+        Please also consult the session pool concurrency section in the documentation.
         """)
     end
   end
