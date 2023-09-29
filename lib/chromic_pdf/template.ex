@@ -9,12 +9,13 @@ defmodule ChromicPDF.Template do
   ## Motivation
 
   This module contains helper functions that make it easier to to build HTML templates (body,
-  header, and footer) that fully cover a given page. Like an adapter, it tries to harmonize
-  Chrome's `printToPDF` options and related CSS layout styles (`@page` and friends) with a custom
-  set of page sizing options. Using this module is entirely optional, but perhaps can help to
-  avoid some common pitfalls arising from the slightly unintuitive and sometimes conflicting
-  behaviour of `printToPDF` options and `@page` CSS styles in Chrome.
+  header, and footer) that fully cover a given page. It tries to harmonize Chrome's `printToPDF`
+  options and related CSS layout styles (`@page` and friends) with a custom set of page sizing
+  options.
 
+  Using this module is entirely optional, but perhaps can help to avoid some common pitfalls
+  arising from the slightly unintuitive and sometimes conflicting behaviour of `printToPDF`
+  options and `@page` CSS styles in Chrome.
 
   ## Page dimensions
 
@@ -287,16 +288,11 @@ defmodule ChromicPDF.Template do
 
   EEx.function_from_string(:defp, :render_styles, @styles, [:assigns])
 
-  # Inverts the paper size if landscape orientation.
-  defp maybe_rotate_paper(size, false) when tuple_size(size) === 2, do: size
-  defp maybe_rotate_paper({w, h}, true), do: {h, w}
-
   # Fetches paper size from opts, translates from config or uses given {width, height} tuple.
   defp get_paper_size(manual) when tuple_size(manual) === 2, do: manual
 
   defp get_paper_size(name) when is_atom(name) do
-    @paper_sizes_in_inch
-    |> Map.get(name, @default_paper_size)
+    Map.get(@paper_sizes_in_inch, name, @default_paper_size)
   end
 
   defp get_paper_size(opts) when is_list(opts) do
@@ -305,4 +301,8 @@ defmodule ChromicPDF.Template do
     |> get_paper_size()
     |> maybe_rotate_paper(Keyword.get(opts, :landscape, false))
   end
+
+  # Inverts the paper size if landscape orientation.
+  defp maybe_rotate_paper(size, false) when tuple_size(size) === 2, do: size
+  defp maybe_rotate_paper({w, h}, true), do: {h, w}
 end
