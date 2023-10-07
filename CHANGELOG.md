@@ -1,3 +1,13 @@
+## Unreleased
+
+### Added
+
+- Add `Template.options/1` that returns the options for page dimensions, header, and footer, but does not require the content.
+
+### Changed
+
+- Strip styles generated in `Template.styles/1`.
+
 ## [1.14.0] - 2024-09-27
 
 ### Added

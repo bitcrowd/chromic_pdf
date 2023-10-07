@@ -2,24 +2,8 @@
 
 defmodule ChromicPDF.TemplateTest do
   use ExUnit.Case, async: false
-  import ChromicPDF.Utils, only: [system_cmd!: 2]
-
-  @output Path.expand("../test.pdf", __ENV__.file)
-
-  defp print_to_pdf(opts, cb) do
-    ChromicPDF.Template.source_and_options(opts)
-    |> print_to_pdf(&ChromicPDF.print_to_pdf/2, cb)
-  end
-
-  defp print_to_pdf(source_and_opts, print_fun, cb) do
-    assert print_fun.(source_and_opts, output: @output) == :ok
-    assert File.exists?(@output)
-
-    text = system_cmd!("pdftotext", [@output, "-"])
-    cb.(text)
-  after
-    File.rm_rf!(@output)
-  end
+  import ChromicPDF.TestAPI
+  import ChromicPDF.Template
 
   describe "using Template helpers" do
     setup do
@@ -27,68 +11,81 @@ defmodule ChromicPDF.TemplateTest do
       :ok
     end
 
-    def assert_print_fun_accepts_source_and_options(print_fun) do
-      ChromicPDF.Template.source_and_options(
-        content: "<p>Hello</p>",
-        header: "<p>header</p>",
-        footer: "<p>footer</p>",
-        header_height: "40mm",
-        footer_height: "40mm"
-      )
-      |> print_to_pdf(print_fun, fn text ->
+    @header_and_style_opts [
+      header: "<p>header</p>",
+      footer: "<p>footer</p>",
+      header_height: "40mm",
+      footer_height: "40mm"
+    ]
+
+    @content_and_header_and_style_opts [{:content, "<p>Hello</p>"} | @header_and_style_opts]
+
+    @tag :pdftotext
+    test "`source_and_options/1` can be used as the source param for `print_to_pdf/2`" do
+      @content_and_header_and_style_opts
+      |> source_and_options()
+      |> print_to_pdf(fn text ->
         assert String.contains?(text, "Hello")
         assert String.contains?(text, "header")
         assert String.contains?(text, "footer")
       end)
     end
 
-    @tag :pdftotext
-    test "`source_and_options/1` can be used as the source param for `print_to_pdf/2`" do
-      assert_print_fun_accepts_source_and_options(&ChromicPDF.print_to_pdf/2)
-    end
-
-    @tag :pdftotext
     test "`source_and_options/1` can be used as the source param for `capture_screenshot/2`" do
       assert {:ok, _} =
-               [content: "<p>Hello</p>"]
-               |> ChromicPDF.Template.source_and_options()
+               @content_and_header_and_style_opts
+               |> source_and_options()
                |> ChromicPDF.capture_screenshot()
     end
 
     @tag :pdftotext
     test "`source_and_options/1` can be used as the source param for `print_to_pdfa/2`" do
-      assert_print_fun_accepts_source_and_options(&ChromicPDF.print_to_pdfa/2)
+      assert {:ok, _} =
+               @content_and_header_and_style_opts
+               |> source_and_options()
+               |> ChromicPDF.print_to_pdfa()
+    end
+
+    @tag :pdftotext
+    test "`options/1` can be used as the opts param for `print_to_pdf/2`" do
+      opts = options(@header_and_style_opts)
+
+      print_to_pdf({:html, "<p>Hello</p>"}, opts, fn text ->
+        assert String.contains?(text, "Hello")
+        assert String.contains?(text, "header")
+        assert String.contains?(text, "footer")
+      end)
+    end
+
+    test "`options/1` can be used as the opts param for `capture_screenshot/2`" do
+      opts = options(@header_and_style_opts)
+      assert {:ok, _} = ChromicPDF.capture_screenshot({:html, "<p>Hello</p>"}, opts)
+    end
+
+    test "`options/1` can be used as the opts param for `print_to_pdfa/2`" do
+      opts = options(@header_and_style_opts)
+      assert {:ok, _} = ChromicPDF.print_to_pdfa({:html, "<p>Hello</p>"}, opts)
     end
 
     @tag :pdfinfo
     test "it keeps the page size when landscape param is false" do
-      pdf_params = [
-        content: "<p>Hello</p>",
-        size: :a4,
-        landscape: false
-      ]
-
-      print_to_pdf(pdf_params, fn _text ->
-        output = system_cmd!("pdfinfo", [@output])
-
+      @content_and_header_and_style_opts
+      |> Keyword.merge(size: :a4, landscape: false)
+      |> source_and_options()
+      |> print_to_pdf(fn _text, info ->
         # Older Chrome/Skia versions calculated slightly lower pts from the 8.3 inch width.
         # Older versions were not detected as A4 by pdfinfo.
-        assert output =~ ~r/Page size:\s+(597\.12|598\.08) x 841\.92 pts( \(A4\))?/
+        assert info =~ ~r/Page size:\s+(597\.12|598\.08) x 841\.92 pts( \(A4\))?/
       end)
     end
 
     @tag :pdfinfo
     test "it inverts the page size when landscape param is true" do
-      pdf_params = [
-        content: "<p>Hello</p>",
-        size: :a4,
-        landscape: true
-      ]
-
-      print_to_pdf(pdf_params, fn _text ->
-        output = system_cmd!("pdfinfo", [@output])
-
-        assert output =~ ~r/Page size:\s+841\.92 x (597\.12|598\.08) pts/
+      @content_and_header_and_style_opts
+      |> Keyword.merge(size: :a4, landscape: true)
+      |> source_and_options()
+      |> print_to_pdf(fn _text, info ->
+        assert info =~ ~r/Page size:\s+841\.92 x (597\.12|598\.08) pts/
       end)
     end
   end

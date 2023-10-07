@@ -30,10 +30,9 @@ defmodule ChromicPDF.Template do
 
   require EEx
 
-  @type content_option ::
-          {:content, iodata()}
-          | {:header, iodata()}
-          | {:footer, iodata()}
+  @type content_option :: {:content, iodata()}
+
+  @type header_footer_option :: {:header, iodata()} | {:footer, iodata()}
 
   @type paper_size ::
           {float(), float()}
@@ -127,13 +126,15 @@ defmodule ChromicPDF.Template do
   """
 
   @doc """
-  Returns source and options for a PDF to be printed, a given set of template options. The return
-  value can be passed to `ChromicPDF.print_to_pdf/2`.
+  Returns source and options for a PDF to be printed, a given set of template options.
+
+  The return value can be directly passed to `ChromicPDF.print_to_pdf/2`.
 
   ## Options
 
-  * `header`
-  * `footer`
+  * `content` iodata page content (required)
+  * `header` iodata content of header (default: "")
+  * `footer` iodata content of footer (default: "")
   * all options from `styles/1`
 
   ## Example
@@ -151,7 +152,7 @@ defmodule ChromicPDF.Template do
       )
 
   Content, header, and footer templates should be unwrapped HTML markup (i.e. no `<html>` around
-  the content), prefixed with any `<style>` tags that your page needs.
+  the content), including any `<style>` tags that your page needs.
 
         <style>
           h1 { font-size: 22pt; }
@@ -160,32 +161,22 @@ defmodule ChromicPDF.Template do
 
   ## ⚠ Markup is injected into the DOM ⚠
 
-  Please be aware that the options returned by this function cause ChromicPDF to inject the
+  Please be aware that the "source" returned by this function cause ChromicPDF to inject the
   markup directly into the DOM using the remote debugging API. This comes with some pitfalls
   which are explained in `ChromicPDF.print_to_pdf/2`. Most notably, **no relative URLs** may be
   used within the given HTML.
   """
-  @spec source_and_options([content_option() | style_option()]) ::
+  @spec source_and_options([content_option() | header_footer_option() | style_option()]) ::
           ChromicPDF.source_and_options()
   def source_and_options(opts) do
-    content = Keyword.get(opts, :content, @default_content)
-    header = Keyword.get(opts, :header, "")
-    footer = Keyword.get(opts, :footer, "")
-    styles = do_styles(opts)
-
     {width, height} = get_paper_size(opts)
+
+    content = Keyword.get(opts, :content, @default_content)
+    styles = Keyword.get_lazy(opts, :styles, fn -> styles({width, height}, opts) end)
 
     %{
       source: {:html, html_concat(styles, content)},
-      opts: [
-        print_to_pdf: %{
-          displayHeaderFooter: true,
-          headerTemplate: html_concat(styles, header),
-          footerTemplate: html_concat(styles, footer),
-          paperWidth: width,
-          paperHeight: height
-        }
-      ]
+      opts: options(Keyword.put_new(opts, :styles, styles))
     }
   end
 
@@ -201,6 +192,54 @@ defmodule ChromicPDF.Template do
   def html_concat({:safe, styles}, content), do: html_concat(styles, content)
   def html_concat(styles, {:safe, content}), do: html_concat(styles, content)
   def html_concat(styles, content), do: [styles, content]
+
+  @doc """
+  Returns an options list for given template options.
+
+  Returned options can be passed as second argument to `ChromicPDF.print_to_pdf/2`.
+
+  ## Options
+
+  * `header` iodata content of header
+  * `footer` iodata content of footer
+  * all options from `styles/1`
+
+  ## Example
+
+  This example has the dimension of a ISO A4 page.
+
+      ChromicPDF.Template.options(
+        header: "<p>header</p>",
+        footer: "<p>footer</p>",
+        size: :a4,
+        header_height: "45mm",
+        header_font_size: "20pt",
+        footer_height: "40mm"
+      )
+
+  Header, and footer templates should be unwrapped HTML markup (i.e. no `<html>` around
+  the content), including any `<style>` tags that your page needs.
+  """
+  @spec options() :: keyword()
+  @spec options([header_footer_option() | style_option() | {:styles, binary()}]) :: keyword()
+  def options(opts \\ []) do
+    {width, height} = get_paper_size(opts)
+
+    header = Keyword.get(opts, :header, "")
+    footer = Keyword.get(opts, :footer, "")
+    styles = Keyword.get_lazy(opts, :styles, fn -> styles({width, height}, opts) end)
+
+    [
+      print_to_pdf: %{
+        preferCSSPageSize: true,
+        displayHeaderFooter: true,
+        headerTemplate: html_concat(styles, header),
+        footerTemplate: html_concat(styles, footer),
+        paperWidth: width,
+        paperHeight: height
+      }
+    ]
+  end
 
   @styles """
   <style>
@@ -237,7 +276,7 @@ defmodule ChromicPDF.Template do
   """
 
   @doc """
-  Renders page styles for given options.
+  Renders page styles for given template options.
 
   These base styles will configure page dimensions and header and footer heights. They also
   remove any browser padding and margins from these elements, and set the font-size.
@@ -264,12 +303,13 @@ defmodule ChromicPDF.Template do
   when explicit page dimensions are given. Hence, we provide a `landscape` option here that
   swaps the page dimensions (e.g. it turns 11.7x8.3" A4 into 8.3"x11.7").
   """
+  @spec styles() :: binary()
   @spec styles([style_option()]) :: binary()
-  def styles(opts \\ []), do: do_styles(opts)
+  def styles(opts \\ []) do
+    styles(get_paper_size(opts), opts)
+  end
 
-  defp do_styles(opts) do
-    {width, height} = get_paper_size(opts)
-
+  defp styles({width, height}, opts) do
     assigns = [
       width: "#{width}in",
       height: "#{height}in",
@@ -283,7 +323,9 @@ defmodule ChromicPDF.Template do
       text_rendering: Keyword.get(opts, :text_rendering, "auto")
     ]
 
-    render_styles(assigns)
+    assigns
+    |> render_styles()
+    |> squish()
   end
 
   EEx.function_from_string(:defp, :render_styles, @styles, [:assigns])
@@ -305,4 +347,11 @@ defmodule ChromicPDF.Template do
   # Inverts the paper size if landscape orientation.
   defp maybe_rotate_paper(size, false) when tuple_size(size) === 2, do: size
   defp maybe_rotate_paper({w, h}, true), do: {h, w}
+
+  defp squish(css) do
+    css
+    |> String.trim()
+    |> String.replace(~r/[[:space:]]+/, " ")
+    |> String.replace(~r/\n/, "")
+  end
 end
