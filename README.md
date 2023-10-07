@@ -82,11 +82,10 @@ end)
 ### Template API
 
 [ChromicPDF.Template](https://hexdocs.pm/chromic_pdf/ChromicPDF.Template.html) contains
-additional functionality that makes styling of PDF documents easier and overall provides a more
-convenient API. See the documentation for details.
+additional functionality for controlling page dimensions of your PDF.
 
 ```elixir
-[content: "<p>Hello Template</p>"]
+[content: "<p>Hello Template</p>", size: :a4]
 |> ChromicPDF.Template.source_and_options()
 |> ChromicPDF.print_to_pdf()
 ```
@@ -98,10 +97,6 @@ Multiple sources can be automatically concatenated using Ghostscript.
 ```elixir
 ChromicPDF.print_to_pdf([{:html, "page 1"}, {:html, "page 2"}], output: "joined.pdf")
 ```
-
-### Examples
-
-* For a more complete example of how to integrate ChromicPDF in a Phoenix application, see [examples/phoenix](https://github.com/bitcrowd/chromic_pdf/tree/main/examples/phoenix).
 
 ## Development
 

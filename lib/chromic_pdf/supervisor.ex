@@ -138,6 +138,7 @@ defmodule ChromicPDF.Supervisor do
 
       @type url :: binary()
       @type path :: binary()
+      @type assigns :: map()
 
       @type source_tuple :: {:url, url()} | {:html, iodata()}
       @type source_and_options :: %{source: source_tuple(), opts: [pdf_option()]}
@@ -178,6 +179,7 @@ defmodule ChromicPDF.Supervisor do
 
       @type navigate_option ::
               {:set_cookie, map()}
+              | {:assigns, map()}
               | evaluate_option()
               | wait_for_option()
 
@@ -308,9 +310,9 @@ defmodule ChromicPDF.Supervisor do
 
       ## Input options
 
-      ChromicPDF offers two primary methods of supplying Chrome with the HTML source to print.
-      You can choose between passing in an URL for Chrome to load and injecting the HTML markup
-      directly into the DOM through the remote debugging API.
+      ChromicPDF offers two primary methods of supplying Chrome with the HTML source to print:
+      You can choose between passing in an **URL for Chrome to load** and **injecting the HTML
+      markup directly** into the DOM through the remote debugging API.
 
       ### Print from URL
 
@@ -322,6 +324,25 @@ defmodule ChromicPDF.Supervisor do
           ChromicPDF.print_to_pdf({:url, "http://example.net"})
 
           ChromicPDF.print_to_pdf({:url, "https://example.net"})
+
+      Printing from URL has the benefit of being the tried-and-true solution, as Chrome's
+      content loading works just as you would expect, including its assets cache.
+
+      #### Passing assigns from caller to your endpoint
+
+      Additionally, printing from URL allows you to easily leverage your existing HTTP server
+      and HTML rendering infrastructure, by serving HTML templates from an internal endpoint.
+      Usually, you will want to dynamically render content based on a set of template parameters.
+      `ChromicPDF.AssignsPlug` allows you to pass a map of assigns from the caller of
+      `print_to_pdf/2` to the process serving Chrome's HTTP request.
+
+          ChromicPDF.print_to_pdf(
+            {:url, "http://localhost:4000/my/template/pdf"},
+            assigns: %{hello: :world}
+          )
+
+      To fetch the assigns into the `conn` on the receiving end, add `ChromicPDF.AssignsPlug`
+      to your pipeline.
 
       #### Cookies
 
@@ -342,36 +363,25 @@ defmodule ChromicPDF.Supervisor do
       ### Print from in-memory HTML
 
       Alternatively, `print_to_pdf/2` allows to pass an in-memory HTML blob to Chrome in a
-      `{:html, blob()}` tuple. The HTML is sent to the target using the [`Page.setDocumentContent`](https://chromedevtools.github.io/devtools-protocol/tot/Page#method-setDocumentContent)
-      function. Oftentimes this method is preferable over printing a URL if you intend to render
-      PDFs from templates rendered within the application that also hosts ChromicPDF, without the
-      need to route the content through an actual HTTP endpoint. Also, this way of passing the
-      HTML source has slightly better performance than printing a URL.
+      `{:html, blob()}` tuple. The HTML is sent to the target using the [`Page.setDocumentContent`](https://chromedevtools.github.io/devtools-protocol/tot/Page#method-setDocumentContent) function.
 
           ChromicPDF.print_to_pdf(
             {:html, "<h1>Hello World!</h1>"}
           )
 
-      #### In-memory content can be iodata
-
-      In-memory HTML for both the main input parameter as well as the header and footer options
-      can be passed as [`iodata`](https://hexdocs.pm/elixir/IO.html#module-io-data). Such lists
-      are converted to String before submission to the session process by passing them through
-      `:erlang.iolist_to_binary/1`.
-
-          ChromicPDF.print_to_pdf(
-            {:html, ["<style>p { color: green; }</style>", "<p>green paragraph</p>"]}
-          )
+      This method is useful for setups where Chrome has no network access to the application that
+      hosts ChromicPDF, or you prefer not to have an HTTP server in your application.
 
       #### Caveats
 
-      Please mind the following caveats.
+      However, in-memory HTML printing comes with a few caveats.
 
       ##### References to external files in HTML source
 
-      Please note that since the document content is replaced without navigating to a URL, Chrome
-      has no way of telling which host to prepend to **relative URLs** contained in the source.
-      This means, if your HTML contains markup like
+      Since the document content is replaced without navigating to a URL, Chrome has no way of
+      telling which host it should contact to resolve **relative URLs** contained in the source.
+
+      If your HTML contains markup like
 
       ```html
       <!-- BAD: relative link to stylesheet in <head> element -->
@@ -383,7 +393,7 @@ defmodule ChromicPDF.Supervisor do
       <img src="some_logo.png">
       ```
 
-      ... you will need to replace these lines with either **absolute URLs** or inline data.
+      ... you will need to replace these lines with either **absolute URLs** or **inline data**.
       Of course, absolute URLs can use the `file://` scheme to point to files on the local
       filesystem, assuming Chrome has access to them. For the purpose of displaying small
       inline images (e.g. logos), [data URLs](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URIs)
@@ -406,7 +416,8 @@ defmodule ChromicPDF.Supervisor do
       ##### Content from Phoenix templates
 
       If your content is generated by a Phoenix template (and hence comes in the form of
-      `{:safe, iodata()}`), you will need to pass it to `Phoenix.HTML.safe_to_string/1` first.
+      `{:safe, iodata()}` or `%Phoenix.LiveView.Rendered{}`), you will need to pass it to
+      `Phoenix.HTML.safe_to_string/1` first.
 
           content = SomeView.render("body.html") |> Phoenix.HTML.safe_to_string()
           ChromicPDF.print_to_pdf({:html, content})
