@@ -27,20 +27,7 @@ defmodule ChromicPdf.MixProject do
       name: "ChromicPDF",
       source_url: @source_url,
       homepage_url: @source_url,
-      docs: [
-        main: "ChromicPDF",
-        logo: "assets/icon.png",
-        extras: [
-          "README.md": [title: "Read Me"],
-          "CHANGELOG.md": [title: "Changelog"],
-          LICENSE: [title: "License"]
-        ],
-        skip_undefined_reference_warnings_on: ["CHANGELOG.md"],
-        source_url: @source_url,
-        source_ref: "v#{@version}",
-        formatters: ["html"],
-        assets: "assets"
-      ]
+      docs: docs()
     ]
   end
 
@@ -65,6 +52,22 @@ defmodule ChromicPdf.MixProject do
   defp elixirc_paths(:dev), do: ["examples", "lib"]
   defp elixirc_paths(:test), do: ["examples", "lib", "test"]
   defp elixirc_paths(:prod), do: ["lib"]
+
+  defp docs do
+    [
+      source_ref: "v#{@version}",
+      main: "ChromicPDF",
+      logo: "assets/icon.png",
+      extras: [
+        "README.md": [title: "Read Me"],
+        "CHANGELOG.md": [title: "Changelog"],
+        LICENSE: [title: "License"]
+      ],
+      skip_undefined_reference_warnings_on: ["CHANGELOG.md"],
+      formatters: ["html"],
+      assets: "assets"
+    ]
+  end
 
   defp deps do
     [
