@@ -32,7 +32,7 @@ defmodule ChromicPDF.TestAPI do
     print_to_pdf({:url, "file://#{@test_html}"}, [], cb)
   end
 
-  def print_to_pdf(input) when is_tuple(input) do
+  def print_to_pdf(input) when is_tuple(input) or is_map(input) do
     print_to_pdf(input, [], fn _output -> :ok end)
   end
 
@@ -44,11 +44,11 @@ defmodule ChromicPDF.TestAPI do
     print_to_pdf({:url, "file://#{@test_html}"}, params, cb)
   end
 
-  def print_to_pdf(input, cb) when is_tuple(input) and is_function(cb) do
+  def print_to_pdf(input, cb) when (is_tuple(input) or is_map(input)) and is_function(cb) do
     print_to_pdf(input, [], cb)
   end
 
-  def print_to_pdf(input, params) when is_tuple(input) and is_list(params) do
+  def print_to_pdf(input, params) when (is_tuple(input) or is_map(input)) and is_list(params) do
     print_to_pdf(input, params, fn _output -> :ok end)
   end
 
@@ -58,7 +58,15 @@ defmodule ChromicPDF.TestAPI do
       assert File.exists?(output)
 
       text = system_cmd!("pdftotext", [output, "-"])
-      cb.(text)
+
+      case Function.info(cb, :arity) do
+        {:arity, 1} ->
+          cb.(text)
+
+        {:arity, 2} ->
+          info = system_cmd!("pdfinfo", [output])
+          cb.(text, info)
+      end
     end)
   end
 
