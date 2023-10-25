@@ -98,6 +98,10 @@ Multiple sources can be automatically concatenated using Ghostscript.
 ChromicPDF.print_to_pdf([{:html, "page 1"}, {:html, "page 2"}], output: "joined.pdf")
 ```
 
+### Examples
+
+* There is an outdated example of how to integrate ChromicPDF in a Phoenix application, see [examples/phoenix](https://github.com/bitcrowd/chromic_pdf/tree/v1.14.0/examples/phoenix).
+
 ## Development
 
 This should get you started:
