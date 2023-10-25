@@ -51,19 +51,19 @@ if Code.ensure_loaded?(Plug) and Code.ensure_loaded?(Plug.Crypto) do
     end
 
     defp start_agent_and_sign_pid(assigns) do
-      # Salt is used in the signature as well as a simple authorization method to stop requests
-      # with old valid signatures from accessing an agent with reused pid.
-      salt = :crypto.strong_rand_bytes(8)
+      # `identity` is used as salt in the signature as well as a simple authorization method to
+      # stop requests with old valid signatures from accessing an agent with reused pid.
+      identity = :crypto.strong_rand_bytes(8)
 
-      {:ok, pid} = Agent.start_link(fn -> {salt, assigns} end)
+      {:ok, pid} = Agent.start_link(fn -> {identity, assigns} end)
 
-      token = Crypto.sign(@secret_key_base, salt, :erlang.term_to_binary(pid))
+      token = Crypto.sign(@secret_key_base, identity, :erlang.term_to_binary(pid))
 
-      {token, salt}
+      {token, identity}
     end
 
-    defp encode_url_token(token_and_salt) do
-      {:v1, token_and_salt}
+    defp encode_url_token(token_and_identity) do
+      {:v1, token_and_identity}
       |> :erlang.term_to_binary()
       |> Base.url_encode64()
     end
@@ -110,22 +110,22 @@ if Code.ensure_loaded?(Plug) and Code.ensure_loaded?(Plug.Crypto) do
     end
 
     defp decode_url_token(assigns_from) do
-      {:v1, token_and_salt} =
+      {:v1, token_and_identity} =
         assigns_from
         |> Base.url_decode64!()
         |> Crypto.non_executable_binary_to_term([:safe])
 
-      token_and_salt
+      token_and_identity
     end
 
-    defp verify_pid_and_fetch_from_agent({token, salt}) do
-      {:ok, payload} = Crypto.verify(@secret_key_base, salt, token, max_age: @max_age)
+    defp verify_pid_and_fetch_from_agent({token, identity}) do
+      {:ok, payload} = Crypto.verify(@secret_key_base, identity, token, max_age: @max_age)
 
       # No need to safely decode this as it was signed.
       pid = :erlang.binary_to_term(payload)
 
       # Likewise no need for secure_compare as authenticity is already established.
-      {^salt, payload} = Agent.get(pid, & &1)
+      {^identity, payload} = Agent.get(pid, & &1)
 
       # Prevent process accumulation in case the client process is reused.
       Agent.stop(pid)
