@@ -38,11 +38,11 @@ defmodule ChromicPDF.API do
   end
 
   def print_to_pdf(services, %{source: source, opts: opts}, overrides)
-      when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
+      when is_tuple(source) and is_list(opts) and is_list(overrides) do
     print_to_pdf(services, source, Keyword.merge(opts, overrides))
   end
 
-  def print_to_pdf(services, source, opts) when tuple_size(source) == 2 and is_list(opts) do
+  def print_to_pdf(services, source, opts) when is_tuple(source) and is_list(opts) do
     chrome_export(services, :print_to_pdf, source, opts)
   end
 
@@ -51,11 +51,11 @@ defmodule ChromicPDF.API do
         ]) ::
           ChromicPDF.export_return()
   def capture_screenshot(services, %{source: source, opts: opts}, overrides)
-      when tuple_size(source) == 2 and is_list(opts) and is_list(overrides) do
+      when is_tuple(source) and is_list(opts) and is_list(overrides) do
     capture_screenshot(services, source, Keyword.merge(opts, overrides))
   end
 
-  def capture_screenshot(services, source, opts) when tuple_size(source) == 2 and is_list(opts) do
+  def capture_screenshot(services, source, opts) when is_tuple(source) and is_list(opts) do
     chrome_export(services, :capture_screenshot, source, opts)
   end
 

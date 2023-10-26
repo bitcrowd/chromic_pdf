@@ -3,10 +3,15 @@
 ### Added
 
 - Add `Template.options/1` that returns the options for page dimensions, header, and footer, but does not require the content.
+- `ChromicPDF.Plug` mechanism to pass assigns to a template printed from `:url`.
 
 ### Changed
 
 - Strip styles generated in `Template.styles/1`.
+
+### Removed
+
+- Dropped the outdated Phoenix example in `examples/`.
 
 ## [1.14.0] - 2024-09-27
 

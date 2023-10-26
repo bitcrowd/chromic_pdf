@@ -18,7 +18,19 @@ defmodule ChromicPDF.PDFOptions do
   defp put_source(opts, {:html, source}), do: put_source(opts, :html, source)
 
   defp put_source(opts, {:url, source}) do
-    url = if File.exists?(source), do: "file://#{Path.expand(source)}", else: source
+    url =
+      cond do
+        File.exists?(source) ->
+          # This works for relative paths as "local" Chromiums start with the same pwd.
+          "file://#{Path.expand(source)}"
+
+        Keyword.has_key?(opts, :assigns) ->
+          ChromicPDF.AssignsPlug.start_agent_and_return_signed_url(source, opts[:assigns])
+
+        true ->
+          source
+      end
+
     put_source(opts, :url, url)
   end
 

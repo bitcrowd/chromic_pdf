@@ -13,7 +13,7 @@ defmodule ChromicPdf.MixProject do
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
       dialyzer: [
-        plt_add_apps: [:ex_unit, :mix, :websockex, :inets],
+        plt_add_apps: [:ex_unit, :mix, :websockex, :inets, :plug, :plug_crypto],
         plt_file: {:no_warn, ".plts/dialyzer.plt"}
       ],
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -49,8 +49,8 @@ defmodule ChromicPdf.MixProject do
     ]
   end
 
-  defp elixirc_paths(:dev), do: ["examples", "lib"]
-  defp elixirc_paths(:test), do: ["examples", "lib", "test"]
+  defp elixirc_paths(:dev), do: ["lib"]
+  defp elixirc_paths(:test), do: ["lib", "test"]
   defp elixirc_paths(:prod), do: ["lib"]
 
   defp docs do
@@ -73,15 +73,14 @@ defmodule ChromicPdf.MixProject do
     [
       {:jason, "~> 1.1"},
       {:nimble_pool, "~> 0.2 or ~> 1.0"},
+      {:plug, "~> 1.11", optional: true},
+      {:plug_crypto, "~> 1.2 or ~> 2.0", optional: true},
       {:telemetry, "~> 0.4 or ~> 1.0"},
       {:websockex, ">= 0.4.3", optional: true},
       {:dialyxir, "~> 1.2", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:ex_doc, ">= 0.0.0", only: [:test, :dev], runtime: false},
       {:junit_formatter, "~> 3.1", only: [:test]},
-      {:phoenix, "~> 1.5", only: [:dev, :test]},
-      {:phoenix_html, "~> 3.0", only: [:dev, :test]},
-      {:plug, "~> 1.11", only: [:dev, :test]},
       {:bandit, "~> 0.5.11", only: [:test]}
     ]
   end
