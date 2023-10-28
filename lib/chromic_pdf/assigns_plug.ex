@@ -22,7 +22,6 @@ if Code.ensure_loaded?(Plug) and Code.ensure_loaded?(Plug.Crypto) do
     import Plug.Conn, only: [assign: 3]
     alias Plug.{Conn, Crypto}
 
-    @type url :: binary
     @type assigns :: map
 
     # max age of a "session", i.e. time between print_to_pdf and incoming request from Chrome.
@@ -39,54 +38,38 @@ if Code.ensure_loaded?(Plug) and Code.ensure_loaded?(Plug.Crypto) do
     # configurable / persistent between builds.
     @secret_key_base :crypto.strong_rand_bytes(32)
 
+    # Salt is irrelevant.
+    @salt :crypto.strong_rand_bytes(8)
+
+    @cookie "chromic_pdf_cookie"
+
     @doc false
-    @spec start_agent_and_return_signed_url(url, assigns) :: url
-    def start_agent_and_return_signed_url(url, assigns) do
-      assigns_from =
+    @spec start_agent_and_get_cookie(assigns) :: map
+    def start_agent_and_get_cookie(assigns) do
+      value =
         assigns
-        |> start_agent_and_sign_pid()
-        |> encode_url_token()
+        |> start_agent()
+        |> sign_and_encode()
 
-      append_query(url, %{assigns_from: assigns_from})
+      %{name: @cookie, value: value}
     end
 
-    defp start_agent_and_sign_pid(assigns) do
-      # `identity` is used as salt in the signature as well as a simple authorization method to
-      # stop requests with old valid signatures from accessing an agent with reused pid.
-      identity = :crypto.strong_rand_bytes(8)
+    defp start_agent(assigns) do
+      ref = make_ref()
 
-      {:ok, pid} = Agent.start_link(fn -> {identity, assigns} end)
+      {:ok, pid} = Agent.start_link(fn -> {ref, assigns} end)
 
-      token = Crypto.sign(@secret_key_base, identity, :erlang.term_to_binary(pid))
-
-      {token, identity}
+      {pid, ref}
     end
 
-    defp encode_url_token(token_and_identity) do
-      {:v1, token_and_identity}
+    defp sign_and_encode(value) do
+      payload = :erlang.term_to_binary(value)
+
+      signed = Crypto.sign(@secret_key_base, @salt, payload)
+
+      {:v1, signed}
       |> :erlang.term_to_binary()
       |> Base.url_encode64()
-    end
-
-    defp append_query(url, query) do
-      # Elixir 1.14 added URI.append_query/2. When we require Elixir >=1.14, we may change to:
-      #
-      #      url
-      #      |> URI.parse()
-      #      |> URI.append_query(URI.encode_query(query))
-      #      |> URI.to_string()
-
-      uri = URI.parse(url)
-
-      query =
-        (uri.query || "")
-        |> URI.decode_query()
-        |> Map.merge(query)
-        |> URI.encode_query()
-
-      uri
-      |> Map.put(:query, query)
-      |> URI.to_string()
     end
 
     @impl Plug
@@ -94,43 +77,41 @@ if Code.ensure_loaded?(Plug) and Code.ensure_loaded?(Plug.Crypto) do
 
     @impl Plug
     def call(conn, opts) do
-      case conn.query_params do
-        %{"assigns_from" => assigns_from} ->
-          assigns_from
-          |> decode_url_token()
-          |> verify_pid_and_fetch_from_agent()
+      case conn.req_cookies do
+        %{@cookie => cookie} ->
+          cookie
+          |> decode_and_verify()
+          |> fetch_from_agent()
           |> assign_all(conn)
 
         %Conn.Unfetched{} ->
-          # Custom endpoints may not have the query params fetched.
+          # Custom endpoints may not have the cookies fetched.
           conn
-          |> Conn.fetch_query_params()
+          |> Conn.fetch_cookies()
           |> call(opts)
       end
     end
 
-    defp decode_url_token(assigns_from) do
-      {:v1, token_and_identity} =
-        assigns_from
+    defp decode_and_verify(encoded) do
+      {:v1, signed} =
+        encoded
         |> Base.url_decode64!()
         |> Crypto.non_executable_binary_to_term([:safe])
 
-      token_and_identity
-    end
-
-    defp verify_pid_and_fetch_from_agent({token, identity}) do
-      {:ok, payload} = Crypto.verify(@secret_key_base, identity, token, max_age: @max_age)
+      {:ok, payload} = Crypto.verify(@secret_key_base, @salt, signed, max_age: @max_age)
 
       # No need to safely decode this as it was signed.
-      pid = :erlang.binary_to_term(payload)
+      :erlang.binary_to_term(payload)
+    end
 
-      # Likewise no need for secure_compare as authenticity is already established.
-      {^identity, payload} = Agent.get(pid, & &1)
+    defp fetch_from_agent({pid, ref}) do
+      # No need for secure_compare as authenticity is already established.
+      {^ref, assigns} = Agent.get(pid, & &1)
 
       # Prevent process accumulation in case the client process is reused.
       Agent.stop(pid)
 
-      payload
+      assigns
     end
 
     defp assign_all(assigns, conn) do
