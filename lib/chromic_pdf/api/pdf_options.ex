@@ -7,10 +7,38 @@ defmodule ChromicPDF.PDFOptions do
 
   def prepare_input_options(source, opts) do
     opts
+    |> set_cookie_for_assigns_plug(source)
     |> put_source(source)
     |> replace_wait_for_with_evaluate()
     |> stringify_map_keys()
     |> iolists_to_binary()
+  end
+
+  defp set_cookie_for_assigns_plug(opts, source) do
+    cond do
+      !Keyword.has_key?(opts, :assigns) ->
+        opts
+
+      !match?({:url, _}, source) ->
+        raise(":assigns option invalid with :url source")
+
+      Keyword.has_key?(opts, :set_cookie) ->
+        raise(":assigns option conflicts with :set_cookie")
+
+      true ->
+        do_set_cookie_for_assigns_plug(opts, source)
+    end
+  end
+
+  defp do_set_cookie_for_assigns_plug(opts, {:url, url}) do
+    {assigns, rest} = Keyword.pop(opts, :assigns)
+
+    set_cookie_opts =
+      assigns
+      |> ChromicPDF.AssignsPlug.start_agent_and_get_cookie()
+      |> Map.put(:url, url)
+
+    Keyword.put(rest, :set_cookie, set_cookie_opts)
   end
 
   defp put_source(opts, {:file, source}), do: put_source(opts, {:url, source})
@@ -19,16 +47,11 @@ defmodule ChromicPDF.PDFOptions do
 
   defp put_source(opts, {:url, source}) do
     url =
-      cond do
-        File.exists?(source) ->
-          # This works for relative paths as "local" Chromiums start with the same pwd.
-          "file://#{Path.expand(source)}"
-
-        Keyword.has_key?(opts, :assigns) ->
-          ChromicPDF.AssignsPlug.start_agent_and_return_signed_url(source, opts[:assigns])
-
-        true ->
-          source
+      if File.exists?(source) do
+        # This works for relative paths as "local" Chromiums start with the same pwd.
+        "file://#{Path.expand(source)}"
+      else
+        source
       end
 
     put_source(opts, :url, url)
