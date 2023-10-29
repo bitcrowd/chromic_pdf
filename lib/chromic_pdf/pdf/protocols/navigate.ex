@@ -7,7 +7,8 @@ defmodule ChromicPDF.Navigate do
 
   steps do
     if_option :set_cookie do
-      call(:set_cookie, "Network.setCookie", &Map.fetch!(&1, :set_cookie), %{})
+      call(:set_cookie, "Network.setCookie", &Map.fetch!(&1, :set_cookie), %{httpOnly: true})
+
       await_response(:cookie_set, [])
     end
 

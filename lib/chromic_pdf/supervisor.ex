@@ -138,9 +138,10 @@ defmodule ChromicPDF.Supervisor do
 
       @type url :: binary()
       @type path :: binary()
-      @type assigns :: map()
 
-      @type source_tuple :: {:url, url()} | {:html, iodata()}
+      @type plug_option :: {:url, url()} | {:forward, mfa()}
+
+      @type source_tuple :: {:url, url()} | {:html, iodata()} | {:plug, [plug_option()]}
       @type source_and_options :: %{source: source_tuple(), opts: [pdf_option()]}
       @type source :: source() | source_and_options()
 
@@ -310,9 +311,11 @@ defmodule ChromicPDF.Supervisor do
 
       ## Input options
 
-      ChromicPDF offers two primary methods of supplying Chrome with the HTML source to print:
-      You can choose between passing in an **URL for Chrome to load** and **injecting the HTML
-      markup directly** into the DOM through the remote debugging API.
+      You can choose between multiple methods of supplying Chrome with the HTML source to print:
+
+      - Printing from a URL
+      - Internal endpoint with request forwarding
+      - Injecting the HTML markup directly into the DOM through the remote debugging API
 
       ### Print from URL
 
@@ -327,22 +330,6 @@ defmodule ChromicPDF.Supervisor do
 
       Printing from URL has the benefit of being the tried-and-true solution, as Chrome's
       content loading works just as you would expect, including its assets cache.
-
-      #### Passing assigns from caller to your endpoint
-
-      Additionally, printing from URL allows you to easily leverage your existing HTTP server
-      and HTML rendering infrastructure, by serving HTML templates from an internal endpoint.
-      Usually, you will want to dynamically render content based on a set of template parameters.
-      `ChromicPDF.AssignsPlug` allows you to pass a map of assigns from the caller of
-      `print_to_pdf/2` to the process serving Chrome's HTTP request.
-
-          ChromicPDF.print_to_pdf(
-            {:url, "http://localhost:4000/my/template/pdf"},
-            assigns: %{hello: :world}
-          )
-
-      To fetch the assigns into the `conn` on the receiving end, add `ChromicPDF.AssignsPlug`
-      to your pipeline.
 
       #### Cookies
 
@@ -359,6 +346,25 @@ defmodule ChromicPDF.Supervisor do
 
       See [`Network.setCookie`](https://chromedevtools.github.io/devtools-protocol/tot/Network#method-setCookie)
       for options. `name` and `value` keys are required.
+
+      ### Internal endpoint with request forwarding
+
+      Serving HTML templates from an internal endpoint allows you to leverage your existing HTTP
+      server and HTML rendering infrastructure. Usually, you will want to render a HTML template
+      from data you have in hand when calling `print_to_pdf/2`. `ChromicPDF.Plug` allows you to
+      pass a callback function from the caller to the process serving Chrome's HTTP request.
+
+          ChromicPDF.print_to_pdf(
+            {:plug,
+              url: "http://localhost:4000/makepdf",
+              forward:
+                fn conn ->
+                  # this is executed in the context of the incoming Chrome request
+                end
+            }
+          )
+
+      You can also pass a MFA to the `:forward` option.
 
       ### Print from in-memory HTML
 

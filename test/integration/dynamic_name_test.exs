@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule ChromicPDF.DynamicNameTest do
-  use ExUnit.Case, async: false
+  use ChromicPDF.Case, async: false
 
   @moduletag pool_size: 1
 

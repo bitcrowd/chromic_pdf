@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule ChromicPDF.WarmUpTest do
-  use ExUnit.Case, async: false
+  use ChromicPDF.Case, async: false
   import ExUnit.CaptureIO
   alias Mix.Tasks.ChromicPdf.WarmUp
 

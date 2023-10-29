@@ -1,20 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule ChromicPDF.PDFGenerationTest do
-  use ExUnit.Case, async: false
+  use ChromicPDF.Case, async: false
   import ExUnit.CaptureLog
   import ChromicPDF.TestAPI
   import ChromicPDF.Utils, only: [system_cmd!: 2]
   alias ChromicPDF.TestServer
-
-  setup context do
-    if {:disable_logger, true} in context do
-      Logger.remove_backend(:console)
-      on_exit(fn -> Logger.add_backend(:console) end)
-    end
-
-    :ok
-  end
 
   describe "PDF printing" do
     setup do
