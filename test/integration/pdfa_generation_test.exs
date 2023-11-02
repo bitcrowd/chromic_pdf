@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule ChromicPDF.PDFAGenerationTest do
-  use ExUnit.Case, async: false
+  use ChromicPDF.Case, async: false
   import ChromicPDF.Utils, only: [system_cmd!: 2, with_tmp_dir: 1]
 
   @test_html Path.expand("../fixtures/test.html", __ENV__.file)

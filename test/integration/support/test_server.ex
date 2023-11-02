@@ -34,9 +34,7 @@ defmodule ChromicPDF.TestServer do
   end
 
   get "/with_plug" do
-    conn = ChromicPDF.AssignsPlug.call(conn, [])
-
-    send_resp(conn, 200, inspect(conn.assigns))
+    ChromicPDF.Plug.call(conn, [])
   end
 
   def port(scheme), do: Map.fetch!(@ports, scheme)

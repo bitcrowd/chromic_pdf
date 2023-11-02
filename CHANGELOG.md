@@ -2,12 +2,13 @@
 
 ### Added
 
+- Add `ChromicPDF.Plug` to forward Chrome requests on an internal endpoint to a template.
 - Add `Template.options/1` that returns the options for page dimensions, header, and footer, but does not require the content.
-- `ChromicPDF.Plug` mechanism to pass assigns to a template printed from `:url`.
 
 ### Changed
 
 - Strip styles generated in `Template.styles/1`.
+- Cookies set via `:set_cookie` are now `httpOnly: true` by default.
 
 ### Removed
 

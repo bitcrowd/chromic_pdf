@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule ChromicPDF.TelemetryTest do
-  use ExUnit.Case, async: false
+  use ChromicPDF.Case, async: false
 
   setup do
     start_supervised!(ChromicPDF)

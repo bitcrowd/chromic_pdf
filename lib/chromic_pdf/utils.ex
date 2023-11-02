@@ -104,4 +104,19 @@ defmodule ChromicPDF.Utils do
   else
     def default_pool_size, do: max(div(System.schedulers_online(), 2), 1)
   end
+
+  @spec rendered_to_binary(iodata | tuple | struct) :: binary
+  def rendered_to_binary(rendered) do
+    rendered
+    |> rendered_to_iodata()
+    |> :erlang.iolist_to_binary()
+  end
+
+  @spec rendered_to_iodata(iodata | tuple | struct) :: iodata
+  def rendered_to_iodata(value) when is_binary(value) or is_list(value), do: value
+
+  if Code.ensure_loaded?(Phoenix.HTML.Safe) do
+    alias Phoenix.HTML.Safe
+    def rendered_to_iodata(value), do: Safe.to_iodata(value)
+  end
 end

@@ -2,7 +2,7 @@
 
 # credo:disable-for-this-file Credo.Check.Readability.LargeNumbers
 defmodule ChromicPDF.InetConnectionTest do
-  use ExUnit.Case, async: false
+  use ChromicPDF.Case, async: false
   import ChromicPDF.TestAPI
   import ChromicPDF.Utils, only: [find_supervisor_child: 2]
   alias ChromicPDF.{TestDockerChrome, TestInetChrome}

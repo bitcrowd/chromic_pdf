@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 defmodule ChromicPDF.SessionPoolTest do
-  use ExUnit.Case, async: false
+  use ChromicPDF.Case, async: false
   import ExUnit.CaptureIO
   import ExUnit.CaptureLog
   import ChromicPDF.Assertions
