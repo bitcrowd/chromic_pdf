@@ -14,13 +14,13 @@
 
 - Dropped the outdated Phoenix example in `examples/`.
 
-## [1.14.0] - 2024-09-27
+## [1.14.0] - 2023-09-27
 
 ### Added
 
 - Configurable pool checkout timeout via new global option `:checkout_timeout`.
 
-## [1.13.0] - 2024-08-17
+## [1.13.0] - 2023-08-17
 
 ### Added
 
@@ -33,14 +33,14 @@
 
 ⚠️ In case you are using `no_sandbox: true`, dropping `--no-zygote` means Chrome will spawn an additional OS process (the "zygote" process), which could be considered a break of backwards compatibility. Please monitor your next deployment. However, we believe this change is safe, meaning except for the additional process, it will not be noticable. Hence we concluded to drop the switch without a major version bump, in order not to disturb too many people. If you are not using `:no_sandbox`, this does not affect you.
 
-## [1.12.0] - 2024-07-12
+## [1.12.0] - 2023-07-12
 
 ### Added
 
 - Add `:console_api_calls` option to configure handling of `console.foo` calls in JS runtime (ignore, log, raise).
 - Document fixes for font rendering issues, and give `ChromicPDF.Template` a `text_rendering` option to allow applying `text-rendering: geometricPrecision;` on all elements.
 
-## [1.11.0] - 2024-06-19
+## [1.11.0] - 2023-06-19
 
 ### Added
 
@@ -50,19 +50,19 @@
 
 - Add `--hide-scrollbars` to default command line options, to hide scrollbars on screenshots.
 
-## [1.10.0] - 2024-06-09
+## [1.10.0] - 2023-06-09
 
 ### Added
 
 - Add `:full_page` option to `ChromicPDF.capture_screenshot/2` to increase the viewport size to match the content.
 
-## [1.9.1] - 2024-06-08
+## [1.9.1] - 2023-06-08
 
 ### Fixed
 
 - Handle `ChromicPDF.Template.source_and_options/1` tuples in `ChromicPDF.capture_screenshot/2`.
 
-## [1.9.0] - 2024-05-02
+## [1.9.0] - 2023-05-02
 
 ### Added
 
