@@ -44,6 +44,7 @@ defmodule ChromicPDF.ChromeRunner do
   @default_executables [
     "chromium-browser",
     "chromium",
+    "chrome.exe",
     "google-chrome",
     "/usr/bin/chromium-browser",
     "/usr/bin/chromium",
