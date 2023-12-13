@@ -31,21 +31,30 @@ jobs:
       packages: write
     strategy:
       matrix:
-        dockerfile: ['elixir-1-11', 'debian-buster', 'debian-bullseye', 'debian-bookworm', 'alpine-3-16-2', 'alpine-3-17-3', 'alpine-3-18-4']
+        dockerfile: ['elixir-1-11', 'debian-buster', 'alpine-3-16-2', 'alpine-3-17-3', 'alpine-3-18-4']
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - uses: dorny/paths-filter@v2
+        id: paths-filter
+        with:
+          filters: |
+            dockerfile:
+              - .github/docker/Dockerfile_${{matrix.dockerfile}}
+
       - name: Log in to the Container registry
-        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        if: steps.paths-filter.outputs.dockerfile == 'true'
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        if: steps.paths-filter.outputs.dockerfile == 'true'
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: .github/docker/Dockerfile_${{matrix.dockerfile}}
