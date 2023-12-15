@@ -29,7 +29,7 @@ defmodule ChromicPDF.GhostscriptRunner do
 
   @ghostscript_bin "gs"
   @ghostscript_safer_version [9, 28]
-  @ghostscript_new_interpreter_version [9, 56]
+  @ghostscript_new_interpreter_version {[9, 56], [10, 2]}
 
   @spec run_postscript(binary(), binary()) :: binary()
   def run_postscript(pdf_path, ps_path) do
@@ -116,7 +116,10 @@ defmodule ChromicPDF.GhostscriptRunner do
   end
 
   defp maybe_disable_new_interpreter do
-    if semver_compare(ghostscript_version(), @ghostscript_new_interpreter_version) in [:eq, :gt] do
+    {bad, good} = @ghostscript_new_interpreter_version
+
+    if semver_compare(ghostscript_version(), bad) in [:eq, :gt] &&
+         semver_compare(ghostscript_version(), good) == :lt do
       # We get segmentation faults with the new intepreter (see https://github.com/bitcrowd/chromic_pdf/issues/153):
       #
       # /usr/bin/gs exited with status 139!

@@ -18,6 +18,7 @@ config :chromic_pdf, chrome_version: "Google Chrome 120.0.6099.71"
 
 ### Changed
 
+- Drop `-dNEWPDF=false` switch from Ghostscript >= 10.2. The old PDF interpreter has been removed and using the switch results in a warning now.
 - Split `Chromic.Template.styles/1` into `page_styles/1` and `header_footer_styles/1`, and trim the stylesheets.
 - Cookies set via `:set_cookie` are now `httpOnly: true` by default.
 
