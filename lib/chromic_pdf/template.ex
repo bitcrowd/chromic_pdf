@@ -16,19 +16,11 @@ defmodule ChromicPDF.Template do
   Using this module is entirely optional, but perhaps can help to avoid some common pitfalls
   arising from the slightly unintuitive and sometimes conflicting behaviour of `printToPDF`
   options and `@page` CSS styles in Chrome.
-
-  ## Page dimensions
-
-  One particularly cumbersome detail is that Chrome in headless mode does not correctly interpret
-  the `@page` CSS rule to configure the page dimensions. Resulting PDF files will always be in
-  US-letter format unless configured differently with the `paperWidth` and `paperHeight` options.
-  Experience has shown, that results will be best if the `@page` rule aligns with the values
-  passed to `printToPDF/2`, which is why this module exists to make basic page sizing easier.
-
-  To rotate a page into landscape, use the `landscape` option.
   """
 
+  import ChromicPDF.Utils, only: [semver_compare: 2]
   require EEx
+  alias ChromicPDF.ChromeRunner
 
   @type content_option :: {:content, iodata()}
 
@@ -169,14 +161,12 @@ defmodule ChromicPDF.Template do
   @spec source_and_options([content_option() | header_footer_option() | style_option()]) ::
           ChromicPDF.source_and_options()
   def source_and_options(opts) do
-    {width, height} = get_paper_size(opts)
-
+    styles = page_styles(opts)
     content = Keyword.get(opts, :content, @default_content)
-    styles = Keyword.get_lazy(opts, :styles, fn -> styles({width, height}, opts) end)
 
     %{
       source: {:html, html_concat(styles, content)},
-      opts: options(Keyword.put_new(opts, :styles, styles))
+      opts: options(opts)
     }
   end
 
@@ -221,27 +211,23 @@ defmodule ChromicPDF.Template do
   the content), including any `<style>` tags that your page needs.
   """
   @spec options() :: keyword()
-  @spec options([header_footer_option() | style_option() | {:styles, binary()}]) :: keyword()
+  @spec options([header_footer_option() | style_option()]) :: keyword()
   def options(opts \\ []) do
-    {width, height} = get_paper_size(opts)
-
     header = Keyword.get(opts, :header, "")
     footer = Keyword.get(opts, :footer, "")
-    styles = Keyword.get_lazy(opts, :styles, fn -> styles({width, height}, opts) end)
+    styles = header_footer_styles(opts)
 
     [
       print_to_pdf: %{
         preferCSSPageSize: true,
         displayHeaderFooter: true,
         headerTemplate: html_concat(styles, header),
-        footerTemplate: html_concat(styles, footer),
-        paperWidth: width,
-        paperHeight: height
+        footerTemplate: html_concat(styles, footer)
       }
     ]
   end
 
-  @styles """
+  @page_styles """
   <style>
     * {
       -webkit-print-color-adjust: <%= @webkit_print_color_adjust %>;
@@ -249,40 +235,61 @@ defmodule ChromicPDF.Template do
     }
 
     @page {
-      width: <%= @width %>;
-      height: <%= @height %>;
+      size: <%= @width %> <%= @height %>;
       margin: <%= @header_height %> 0 <%= @footer_height %>;
     }
 
-    #header {
-      padding: 0 !important;
-      height: <%= @header_height %>;
-      font-size: <%= @header_font_size %>;
-      zoom: <%= @header_zoom %>;
-    }
-
-    #footer {
-      padding: 0 !important;
-      height: <%= @footer_height %>;
-      font-size: <%= @footer_font_size %>;
-      zoom: <%= @footer_zoom %>;
-    }
-
-    html, body {
+    body {
       margin: 0;
       padding: 0;
     }
   </style>
   """
 
+  @header_footer_styles """
+  <style>
+    * {
+      -webkit-print-color-adjust: <%= @webkit_print_color_adjust %>;
+      text-rendering: <%= @text_rendering %>;
+    }
+
+    #header {
+      padding: 0 !important;
+      height: <%= @header_height %>;
+      font-size: <%= @header_font_size %>;
+    }
+
+    #footer {
+      padding: 0 !important;
+      height: <%= @footer_height %>;
+      font-size: <%= @footer_font_size %>;
+    }
+  </style>
+  """
+
+  @doc """
+  Renders page styles & header/footer styles in a single template.
+
+  This function is deprecated. Since Chromium v117 the footer and header templates must not
+  contain any margins in a `@page` directive anymore.
+
+  See https://github.com/bitcrowd/chromic_pdf/issues/290 for details.
+
+  Please use `page_styles/1` or `header_footer_styles/1` instead.
+  """
+  @deprecated "Use page_styles/1 or header_footer_styles/1 instead"
+  @spec styles() :: binary()
+  @spec styles([style_option()]) :: binary()
+  def styles(opts \\ []) do
+    page_styles(opts) <> header_footer_styles(opts)
+  end
+
   @doc """
   Renders page styles for given template options.
 
-  These base styles will configure page dimensions and header and footer heights. They also
-  remove any browser padding and margins from these elements, and set the font-size.
-
-  Additionally, they set the zoom level of header and footer templates to 0.75 which seems to
-  make them align with the content viewport scaling better.
+  These base styles will configure page dimensions and apply margins for headers and footers.
+  They also remove any default browser margin from the body, and apply sane defaults for
+  rendering text in print.
 
   ## Options
 
@@ -303,32 +310,63 @@ defmodule ChromicPDF.Template do
   when explicit page dimensions are given. Hence, we provide a `landscape` option here that
   swaps the page dimensions (e.g. it turns 11.7x8.3" A4 into 8.3"x11.7").
   """
-  @spec styles() :: binary()
-  @spec styles([style_option()]) :: binary()
-  def styles(opts \\ []) do
-    styles(get_paper_size(opts), opts)
+  @spec page_styles() :: binary()
+  @spec page_styles([style_option()]) :: binary()
+  def page_styles(opts \\ []) do
+    opts
+    |> assigns_for_styles()
+    |> render_page_styles()
+    |> squish()
   end
 
-  defp styles({width, height}, opts) do
-    assigns = [
+  EEx.function_from_string(:defp, :render_page_styles, @page_styles, [:assigns])
+
+  @doc """
+  Renders header/footer styles for given template options.
+
+  These styles apply sane default to your header and footer templates. They set a default
+  fonts-size and force their height.
+
+  For Chromium before v120, they also set the zoom level of header and footer templates
+  to 0.75 which aligns them with the content viewport scaling.
+
+  https://bugs.chromium.org/p/chromium/issues/detail?id=1509917#c3
+  """
+  @spec header_footer_styles() :: binary()
+  @spec header_footer_styles([style_option()]) :: binary()
+  def header_footer_styles(opts \\ []) do
+    opts
+    |> assigns_for_styles()
+    |> render_header_footer_styles()
+    |> squish()
+  end
+
+  EEx.function_from_string(:defp, :render_header_footer_styles, @header_footer_styles, [:assigns])
+
+  defp assigns_for_styles(opts) do
+    {width, height} = get_paper_size(opts)
+
+    [
       width: "#{width}in",
       height: "#{height}in",
       header_height: Keyword.get(opts, :header_height, "0"),
       header_font_size: Keyword.get(opts, :header_font_size, "10pt"),
       footer_height: Keyword.get(opts, :footer_height, "0"),
       footer_font_size: Keyword.get(opts, :footer_font_size, "10pt"),
-      header_zoom: Keyword.get(opts, :header_zoom, "0.75"),
-      footer_zoom: Keyword.get(opts, :footer_zoom, "0.75"),
+      header_zoom: Keyword.get(opts, :header_zoom, default_zoom()),
+      footer_zoom: Keyword.get(opts, :footer_zoom, default_zoom()),
       webkit_print_color_adjust: Keyword.get(opts, :webkit_print_color_adjust, "exact"),
       text_rendering: Keyword.get(opts, :text_rendering, "auto")
     ]
-
-    assigns
-    |> render_styles()
-    |> squish()
   end
 
-  EEx.function_from_string(:defp, :render_styles, @styles, [:assigns])
+  defp default_zoom do
+    if semver_compare(ChromeRunner.version(), [120]) in [:eq, :gt] do
+      "1"
+    else
+      "0.75"
+    end
+  end
 
   # Fetches paper size from opts, translates from config or uses given {width, height} tuple.
   defp get_paper_size(manual) when tuple_size(manual) === 2, do: manual

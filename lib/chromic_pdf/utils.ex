@@ -119,4 +119,32 @@ defmodule ChromicPDF.Utils do
     alias Phoenix.HTML.Safe
     def rendered_to_iodata(value), do: Safe.to_iodata(value)
   end
+
+  @spec with_app_config_cache(atom, function) :: any
+  def with_app_config_cache(key, function) do
+    case Application.get_env(:chromic_pdf, key) do
+      nil ->
+        result = function.()
+        Application.put_env(:chromic_pdf, key, result)
+        result
+
+      value ->
+        value
+    end
+  end
+
+  @spec semver_compare(binary, list) :: :lt | :eq | :gt
+  def semver_compare(x, y) do
+    x
+    |> String.trim()
+    |> String.split(".")
+    |> Enum.map(&String.to_integer/1)
+    |> Enum.zip(y)
+    |> do_semver_compare()
+  end
+
+  defp do_semver_compare([]), do: :eq
+  defp do_semver_compare([{x, y} | _rest]) when x < y, do: :lt
+  defp do_semver_compare([{x, y} | _rest]) when x > y, do: :gt
+  defp do_semver_compare([{x, y} | rest]) when x == y, do: do_semver_compare(rest)
 end

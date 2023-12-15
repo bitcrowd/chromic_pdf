@@ -3,6 +3,8 @@
 defmodule ChromicPDF.ChromeRunner do
   @moduledoc false
 
+  import ChromicPDF.Utils, only: [system_cmd!: 3, with_app_config_cache: 2]
+
   @spec port_open(keyword()) :: port()
   def port_open(opts) do
     port_opts = append_if([:binary], :nouse_stdio, !discard_stderr?(opts))
@@ -24,17 +26,35 @@ defmodule ChromicPDF.ChromeRunner do
     {:ok, stderr}
   end
 
-  @spec version() :: [non_neg_integer()]
+  @spec version() :: binary()
   def version do
-    "#{executable()} --version"
-    |> String.to_charlist()
-    |> :os.cmd()
-    |> to_string()
-    |> String.trim()
-    |> String.split(" ")
-    |> List.last()
-    |> String.split(".")
-    |> Enum.map(&String.to_integer/1)
+    with_app_config_cache(:chrome_version, &do_version/0)
+  end
+
+  defp do_version do
+    output = system_cmd!(executable(), ["--version"], stderr_to_stdout: true)
+    [version] = Regex.run(~r/\d+\.\d+\.\d+\.\d+/, output)
+    version
+  rescue
+    e ->
+      reraise(
+        """
+        Failed to determine Chrome version.
+
+        If you're using a remote chrome instance, please configure ChromicPDF manually:
+
+            config :chromic_pdf, chrome_version: "Google Chrome 120.0.6099.71"
+
+        Afterwards, force a recompilation with:
+
+            mix deps.compile --force chromic_pdf
+
+        --- original exception --
+
+        #{Exception.format(:error, e, __STACKTRACE__)}
+        """,
+        __STACKTRACE__
+      )
   end
 
   defp shell_command(extra_args, opts) do
