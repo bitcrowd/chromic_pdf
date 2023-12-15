@@ -3,7 +3,7 @@
 defmodule ChromicPDF.GhostscriptRunner do
   @moduledoc false
 
-  import ChromicPDF.Utils, only: [system_cmd!: 3]
+  import ChromicPDF.Utils, only: [semver_compare: 2, system_cmd!: 3, with_app_config_cache: 2]
 
   @default_args [
     "-sstdout=/dev/null",
@@ -104,7 +104,7 @@ defmodule ChromicPDF.GhostscriptRunner do
   end
 
   defp maybe_safer_args(command) do
-    if ghostscript_version() >= @ghostscript_safer_version do
+    if semver_compare(ghostscript_version(), @ghostscript_safer_version) in [:eq, :gt] do
       [
         "-dSAFER",
         Enum.map(command.read, &"--permit-file-read=#{&1}"),
@@ -116,7 +116,7 @@ defmodule ChromicPDF.GhostscriptRunner do
   end
 
   defp maybe_disable_new_interpreter do
-    if ghostscript_version() >= @ghostscript_new_interpreter_version do
+    if semver_compare(ghostscript_version(), @ghostscript_new_interpreter_version) in [:eq, :gt] do
       # We get segmentation faults with the new intepreter (see https://github.com/bitcrowd/chromic_pdf/issues/153):
       #
       # /usr/bin/gs exited with status 139!
@@ -138,33 +138,24 @@ defmodule ChromicPDF.GhostscriptRunner do
   end
 
   defp ghostscript_version do
-    case Application.get_env(:chromic_pdf, :ghostscript_version) do
-      nil ->
-        gsv = read_ghostscript_version()
-        Application.put_env(:chromic_pdf, :ghostscript_version, gsv)
-        gsv
-
-      gsv ->
-        gsv
-    end
+    with_app_config_cache(:ghostscript_version, &do_ghostscript_version/0)
   end
 
-  defp read_ghostscript_version do
+  defp do_ghostscript_version do
     output = system_cmd!(ghostscript_executable(), ["-v"], stderr_to_stdout: true)
-    captures = Regex.named_captures(~r/GPL Ghostscript (?<major>\d+)\.(?<minor>\d+)/, output)
+    [version] = Regex.run(~r/\d+\.\d+/, output)
+    version
+  rescue
+    e ->
+      reraise(
+        """
+        Failed to determine Ghostscript version number! (#{e.__struct__})
 
-    case captures do
-      %{"major" => major, "minor" => minor} ->
-        [String.to_integer(major), String.to_integer(minor)]
+        --- original exception --
 
-      nil ->
-        raise("""
-        Failed to determine Ghostscript version number!
-
-        Output was:
-
-        #{output}
-        """)
-    end
+        #{Exception.format(:error, e, __STACKTRACE__)}
+        """,
+        __STACKTRACE__
+      )
   end
 end

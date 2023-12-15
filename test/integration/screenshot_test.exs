@@ -51,9 +51,7 @@ defmodule ChromicPDF.ScreenshotTest do
 
     @tag :identify
     test ":full_page resizes the the device dimensions to fit the content" do
-      [major | _] = version()
-
-      if major >= 91 do
+      if semver_compare(version(), [91]) in [:eq, :gt] do
         {_, _, height} = capture_screenshot_and_identify(source: {:url, "file://#{@large_html}"})
         assert height < 4000
 

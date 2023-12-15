@@ -1,5 +1,16 @@
 ## Unreleased
 
+### Fixed
+
+- Recover missing custom footer templates by making sure we do not add any `@page` CSS rule to the header or footer templates in `ChromicPDF.Template.source_and_options/1`. (#290)
+- Drop the default `zoom: 0.75` rule from header and footer templates for Chrome >= v120. They removed the default scale-up by 4/3, see [chromium bug #1509917](https://bugs.chromium.org/p/chromium/issues/detail?id=1509917#c3).
+
+Note that for **remote chrome** users this means they will have to explicitly specify the chrome version in the application config.
+
+```elixir
+config :chromic_pdf, chrome_version: "Google Chrome 120.0.6099.71"
+```
+
 ### Added
 
 - Add `ChromicPDF.Plug` to forward Chrome requests on an internal endpoint to a template.
@@ -7,12 +18,13 @@
 
 ### Changed
 
-- Strip styles generated in `Template.styles/1`.
+- Split `Chromic.Template.styles/1` into `page_styles/1` and `header_footer_styles/1`, and trim the stylesheets.
 - Cookies set via `:set_cookie` are now `httpOnly: true` by default.
 
 ### Removed
 
 - Dropped the outdated Phoenix example in `examples/`.
+- Deprecated `ChromicPDF.styles/1`.
 
 ## [1.14.0] - 2023-09-27
 
