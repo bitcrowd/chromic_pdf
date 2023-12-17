@@ -18,7 +18,7 @@ defmodule ChromicPDF.PDFOptions do
   defp put_source(opts, {:path, source}), do: put_source(opts, {:url, source})
   defp put_source(opts, {:html, source}), do: put_source(opts, :html, source)
 
-  if Code.ensure_loaded?(ChromicPDF.Plug) do
+  if Code.ensure_loaded?(Plug) && Code.ensure_loaded?(Plug.Crypto) do
     defp put_source(opts, {:plug, plug_opts}) do
       if Keyword.has_key?(opts, :set_cookie) do
         raise "plug source conflicts with set_cookie"
