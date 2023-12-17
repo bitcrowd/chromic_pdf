@@ -18,22 +18,24 @@ defmodule ChromicPDF.PDFOptions do
   defp put_source(opts, {:path, source}), do: put_source(opts, {:url, source})
   defp put_source(opts, {:html, source}), do: put_source(opts, :html, source)
 
-  defp put_source(opts, {:plug, plug_opts}) do
-    if Keyword.has_key?(opts, :set_cookie) do
-      raise "plug source conflicts with set_cookie"
+  if Code.ensure_loaded?(ChromicPDF.Plug) do
+    defp put_source(opts, {:plug, plug_opts}) do
+      if Keyword.has_key?(opts, :set_cookie) do
+        raise "plug source conflicts with set_cookie"
+      end
+
+      {url, plug_opts} = Keyword.pop!(plug_opts, :url)
+
+      set_cookie_opts =
+        plug_opts
+        |> ChromicPDF.Plug.start_agent_and_get_cookie()
+        |> Map.put(:url, url)
+        |> Map.put(:secure, String.starts_with?(url, "https"))
+
+      opts
+      |> Keyword.put(:set_cookie, set_cookie_opts)
+      |> put_source(:url, url)
     end
-
-    {url, plug_opts} = Keyword.pop!(plug_opts, :url)
-
-    set_cookie_opts =
-      plug_opts
-      |> ChromicPDF.Plug.start_agent_and_get_cookie()
-      |> Map.put(:url, url)
-      |> Map.put(:secure, String.starts_with?(url, "https"))
-
-    opts
-    |> Keyword.put(:set_cookie, set_cookie_opts)
-    |> put_source(:url, url)
   end
 
   defp put_source(opts, {:url, source}) do

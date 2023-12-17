@@ -116,8 +116,8 @@ defmodule ChromicPDF.Utils do
   def rendered_to_iodata(value) when is_binary(value) or is_list(value), do: value
 
   if Code.ensure_loaded?(Phoenix.HTML.Safe) do
-    alias Phoenix.HTML.Safe
-    def rendered_to_iodata(value), do: Safe.to_iodata(value)
+    # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+    def rendered_to_iodata(value), do: Phoenix.HTML.Safe.to_iodata(value)
   end
 
   @spec with_app_config_cache(atom, function) :: any
