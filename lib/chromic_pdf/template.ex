@@ -133,7 +133,7 @@ defmodule ChromicPDF.Template do
 
   This example has the dimension of a ISO A4 page.
 
-      ChromicPDF.Template.source_and_options(
+      [
         content: "<p>Hello</p>",
         header: "<p>header</p>",
         footer: "<p>footer</p>",
@@ -141,7 +141,9 @@ defmodule ChromicPDF.Template do
         header_height: "45mm",
         header_font_size: "20pt",
         footer_height: "40mm"
-      )
+      ]
+      |> ChromicPDF.Template.source_and_options()
+      |> ChromicPDF.print_to_pdf()
 
   Content, header, and footer templates should be unwrapped HTML markup (i.e. no `<html>` around
   the content), including any `<style>` tags that your page needs.
@@ -161,12 +163,13 @@ defmodule ChromicPDF.Template do
   @spec source_and_options([content_option() | header_footer_option() | style_option()]) ::
           ChromicPDF.source_and_options()
   def source_and_options(opts) do
-    styles = page_styles(opts)
-    content = Keyword.get(opts, :content, @default_content)
+    # Keep dialyzer happy by making sure we only pass on option keys as spec'd in lower funs.
+    {content, opts} = Keyword.pop(opts, :content, @default_content)
+    {header_and_footer_opts, style_opts} = Keyword.split(opts, [:header, :footer])
 
     %{
-      source: {:html, html_concat(styles, content)},
-      opts: options(opts)
+      source: {:html, html_concat(page_styles(style_opts), content)},
+      opts: options(header_and_footer_opts ++ style_opts)
     }
   end
 
@@ -213,8 +216,8 @@ defmodule ChromicPDF.Template do
   @spec options() :: keyword()
   @spec options([header_footer_option() | style_option()]) :: keyword()
   def options(opts \\ []) do
-    header = Keyword.get(opts, :header, "")
-    footer = Keyword.get(opts, :footer, "")
+    {header, opts} = Keyword.pop(opts, :header, "")
+    {footer, opts} = Keyword.pop(opts, :footer, "")
     styles = header_footer_styles(opts)
 
     [
@@ -311,7 +314,8 @@ defmodule ChromicPDF.Template do
   swaps the page dimensions (e.g. it turns 11.7x8.3" A4 into 8.3"x11.7").
   """
   @spec page_styles() :: binary()
-  @spec page_styles([style_option()]) :: binary()
+  #  @spec page_styles([style_option()]) :: binary()
+  @spec page_styles(keyword) :: binary()
   def page_styles(opts \\ []) do
     opts
     |> assigns_for_styles()

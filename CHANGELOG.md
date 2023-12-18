@@ -1,3 +1,9 @@
+## Unreleased
+
+### Fixed
+
+- Explicitly pick keys in `ChromicPDF.Template` to fix Dialyzer "no local return" errors in clients.
+
 ## [1.15.0] - 2023-12-15
 
 ### Fixed
