@@ -7,7 +7,7 @@ jobs:
       MIX_ENV: test
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/bitcrowd/chromic_pdf:debian-bullseye
+      image: ghcr.io/bitcrowd/chromic_pdf:alpine-3-17-3
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
