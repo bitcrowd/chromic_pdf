@@ -33,4 +33,5 @@ jobs:
       - run: mix deps.get
       - run: mix compile
       - run: mix chromic_pdf.warm_up
-      - run: mix test || mix test --failed || mix test --failed
+      # only retry failed tests if the tests ran and actually failed (exit status 2), and don't retry if e.g. they didn't compile
+      - run: mix test || if [[ $? = 2 ]]; then mix test --failed || if [[ $? = 2 ]]; then mix test --failed; else false; fi; else false; fi
