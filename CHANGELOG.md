@@ -1,3 +1,9 @@
+## [1.15.2] - 2024-01-04
+
+### Changed
+
+- Expand `phoenix_html` dependency to include version 4 (@idabmat)
+
 ## [1.15.1] - 2023-12-18
 
 ### Fixed
