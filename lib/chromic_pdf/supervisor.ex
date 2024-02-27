@@ -139,7 +139,8 @@ defmodule ChromicPDF.Supervisor do
       @type url :: binary()
       @type path :: binary()
 
-      @type plug_option :: {:url, url()} | {:forward, mfa()}
+      @type plug_forward :: {module(), atom(), [term()]}
+      @type plug_option :: {:url, url()} | {:forward, plug_forward()}
 
       @type source_tuple :: {:url, url()} | {:html, iodata()} | {:plug, [plug_option()]}
       @type source_and_options :: %{source: source_tuple(), opts: [pdf_option()]}
@@ -364,7 +365,7 @@ defmodule ChromicPDF.Supervisor do
             }
           )
 
-      You can also pass a MFA to the `:forward` option.
+      You can also pass a `{module, func, [postargs]}` tuple to the `:forward` option.
 
       ### Print from in-memory HTML
 
