@@ -109,7 +109,7 @@ defmodule ChromicPDF.Browser.Channel do
          Docker runtime provides only 64 MB to containers by default.
 
          Pass --disable-dev-shm-usage as a Chrome flag to use /tmp for this purpose instead
-         (via the chrome_config option), or increase the amount of shared memory available to
+         (via the chrome_args option), or increase the amount of shared memory available to
          the container (see --shm-size for Docker).
       """)
     end
