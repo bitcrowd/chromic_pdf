@@ -68,7 +68,8 @@ defmodule ChromicPDF.GhostscriptWorker do
         version: Keyword.get(params, :pdfa_version, 3),
         icc_path: priv_asset("eciRGB_v2.icc")
       ],
-      permit_read: Keyword.get_values(params, :permit_read)
+      permit_read: Keyword.get_values(params, :permit_read),
+      compatibility_level: Keyword.get(params, :compatibility_level)
     ]
 
     :ok = GhostscriptRunner.pdfwrite(paths, output_path, opts)

@@ -10,8 +10,7 @@ defmodule ChromicPDF.GhostscriptRunner do
     "-dQUIET",
     "-dBATCH",
     "-dNOPAUSE",
-    "-dNOOUTERSAVE",
-    "-dCompatibilityLevel=1.4"
+    "-dNOOUTERSAVE"
   ]
 
   @pdfwrite_default_args [
@@ -59,11 +58,20 @@ defmodule ChromicPDF.GhostscriptRunner do
         source_paths
       ]
     }
+    |> maybe_add_compatibility_level(opts)
     |> maybe_add_pdfa_args(opts)
     |> add_user_permit_reads(opts)
     |> ghostscript_cmd!()
 
     :ok
+  end
+
+  defp maybe_add_compatibility_level(command, opts) do
+    if compatibility_level = Keyword.get(opts, :compatibility_level) do
+      %{command | args: ["-dCompatibilityLevel=#{compatibility_level}" | command.args]}
+    else
+      command
+    end
   end
 
   defp maybe_add_pdfa_args(command, opts) do

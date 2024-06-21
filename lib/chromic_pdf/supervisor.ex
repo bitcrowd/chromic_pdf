@@ -191,6 +191,7 @@ defmodule ChromicPDF.Supervisor do
 
       @type pdfa_option ::
               {:pdfa_version, binary()}
+              | {:compatibility_level, binary()}
               | {:pdfa_def_ext, binary()}
               | {:permit_read, binary()}
               | info_option()
