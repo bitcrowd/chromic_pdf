@@ -357,8 +357,8 @@ defmodule ChromicPDF.Template do
       header_font_size: Keyword.get(opts, :header_font_size, "10pt"),
       footer_height: Keyword.get(opts, :footer_height, "0"),
       footer_font_size: Keyword.get(opts, :footer_font_size, "10pt"),
-      header_zoom: Keyword.get(opts, :header_zoom, default_zoom()),
-      footer_zoom: Keyword.get(opts, :footer_zoom, default_zoom()),
+      header_zoom: Keyword.get_lazy(opts, :header_zoom, &default_zoom/0),
+      footer_zoom: Keyword.get_lazy(opts, :footer_zoom, &default_zoom/0),
       webkit_print_color_adjust: Keyword.get(opts, :webkit_print_color_adjust, "exact"),
       text_rendering: Keyword.get(opts, :text_rendering, "auto")
     ]
