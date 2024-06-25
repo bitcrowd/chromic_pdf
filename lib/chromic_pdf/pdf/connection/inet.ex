@@ -58,7 +58,7 @@ if Code.ensure_loaded?(WebSockex) do
       :inets.start()
 
       url = String.to_charlist("http://#{host}:#{port}/json/version")
-      headers = [{'accept', 'application/json'}]
+      headers = [{~c"accept", ~c"application/json"}]
       http_request_opts = [ssl: [verify: :verify_none]]
 
       case :httpc.request(:get, {url, headers}, http_request_opts, []) do
