@@ -36,6 +36,19 @@ defmodule ChromicPDF.PDFAGenerationTest do
       end)
     end
 
+    @tag :pdfinfo
+    test "it allows to set the PDF compatibility level" do
+      print_to_pdfa(fn file ->
+        output = system_cmd!("pdfinfo", [file])
+        assert output =~ ~r/PDF version:\s+1.7/
+      end)
+
+      print_to_pdfa([compatibility_level: "1.4"], fn file ->
+        output = system_cmd!("pdfinfo", [file])
+        assert output =~ ~r/PDF version:\s+1.4/
+      end)
+    end
+
     test "it can yield a temporary file to a callback" do
       result =
         ChromicPDF.print_to_pdfa({:url, "file://#{@test_html}"},

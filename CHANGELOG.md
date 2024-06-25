@@ -1,3 +1,9 @@
+## Unreleased
+
+### Changed
+
+- Removed the `-dCompatibilityLevel=1.4` default switch from the ghostscript processor. Ghostscript has defaulted to to 1.7 for a long time now and we have been keeping this flag since GS 9.xx which likely not many people are using anymore. If anyone needs it, a new `:compatibility_level` option can used to set it back to 1.4.
+
 ## [1.15.2] - 2024-01-04
 
 ### Changed
