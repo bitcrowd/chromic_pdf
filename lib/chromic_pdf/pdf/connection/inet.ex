@@ -56,12 +56,13 @@ if Code.ensure_loaded?(WebSockex) do
     defp websocket_debugger_url({host, port}) do
       # Ensure inets app is started. Ignore error if it was already.
       :inets.start()
+      :httpc.set_options(ipfamily: :inet6fb4)
 
       url = String.to_charlist("http://#{host}:#{port}/json/version")
       headers = [{~c"accept", ~c"application/json"}]
       http_request_opts = [ssl: [verify: :verify_none]]
 
-      case :httpc.request(:get, {url, headers}, http_request_opts, []) do
+      case :httpc.request(:get, {url, headers}, http_request_opts, [ipv6_host_with_brackets: true]) do
         {:ok, {_, _, body}} ->
           body
           |> Jason.decode!()
