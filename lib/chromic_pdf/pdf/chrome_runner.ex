@@ -147,6 +147,7 @@ defmodule ChromicPDF.ChromeRunner do
   # https://github.com/bitcrowd/chromic_pdf/issues/76
   defp args(extra, opts) do
     default_args()
+    |> remove_conflicting_args(opts)
     |> append_if("--no-sandbox", no_sandbox?(opts))
     |> append_if(to_string(opts[:chrome_args]), !!opts[:chrome_args])
     |> Kernel.++(List.wrap(extra))
@@ -158,4 +159,9 @@ defmodule ChromicPDF.ChromeRunner do
 
   defp no_sandbox?(opts), do: Keyword.get(opts, :no_sandbox, false)
   defp discard_stderr?(opts), do: Keyword.get(opts, :discard_stderr, true)
+
+  defp remove_conflicting_args(defaults, opts) do
+    conflicting_args = Keyword.get(opts, :conflicting_args, [])
+    Enum.reject(defaults, &Enum.member?(conflicting_args, &1))
+  end
 end
