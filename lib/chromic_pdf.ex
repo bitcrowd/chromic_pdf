@@ -287,13 +287,16 @@ defmodule ChromicPDF do
   E.g. in default args within chromic_pdf's code, `--disable-gpu` and then
   passing `chrome_args: "--enable-gpu"` won't work.
 
-  The `:conflicting_args` option allows targeted removing of problematic default
-  args so that they don't disrupt your chrome configuration.
+  In this case, use Keyword form of the `:chrome_args` option which
+  allows targeted removing of problematic default args so that they don't
+  disrupt your chrome configuration.
 
       defp chromic_pdf_opts do
-        [conflicting_args: ["--headless", "--disable-gpu"],
-         chrome_args: "--headless=new --angle=swiftshader"]
+        [chrome_args: [append: "--headless=new --angle=swiftshader",
+                       remove: ["--headless", "--disable-gpu"]]]
       end
+
+  _Note: `:append` expects a string whereas `:remove` expects a list._
 
   The `:chrome_executable` option allows to specify a custom Chrome/Chromium executable.
 
