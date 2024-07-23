@@ -147,9 +147,9 @@ defmodule ChromicPDF.ChromeRunner do
   # https://github.com/bitcrowd/chromic_pdf/issues/76
   defp args(extra, opts) do
     default_args()
-    |> remove_conflicting_args(opts)
+    |> remove_conflicting_args(opts[:chrome_args])
     |> append_if("--no-sandbox", no_sandbox?(opts))
-    |> append_if(to_string(opts[:chrome_args]), !!opts[:chrome_args])
+    |> append_chrome_args_if(opts[:chrome_args])
     |> Kernel.++(List.wrap(extra))
     |> append_if("2>/dev/null 3<&0 4>&1", discard_stderr?(opts))
   end
@@ -157,11 +157,27 @@ defmodule ChromicPDF.ChromeRunner do
   defp append_if(list, _value, false), do: list
   defp append_if(list, value, true), do: list ++ [value]
 
+  defp append_chrome_args_if(list, ""), do: list
+
+  defp append_chrome_args_if(list, chrome_args) when is_binary(chrome_args) do
+    append_if(list, chrome_args, true)
+  end
+
+  defp append_chrome_args_if(list, [{_, _} | _] = chrome_args) do
+    append = Keyword.get(chrome_args, :append)
+
+    append_if(list, append, !!append)
+  end
+
+  defp append_chrome_args_if(list, _), do: list
+
   defp no_sandbox?(opts), do: Keyword.get(opts, :no_sandbox, false)
   defp discard_stderr?(opts), do: Keyword.get(opts, :discard_stderr, true)
 
-  defp remove_conflicting_args(defaults, opts) do
-    conflicting_args = Keyword.get(opts, :conflicting_args, [])
-    Enum.reject(defaults, &Enum.member?(conflicting_args, &1))
+  defp remove_conflicting_args(defaults, [{_, _} | _] = chrome_args) do
+    conflicting = Keyword.get(chrome_args, :remove, [])
+    Enum.reject(defaults, &Enum.member?(conflicting, &1))
   end
+
+  defp remove_conflicting_args(defaults, _), do: defaults
 end
