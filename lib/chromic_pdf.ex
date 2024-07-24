@@ -296,8 +296,6 @@ defmodule ChromicPDF do
                        remove: ["--headless", "--disable-gpu"]]]
       end
 
-  _Note: `:append` expects a string whereas `:remove` expects a list._
-
   The `:chrome_executable` option allows to specify a custom Chrome/Chromium executable.
 
       defp chromic_pdf_opts do

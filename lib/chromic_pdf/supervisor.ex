@@ -220,13 +220,17 @@ defmodule ChromicPDF.Supervisor do
 
       @type ghostscript_pool_option :: {:size, non_neg_integer()}
 
+      @type extended_chrome_args :: [
+              {:append, binary() | [binary()]} | {:remove, binary() | [binary()]}
+            ]
+
       @typedoc """
       These options apply to local Chrome instances only.
       """
       @type local_chrome_option ::
               {:no_sandbox, boolean()}
               | {:discard_stderr, boolean()}
-              | {:chrome_args, binary() | map()}
+              | {:chrome_args, binary() | extended_chrome_args()}
               | {:chrome_executable, binary()}
 
       @typedoc """
