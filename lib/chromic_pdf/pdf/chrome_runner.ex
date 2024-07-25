@@ -57,7 +57,11 @@ defmodule ChromicPDF.ChromeRunner do
       )
   end
 
-  defp shell_command(extra_args, opts) do
+  # Public for unit tests.
+  @doc false
+  @spec shell_command(keyword()) :: binary()
+  @spec shell_command(binary() | [binary()], keyword()) :: binary()
+  def shell_command(extra_args \\ "", opts) do
     Enum.join([~s("#{executable(opts)}") | args(extra_args, opts)], " ")
   end
 
@@ -154,21 +158,23 @@ defmodule ChromicPDF.ChromeRunner do
   end
 
   defp append_if(list, _value, false), do: list
-  defp append_if(list, value, true), do: list ++ List.wrap(value)
+  defp append_if(list, value, true), do: append(list, value)
+
+  defp append(list, value), do: list ++ List.wrap(value)
 
   defp apply_chrome_args(list, nil), do: list
 
   defp apply_chrome_args(list, chrome_args) when is_binary(chrome_args) do
-    append_if(list, chrome_args, true)
+    append(list, chrome_args)
   end
 
   defp apply_chrome_args(list, extended) when is_list(extended) do
-    conflicting = List.wrap(Keyword.get(extended, :remove, []))
-    append = List.wrap(Keyword.get(extended, :append, []))
+    append = Keyword.get(extended, :append, [])
+    remove = Keyword.get(extended, :remove, []) |> List.wrap()
 
     list
-    |> Enum.reject(&Enum.member?(conflicting, &1))
-    |> append_if(append, true)
+    |> Enum.reject(&Enum.member?(remove, &1))
+    |> append(append)
   end
 
   defp no_sandbox?(opts), do: Keyword.get(opts, :no_sandbox, false)
