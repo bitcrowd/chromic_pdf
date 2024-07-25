@@ -1,3 +1,9 @@
+## Unreleased
+
+### Added
+
+- Extend `chrome_args` to allow removal of conflicting default args. Allows for use cases which were previously blocked by defaults such as rendering WebGL images. See #314 (@walter)
+
 ## [1.16.0] - 2024-06-25
 
 ### Changed

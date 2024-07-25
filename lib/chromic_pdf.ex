@@ -278,6 +278,24 @@ defmodule ChromicPDF do
         [chrome_args: "--font-render-hinting=none"]
       end
 
+  In some cases, chromic_pdf's default args may conflict with the ones you would like to add.
+
+  E.g. `--disable-gpu`
+
+  The problem is that you can't simply override them like so:
+
+  E.g. in default args within chromic_pdf's code, `--disable-gpu` and then
+  passing `chrome_args: "--enable-gpu"` won't work.
+
+  In this case, use Keyword form of the `:chrome_args` option which
+  allows targeted removing of problematic default args so that they don't
+  disrupt your chrome configuration.
+
+      defp chromic_pdf_opts do
+        [chrome_args: [append: "--headless=new --angle=swiftshader",
+                       remove: ["--headless", "--disable-gpu"]]]
+      end
+
   The `:chrome_executable` option allows to specify a custom Chrome/Chromium executable.
 
       defp chromic_pdf_opts do
