@@ -2,33 +2,11 @@
 
 defmodule ChromicPDF.ScreenshotTest do
   use ChromicPDF.Case, async: false
+  import ChromicPDF.TestAPI
   import ChromicPDF.Utils
   import ChromicPDF.ChromeRunner, only: [version: 0]
 
-  @test_html Path.expand("../fixtures/test.html", __ENV__.file)
   @large_html Path.expand("../fixtures/large.html", __ENV__.file)
-
-  defp capture_screenshot(opts \\ []) do
-    {source, opts} = Keyword.pop(opts, :source)
-
-    ChromicPDF.capture_screenshot(source || {:url, "file://#{@test_html}"}, opts)
-  end
-
-  defp capture_screenshot_and_identify(opts) do
-    with_tmp_dir(fn tmp_dir ->
-      img = "#{tmp_dir}/test"
-      :ok = capture_screenshot([{:output, img} | opts])
-
-      {stdout, 0} = System.cmd("identify", [img])
-
-      [_, format, dimensions | _] = String.split(stdout, " ")
-
-      %{"width" => width, "height" => height} =
-        Regex.named_captures(~r/^(?<width>\d+)x(?<height>\d+)$/, dimensions)
-
-      {format, String.to_integer(width), String.to_integer(height)}
-    end)
-  end
 
   describe "Taking screenshots" do
     setup do

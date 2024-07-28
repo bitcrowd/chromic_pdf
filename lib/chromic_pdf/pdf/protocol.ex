@@ -19,8 +19,8 @@ defmodule ChromicPDF.Protocol do
   @type step :: call_step() | await_step() | output_step()
 
   # A protocol knows three types of steps: calls, awaits, and output.
-  # * The call step is a protocol call to send to the browser. Multiple call steps in sequence
-  #   are executed sequentially until the next await step is found.
+  # * The call step transforms the state and produces a protocol call to send to the browser.
+  #   Multiple call steps in sequence are executed sequentially until the next await step is found.
   # * Await steps are steps that try to match on messages received from the browser. When a
   #   message is matched, the await step can be removed from the queue (depending on the second
   #   element of the return tuple, `:keep | :remove`). Multiple await steps in sequence are

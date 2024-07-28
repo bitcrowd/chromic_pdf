@@ -93,6 +93,8 @@ defmodule ChromicPDF.Browser.Channel do
     :ok
   end
 
+  def terminate(_exception, _state), do: :ok
+
   defp warn_on_inspector_crash(msg) do
     if match?(%{"method" => "Inspector.targetCrashed"}, msg) do
       Logger.error("""
