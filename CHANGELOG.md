@@ -1,3 +1,9 @@
+## Unreleased
+
+### Fixed
+
+- Small fix `:chrome_version` config switch allowing to pass `Chrome x.y.z.zz` instead of just `x.y.z.zz`
+
 ## [1.16.1] - 2024-07-25
 
 ### Added

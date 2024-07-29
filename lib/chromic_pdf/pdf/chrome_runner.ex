@@ -28,13 +28,13 @@ defmodule ChromicPDF.ChromeRunner do
 
   @spec version() :: binary()
   def version do
-    with_app_config_cache(:chrome_version, &do_version/0)
+    :chrome_version
+    |> with_app_config_cache(&get_version_from_chrome/0)
+    |> extract_version()
   end
 
-  defp do_version do
-    output = system_cmd!(executable(), ["--version"], stderr_to_stdout: true)
-    [version] = Regex.run(~r/\d+\.\d+\.\d+\.\d+/, output)
-    version
+  defp get_version_from_chrome do
+    system_cmd!(executable(), ["--version"], stderr_to_stdout: true)
   rescue
     e ->
       reraise(
@@ -55,6 +55,11 @@ defmodule ChromicPDF.ChromeRunner do
         """,
         __STACKTRACE__
       )
+  end
+
+  defp extract_version(value) do
+    [version] = Regex.run(~r/\d+\.\d+\.\d+\.\d+/, value)
+    version
   end
 
   # Public for unit tests.
