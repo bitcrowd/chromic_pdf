@@ -1,17 +1,30 @@
 # SPDX-License-Identifier: Apache-2.0
 
-defmodule ChromicPDF.PDFOptions do
+defmodule ChromicPDF.ProtocolOptions do
   @moduledoc false
 
   require EEx
   import ChromicPDF.Utils, only: [rendered_to_binary: 1]
 
-  def prepare_input_options(source, opts) do
+  def prepare_print_to_pdf_options(opts, source) do
+    opts
+    |> prepare_navigate_options(source)
+    |> stringify_map_keys(:print_to_pdf)
+    |> sanitize_binary_option([:print_to_pdf, "headerTemplate"])
+    |> sanitize_binary_option([:print_to_pdf, "footerTemplate"])
+  end
+
+  def prepare_capture_screenshot_options(opts, source) do
+    opts
+    |> prepare_navigate_options(source)
+    |> stringify_map_keys(:capture_screenshot)
+  end
+
+  defp prepare_navigate_options(opts, source) do
     opts
     |> put_source(source)
     |> replace_wait_for_with_evaluate()
-    |> stringify_map_keys()
-    |> sanitize_binaries()
+    |> sanitize_binary_option(:html)
   end
 
   defp put_source(opts, {:file, source}), do: put_source(opts, {:url, source})
@@ -91,30 +104,18 @@ defmodule ChromicPDF.PDFOptions do
     end)
   end
 
-  @map_options [:print_to_pdf, :capture_screenshot]
-
-  defp stringify_map_keys(opts) do
-    Enum.reduce(@map_options, opts, fn key, acc ->
-      Keyword.update(acc, key, %{}, &do_stringify_map_keys/1)
-    end)
+  def stringify_map_keys(opts, key) do
+    Keyword.update(opts, key, %{}, &do_stringify_map_keys/1)
   end
 
   defp do_stringify_map_keys(map) do
     Enum.into(map, %{}, fn {k, v} -> {to_string(k), v} end)
   end
 
-  @binary_options [
-    [:html],
-    [:print_to_pdf, "headerTemplate"],
-    [:print_to_pdf, "footerTemplate"]
-  ]
-
-  defp sanitize_binaries(opts) do
-    Enum.reduce(@binary_options, opts, fn path, acc ->
-      update_in(acc, path, fn
-        nil -> ""
-        other -> rendered_to_binary(other)
-      end)
+  defp sanitize_binary_option(opts, path) do
+    update_in(opts, List.wrap(path), fn
+      nil -> ""
+      other -> rendered_to_binary(other)
     end)
   end
 end

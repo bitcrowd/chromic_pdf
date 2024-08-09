@@ -10,15 +10,15 @@ defmodule ChromicPDF.API do
     CaptureScreenshot,
     ExportOptions,
     GhostscriptPool,
-    PDFOptions,
-    PrintToPDF
+    PrintToPDF,
+    ProtocolOptions
   }
 
   @spec print_to_pdf(
           ChromicPDF.Supervisor.services(),
           ChromicPDF.source() | [ChromicPDF.source()],
-          [ChromicPDF.pdf_option() | ChromicPDF.export_option()]
-        ) :: ChromicPDF.export_return()
+          [ChromicPDF.pdf_option() | ChromicPDF.shared_option()]
+        ) :: ChromicPDF.result()
   def print_to_pdf(services, sources, opts) when is_list(sources) and is_list(opts) do
     with_tmp_dir(fn tmp_dir ->
       paths =
@@ -43,41 +43,51 @@ defmodule ChromicPDF.API do
   end
 
   def print_to_pdf(services, source, opts) when is_tuple(source) and is_list(opts) do
-    chrome_export(services, :print_to_pdf, source, opts)
+    {protocol, opts} =
+      opts
+      |> ProtocolOptions.prepare_print_to_pdf_options(source)
+      |> Keyword.pop(:protocol, PrintToPDF)
+
+    chrome_export(services, :print_to_pdf, protocol, opts)
   end
 
   @spec capture_screenshot(ChromicPDF.Supervisor.services(), ChromicPDF.source(), [
-          ChromicPDF.capture_screenshot_option() | ChromicPDF.export_option()
+          ChromicPDF.capture_screenshot_option() | ChromicPDF.shared_option()
         ]) ::
-          ChromicPDF.export_return()
+          ChromicPDF.result()
   def capture_screenshot(services, %{source: source, opts: opts}, overrides)
       when is_tuple(source) and is_list(opts) and is_list(overrides) do
     capture_screenshot(services, source, Keyword.merge(opts, overrides))
   end
 
   def capture_screenshot(services, source, opts) when is_tuple(source) and is_list(opts) do
-    chrome_export(services, :capture_screenshot, source, opts)
+    {protocol, opts} =
+      opts
+      |> ProtocolOptions.prepare_capture_screenshot_options(source)
+      |> Keyword.pop(:protocol, CaptureScreenshot)
+
+    chrome_export(services, :capture_screenshot, protocol, opts)
   end
 
-  @export_protocols %{
-    capture_screenshot: CaptureScreenshot,
-    print_to_pdf: PrintToPDF
-  }
+  @spec run_protocol(ChromicPDF.Supervisor.services(), module(), [
+          ChromicPDF.shared_option() | ChromicPDF.protocol_option()
+        ]) :: ChromicPDF.result()
+  def run_protocol(services, protocol, opts) when is_atom(protocol) and is_list(opts) do
+    chrome_export(services, :run_protocol, protocol, opts)
+  end
 
-  defp chrome_export(services, protocol, source, opts) do
-    opts = PDFOptions.prepare_input_options(source, opts)
-
-    with_telemetry(protocol, opts, fn ->
+  defp chrome_export(services, operation, protocol, opts) do
+    with_telemetry(operation, opts, fn ->
       services.browser
-      |> Browser.new_protocol(Map.fetch!(@export_protocols, protocol), opts)
+      |> Browser.new_protocol(protocol, opts)
       |> ExportOptions.feed_chrome_data_into_output(opts)
     end)
   end
 
   @spec convert_to_pdfa(ChromicPDF.Supervisor.services(), ChromicPDF.path(), [
-          ChromicPDF.pdfa_option() | ChromicPDF.export_option()
+          ChromicPDF.pdfa_option() | ChromicPDF.shared_option()
         ]) ::
-          ChromicPDF.export_return()
+          ChromicPDF.result()
   def convert_to_pdfa(services, pdf_path, opts) when is_binary(pdf_path) and is_list(opts) do
     with_tmp_dir(fn tmp_dir ->
       do_convert_to_pdfa(services, pdf_path, opts, tmp_dir)
@@ -88,10 +98,10 @@ defmodule ChromicPDF.API do
           ChromicPDF.Supervisor.services(),
           ChromicPDF.source() | [ChromicPDF.source()],
           [
-            ChromicPDF.pdf_option() | ChromicPDF.pdfa_option() | ChromicPDF.export_option()
+            ChromicPDF.pdf_option() | ChromicPDF.pdfa_option() | ChromicPDF.shared_option()
           ]
         ) ::
-          ChromicPDF.export_return()
+          ChromicPDF.result()
   def print_to_pdfa(services, source, opts) when is_list(opts) do
     with_tmp_dir(fn tmp_dir ->
       pdf_path = Path.join(tmp_dir, random_file_name(".pdf"))

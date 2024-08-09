@@ -4,7 +4,7 @@ defmodule ChromicPDF.TestAPI do
   @moduledoc false
 
   import ExUnit.Assertions
-  import ChromicPDF.Utils, only: [system_cmd!: 2]
+  import ChromicPDF.Utils, only: [system_cmd!: 2, with_tmp_dir: 1]
 
   @test_html Path.expand("../../fixtures/test.html", __ENV__.file)
   @test_dynamic_html Path.expand("../../fixtures/test_dynamic.html", __ENV__.file)
@@ -87,5 +87,27 @@ defmodule ChromicPDF.TestAPI do
     fun.(@output)
   after
     File.rm_rf!(@output)
+  end
+
+  def capture_screenshot(opts \\ []) do
+    {source, opts} = Keyword.pop(opts, :source)
+
+    ChromicPDF.capture_screenshot(source || {:url, "file://#{@test_html}"}, opts)
+  end
+
+  def capture_screenshot_and_identify(opts) do
+    with_tmp_dir(fn tmp_dir ->
+      img = "#{tmp_dir}/test"
+      :ok = capture_screenshot([{:output, img} | opts])
+
+      {stdout, 0} = System.cmd("identify", [img])
+
+      [_, format, dimensions | _] = String.split(stdout, " ")
+
+      %{"width" => width, "height" => height} =
+        Regex.named_captures(~r/^(?<width>\d+)x(?<height>\d+)$/, dimensions)
+
+      {format, String.to_integer(width), String.to_integer(height)}
+    end)
   end
 end

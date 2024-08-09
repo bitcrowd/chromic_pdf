@@ -1,8 +1,16 @@
 ## Unreleased
 
+### Changed
+
+- Some of the types have been renamed, e.g. `ChromicPDF.export_option` to `shared_option`.
+
 ### Fixed
 
 - Small fix `:chrome_version` config switch allowing to pass `Chrome x.y.z.zz` instead of just `x.y.z.zz`
+
+### Added
+
+- Support custom protocols through `:protocol` option on `print_to_pdf/2` and `capture_screenshot`, as well as new `ChromicPDF.run_protocol/2` function. These features are considered internal API.
 
 ## [1.16.1] - 2024-07-25
 
