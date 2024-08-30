@@ -42,6 +42,7 @@ defmodule ChromicPDF.ProtocolTest do
         session_pool: 1,
         no_sandbox: true,
         discard_stderr: true,
+        new_headless_mode: true,
         chrome_args: "some-args",
         chrome_executable: "chromium",
         ignore_certificate_errors: true,
@@ -67,6 +68,7 @@ defmodule ChromicPDF.ProtocolTest do
       assert inspected =~ ~s(:init_timeout => 1)
       assert inspected =~ ~s(:max_session_uses => 1)
       assert inspected =~ ~s(:no_sandbox => true)
+      assert inspected =~ ~s(:new_headless_mode => true)
       assert inspected =~ ~s(:offline => true)
       assert inspected =~ ~s(:on_demand => true)
       assert inspected =~ ~s(:output => "[FILTERED]")

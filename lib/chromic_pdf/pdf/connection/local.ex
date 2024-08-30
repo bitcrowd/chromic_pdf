@@ -17,7 +17,7 @@ defmodule ChromicPDF.Connection.Local do
   def handle_init(opts) do
     port =
       opts
-      |> Keyword.take([:chrome_args, :discard_stderr, :no_sandbox, :chrome_executable])
+      |> Keyword.take([:chrome_args, :discard_stderr, :no_sandbox, :new_headless_mode, :chrome_executable])
       |> ChromeRunner.port_open()
 
     Port.monitor(port)

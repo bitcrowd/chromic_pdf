@@ -79,6 +79,16 @@ defmodule ChromicPDF do
   Note that this doesn't prevent other features like the `evaluate` option from working, it
   solely applies to scripts being supplied by the rendered page itself.
 
+  ### New vs Old Headless Mode
+
+  Chromic introduced a [new headless mode](https://developer.chrome.com/docs/chromium/new-headless) from version 112 onwards, but starts in the old mode by default.
+
+  You can enable the new headless mode with the option:
+
+      def chromid_pdf_opts do
+        [new_headless_mode: true]
+      end
+
   ### Running in offline mode
 
   To prevent your templates from accessing any remote hosts, the browser targets can be spawned

@@ -160,6 +160,7 @@ defmodule ChromicPDF.Protocol do
         :session_pool => true,
         :no_sandbox => true,
         :discard_stderr => true,
+        :new_headless_mode => false,
         :chrome_args => true,
         :chrome_executable => true,
         :ignore_certificate_errors => true,

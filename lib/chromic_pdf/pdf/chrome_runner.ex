@@ -116,7 +116,6 @@ defmodule ChromicPDF.ChromeRunner do
   # option (i.e. via pipes) instead of via a socket.
 
   @default_args [
-    "--headless",
     "--disable-accelerated-2d-canvas",
     "--disable-gpu",
     "--allow-pre-commit-input",
@@ -157,6 +156,7 @@ defmodule ChromicPDF.ChromeRunner do
   defp args(extra, opts) do
     default_args()
     |> append_if("--no-sandbox", no_sandbox?(opts))
+    |> append_if_else("--headless", "--headless=new", new_headless_mode?(opts))
     |> apply_chrome_args(opts[:chrome_args])
     |> Kernel.++(List.wrap(extra))
     |> append_if("2>/dev/null 3<&0 4>&1", discard_stderr?(opts))
@@ -164,6 +164,9 @@ defmodule ChromicPDF.ChromeRunner do
 
   defp append_if(list, _value, false), do: list
   defp append_if(list, value, true), do: append(list, value)
+
+  defp append_if_else(list, if_value, _else_value, true), do: append(list, if_value)
+  defp append_if_else(list, _if_value, else_value, false), do: append(list, else_value)
 
   defp append(list, value), do: list ++ List.wrap(value)
 
@@ -183,5 +186,6 @@ defmodule ChromicPDF.ChromeRunner do
   end
 
   defp no_sandbox?(opts), do: Keyword.get(opts, :no_sandbox, false)
+  defp new_headless_mode?(opts), do: Keyword.get(opts, :new_headless_mode, false)
   defp discard_stderr?(opts), do: Keyword.get(opts, :discard_stderr, true)
 end

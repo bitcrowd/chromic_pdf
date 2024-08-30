@@ -232,6 +232,7 @@ defmodule ChromicPDF.Supervisor do
       @type local_chrome_option ::
               {:no_sandbox, boolean()}
               | {:discard_stderr, boolean()}
+              | {:new_headless_mode, boolean()}
               | {:chrome_args, binary() | extended_chrome_args()}
               | {:chrome_executable, binary()}
 
