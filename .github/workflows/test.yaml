@@ -5,7 +5,7 @@ jobs:
     name: ${{ matrix.tag }}
     strategy:
       matrix:
-        tag: ['elixir-1-11', 'debian-buster', 'alpine-3-17-3', 'alpine-3-18-4']
+        tag: ['elixir-1-11', 'debian-buster', 'alpine-3-17-3', 'alpine-3-18-4', 'alpine-3-20-2']
     env:
       MIX_ENV: test
     runs-on: ubuntu-latest
