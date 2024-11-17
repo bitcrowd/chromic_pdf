@@ -233,13 +233,7 @@ defmodule ChromicPDF.ProtocolMacros do
          true <- state["sessionId"] == msg["sessionId"] do
       exception = get_in!(msg, ["params", "exceptionDetails"])
       prefix = get_in(exception, ["text"])
-
-      suffix =
-        get_in(exception, ["exception", "description"])
-        |> case do
-          nil -> "undefined"
-          description -> description
-        end
+      suffix = get_in(exception, ["exception", "description"]) || "undefined"
 
       description = "#{prefix} #{suffix}"
 
