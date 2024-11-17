@@ -232,7 +232,10 @@ defmodule ChromicPDF.ProtocolMacros do
     with true <- JsonRPC.notification?(msg, "Runtime.exceptionThrown"),
          true <- state["sessionId"] == msg["sessionId"] do
       exception = get_in!(msg, ["params", "exceptionDetails"])
-      description = get_in!(exception, ["exception", "description"])
+      prefix = get_in(exception, ["text"])
+      suffix = get_in(exception, ["exception", "description"]) || "undefined"
+
+      description = "#{prefix} #{suffix}"
 
       case Map.get(state, :unhandled_runtime_exceptions, :log) do
         :ignore ->
