@@ -406,7 +406,7 @@ defmodule ChromicPDF.PDFGenerationTest do
     test "timezone can be set", %{port: port} do
       input = {:url, "http://localhost:#{port}/timezone_echo"}
 
-      print_to_pdf(input, [set_timezone: %{timezoneId: "America/New_York"}], fn text ->
+      print_to_pdf(input, [timezone: "America/New_York"], fn text ->
         text = text |> String.trim() |> Jason.decode!()
         assert text == %{"timezoneId" => "America/New_York"}
       end)
