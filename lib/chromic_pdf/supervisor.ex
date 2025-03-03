@@ -179,14 +179,12 @@ defmodule ChromicPDF.Supervisor do
                  required(:attribute) => binary()
                }}
 
-      @type set_timezone_option :: {:set_timezone, %{required(:timezoneId) => String.t()}}
-
       @type navigate_option ::
               {:set_cookie, map()}
               | {:assigns, map()}
               | evaluate_option()
               | wait_for_option()
-              | set_timezone_option()
+              | {:set_timezone, String.t()}
 
       @type pdf_option ::
               {:print_to_pdf, map()}
