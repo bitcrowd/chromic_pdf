@@ -12,8 +12,13 @@ defmodule ChromicPDF.Navigate do
       await_response(:cookie_set, [])
     end
 
-    if_option :set_timezone do
-      call(:set_timezone, "Emulation.setTimezoneOverride", &Map.fetch!(&1, :set_timezone), %{})
+    if_option :timezone do
+      call(
+        :timezone,
+        "Emulation.setTimezoneOverride",
+        &%{"timezoneId" => Map.fetch!(&1, :timezone)},
+        %{}
+      )
 
       await_response(:timezone_set, [])
     end
