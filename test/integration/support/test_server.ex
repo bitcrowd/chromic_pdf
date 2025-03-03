@@ -33,6 +33,21 @@ defmodule ChromicPDF.TestServer do
     send_resp(conn, 200, inspect(conn.req_cookies))
   end
 
+  get "/timezone_echo" do
+    body = """
+    <html>
+      <body>
+        <span id="timezone"></span>
+        <script>
+          document.getElementById("timezone").innerText = JSON.stringify({ timezoneId: Intl.DateTimeFormat().resolvedOptions().timeZone });
+        </script>
+      </body>
+    </html>
+    """
+
+    send_resp(conn, 200, body)
+  end
+
   get "/with_plug" do
     ChromicPDF.Plug.call(conn, [])
   end
