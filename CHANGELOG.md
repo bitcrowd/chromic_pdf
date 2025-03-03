@@ -1,3 +1,9 @@
+## Unreleased
+
+### Added
+
+- :timezone to navigation protocol
+
 ## [1.17.0] - 2024-08-09
 
 ### Changed
