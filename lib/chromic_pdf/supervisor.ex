@@ -184,6 +184,7 @@ defmodule ChromicPDF.Supervisor do
               | {:assigns, map()}
               | evaluate_option()
               | wait_for_option()
+              | {:timezone, String.t()}
 
       @type pdf_option ::
               {:print_to_pdf, map()}

@@ -394,6 +394,25 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
   end
 
+  describe "timezone can be set thru print_to_pdf/2" do
+    setup do
+      start_supervised!(ChromicPDF)
+      start_supervised!(TestServer.bandit(:http))
+
+      %{port: TestServer.port(:http)}
+    end
+
+    @tag :disable_logger
+    test "timezone can be set", %{port: port} do
+      input = {:url, "http://localhost:#{port}/timezone_echo"}
+
+      print_to_pdf(input, [timezone: "America/New_York"], fn text ->
+        text = text |> String.trim() |> Jason.decode!()
+        assert text == %{"timezoneId" => "America/New_York"}
+      end)
+    end
+  end
+
   describe "certificate error handling" do
     setup do
       start_supervised!(ChromicPDF)
