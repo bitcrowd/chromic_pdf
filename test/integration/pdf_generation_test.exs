@@ -396,7 +396,7 @@ defmodule ChromicPDF.PDFGenerationTest do
 
   describe "timezone can be set thru print_to_pdf/2" do
     setup do
-      start_supervised!({ChromicPDF, offline: false})
+      start_supervised!(ChromicPDF)
       start_supervised!(TestServer.bandit(:http))
 
       %{port: TestServer.port(:http)}
