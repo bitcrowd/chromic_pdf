@@ -2,7 +2,7 @@
 
 ### Added
 
-- :timezone to navigation protocol
+- `print_to_pdf` now supports a `:timezone` option to set the timezone before navigating with `Emulation.setTimezoneOverride`
 
 ## [1.17.0] - 2024-08-09
 
