@@ -80,7 +80,7 @@ defmodule ChromicPdf.MixProject do
       {:websockex, ">= 0.4.3", optional: true},
       {:dialyxir, "~> 1.2", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:ex_doc, ">= 0.0.0", only: [:test, :dev], runtime: false},
+      {:ex_doc, "~> 0.38.2", only: [:test, :dev], runtime: false},
       {:junit_formatter, "~> 3.1", only: [:test]},
       {:bandit, "~> 0.5.11", only: [:test]}
     ]
