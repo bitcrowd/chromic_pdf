@@ -72,7 +72,7 @@ defmodule ChromicPdf.MixProject do
   defp deps do
     [
       {:jason, "~> 1.1"},
-      {:nimble_pool, "~> 0.2 or ~> 1.0"},
+      {:nimble_pool, "~> 0.2 or ~> 1.0 or ~> 1.1"},
       {:plug, "~> 1.11", optional: true},
       {:plug_crypto, "~> 1.2 or ~> 2.0", optional: true},
       {:phoenix_html, "~> 2.14 or ~> 3.3 or ~> 4.0", optional: true},
