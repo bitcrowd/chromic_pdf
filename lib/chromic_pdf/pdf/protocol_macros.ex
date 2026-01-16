@@ -188,11 +188,11 @@ defmodule ChromicPDF.ProtocolMacros do
 
         if JsonRPC.response?(msg, last_call_id) do
           cond do
-            function_exported?(__MODULE__, unquote(cb_name), 2) ->
-              apply(__MODULE__, unquote(cb_name), [state, msg])
-
             JsonRPC.is_error?(msg) ->
               {:error, JsonRPC.extract_error(msg)}
+
+            function_exported?(__MODULE__, unquote(cb_name), 2) ->
+              apply(__MODULE__, unquote(cb_name), [state, msg])
 
             true ->
               :ok
