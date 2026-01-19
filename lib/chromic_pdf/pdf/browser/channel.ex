@@ -28,11 +28,11 @@ defmodule ChromicPDF.Browser.Channel do
       not able to complete the current operation (= PDF print job) within the configured
       #{timeout} milliseconds.
 
+      Out of the many reasons for why this may happen, most commonly the browser failed to emit
+      the `frame_stopped_loading` event on time. Please see the process state printed below.
+
       If you are printing large PDFs and expect long processing times, please consult the
       documentation for the `timeout` option of the session pool.
-
-      If you are *not* printing large PDFs but your print jobs still time out, this is likely a
-      bug in ChromicPDF. Please open an issue on the issue tracker.
 
       ---
 
