@@ -35,6 +35,13 @@ defmodule ChromicPDF.PDFGenerationTest do
     end
 
     @tag :pdftotext
+    test "raises an error for invalid paths, e.g. relative" do
+      assert_raise ChromicPDF.ChromeError, ~r/Cannot navigate to invalid URL/, fn ->
+        ChromicPDF.print_to_pdf({:url, "/doesnotwork"})
+      end
+    end
+
+    @tag :pdftotext
     test "it waits for external resources when printing HTML content" do
       html = ~s(<img src="file://#{test_image_path()}" />)
 
