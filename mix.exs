@@ -10,7 +10,7 @@ defmodule ChromicPdf.MixProject do
     [
       app: :chromic_pdf,
       version: @version,
-      elixir: "~> 1.11",
+      elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       dialyzer: [
         plt_add_apps: [:ex_unit, :mix, :websockex, :inets, :phoenix_html, :plug, :plug_crypto],
