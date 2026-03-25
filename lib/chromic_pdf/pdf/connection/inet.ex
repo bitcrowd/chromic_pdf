@@ -58,7 +58,9 @@ if Code.ensure_loaded?(WebSockex) do
       :inets.start()
 
       url = String.to_charlist("http://#{host}:#{port}/json/version")
-      headers = [{~c"accept", ~c"application/json"}]
+      # Chrome requires the "host" header to be set to either an ip address or localhost,
+      # otherwise it will not accept the connection
+      headers = [{~c"accept", ~c"application/json"}, {~c"host", ~c"localhost"}]
       http_request_opts = [ssl: [verify: :verify_none]]
 
       case :httpc.request(:get, {url, headers}, http_request_opts, []) do
@@ -66,6 +68,10 @@ if Code.ensure_loaded?(WebSockex) do
           body
           |> Jason.decode!()
           |> Map.fetch!("webSocketDebuggerUrl")
+          # replace the "localhost" we've provided using the "host" header with
+          # the actual address of the chrome instance
+          |> String.replace("localhost", "#{host}:#{port}")
+
 
         {:error, {:failed_connect, _}} ->
           raise ConnectionLostError, "failed to connect to #{url}"
