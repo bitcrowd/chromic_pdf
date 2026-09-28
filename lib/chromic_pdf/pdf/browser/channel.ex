@@ -46,6 +46,8 @@ defmodule ChromicPDF.Browser.Channel do
 
   @impl GenServer
   def init(config) do
+    Process.flag(:trap_exit, true)
+
     {:ok, conn_pid} = Connection.start_link(config)
 
     {:ok,
@@ -82,10 +84,14 @@ defmodule ChromicPDF.Browser.Channel do
     {:noreply, handle_chrome_message(msg, state)}
   end
 
-  @impl GenServer
-  def terminate(:normal, _state), do: :ok
+  # Connection died, cascade.
+  def handle_info({:EXIT, conn_pid, reason}, %{conn_pid: conn_pid} = state) do
+    {:stop, reason, %{state | conn_pid: nil}}
+  end
 
-  def terminate(:shutdown, %{conn_pid: conn_pid, next_call_id: next_call_id}) do
+  @impl GenServer
+  def terminate(:shutdown, %{conn_pid: conn_pid, next_call_id: next_call_id})
+      when is_pid(conn_pid) do
     # Graceful shutdown: Dispatch the Browser.close call to Chrome which will cause it to detach
     # all debugging sessions and close the port.
     Connection.send_msg(conn_pid, JsonRPC.encode({"Browser.close", %{}}, next_call_id))
@@ -93,7 +99,9 @@ defmodule ChromicPDF.Browser.Channel do
     :ok
   end
 
-  def terminate(_exception, _state), do: :ok
+  def terminate(_reason, _state) do
+    :ok
+  end
 
   defp warn_on_inspector_crash(msg) do
     if match?(%{"method" => "Inspector.targetCrashed"}, msg) do

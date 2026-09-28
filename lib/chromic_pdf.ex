@@ -222,6 +222,10 @@ defmodule ChromicPDF do
   * and when you run your tests. No, after an ExUnit run your application's supervisor is
     not terminated cleanly.
 
+  On a graceful shutdown, ChromicPDF also closes the targets (tabs) and browser contexts of all
+  idle sessions in the session pool. Sessions that are busy with an operation at that time are
+  not cleaned up. To avoid this, you must drain your render job before terminating ChromicPDF.
+
   There are a few ways to mitigate this issue.
 
   ### "On Demand" mode
