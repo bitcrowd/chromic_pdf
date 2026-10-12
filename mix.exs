@@ -4,7 +4,7 @@ defmodule ChromicPdf.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/bitcrowd/chromic_pdf"
-  @version "1.17.1"
+  @version "1.17.2"
 
   def project do
     [

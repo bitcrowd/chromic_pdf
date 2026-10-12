@@ -1,3 +1,10 @@
+## [1.17.2] - 2026-10-12
+
+### Fixed
+
+- Explicitly dispose private browser context in `CloseTarget` instead of relying on `disposeOnDetach` as
+  the latter leaves orphaned Chrome process behind. Fixes #349.
+
 ## [1.17.1] - 2026-01-19
 
 ### Added
