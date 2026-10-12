@@ -53,20 +53,39 @@ defmodule ChromicPDF.Browser do
          {id,
           pool_size: Keyword.fetch!(pool_config, :size),
           max_uses: Keyword.fetch!(pool_config, :max_uses),
+          close_timeout: Keyword.fetch!(pool_config, :close_timeout),
           init_worker: fn ->
             protocol = SpawnSession.new(pool_config)
             timeout = Keyword.fetch!(pool_config, :init_timeout)
 
-            {:ok, %{"sessionId" => sid, "targetId" => tid}} =
+            {:ok, %{"sessionId" => sid, "targetId" => tid, "browserContextId" => bcid}} =
               run_protocol(browser, protocol, timeout)
 
-            %{session_id: sid, target_id: tid}
-          end,
-          terminate_worker: fn %{target_id: target_id} ->
-            protocol = CloseTarget.new(targetId: target_id)
-            timeout = Keyword.fetch!(pool_config, :close_timeout)
+            # We need to find the channel pid and stash it as we can't access our children
+            # anymore when in shutdown.
+            channel = find_channel(browser)
 
-            {:ok, _} = run_protocol(browser, protocol, timeout)
+            %{channel: channel, session_id: sid, target_id: tid, browser_context_id: bcid}
+          end,
+          terminate_worker: fn %{
+                                 channel: channel,
+                                 session_id: session_id,
+                                 target_id: target_id,
+                                 browser_context_id: bcid
+                               } ->
+            # When the channel has died (e.g. Chrome crashed), there is no target left to close.
+            if Process.alive?(channel) do
+              protocol =
+                CloseTarget.new(
+                  sessionId: session_id,
+                  targetId: target_id,
+                  browserContextId: bcid
+                )
+
+              timeout = Keyword.fetch!(pool_config, :close_timeout)
+
+              {:ok, _} = Channel.run_protocol(channel, protocol, timeout)
+            end
           end}}
       end
 

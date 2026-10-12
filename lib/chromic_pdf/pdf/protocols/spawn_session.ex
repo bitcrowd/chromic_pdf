@@ -8,7 +8,7 @@ defmodule ChromicPDF.SpawnSession do
   @version Mix.Project.config()[:version]
 
   steps do
-    call(:create_browser_context, "Target.createBrowserContext", [], %{"disposeOnDetach" => true})
+    call(:create_browser_context, "Target.createBrowserContext", [], %{})
     await_response(:browser_context_created, ["browserContextId"])
 
     call(:create_target, "Target.createTarget", ["browserContextId"], %{"url" => "about:blank"})
@@ -73,6 +73,6 @@ defmodule ChromicPDF.SpawnSession do
 
     include_protocol(ChromicPDF.ResetTarget)
 
-    output(["targetId", "sessionId"])
+    output(["targetId", "sessionId", "browserContextId"])
   end
 end

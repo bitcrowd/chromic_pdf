@@ -6,8 +6,12 @@ defmodule ChromicPDF.CloseTarget do
   import ChromicPDF.ProtocolMacros
 
   steps do
-    call(:close_target, "Target.closeTarget", [:targetId], %{})
-    await_response(:target_closed, ["success"])
-    output("success")
+    call(:detach_from_target, "Target.detachFromTarget", [:sessionId, :targetId], %{})
+    await_response(:detached_from_target, [])
+
+    call(:dispose_browser_context, "Target.disposeBrowserContext", [:browserContextId], %{})
+    await_response(:browser_context_disposed, [])
+
+    output([])
   end
 end

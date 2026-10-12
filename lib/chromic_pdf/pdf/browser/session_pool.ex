@@ -28,8 +28,18 @@ defmodule ChromicPDF.Browser.SessionPool do
   def child_spec({id, opts}) do
     %{
       id: {__MODULE__, id},
-      start: {__MODULE__, :start_link, [opts]}
+      start: {__MODULE__, :start_link, [opts]},
+      shutdown: shutdown_timeout(opts)
     }
+  end
+
+  # On shutdown, idle workers close their targets one after another, each within :close_timeout.
+  # Give the pool enough time to do so before the supervisor kills it.
+  defp shutdown_timeout(opts) do
+    case Keyword.fetch!(opts, :close_timeout) do
+      :infinity -> :infinity
+      close_timeout -> Keyword.fetch!(opts, :pool_size) * close_timeout + 1000
+    end
   end
 
   @spec start_link(Keyword.t()) :: GenServer.on_start()
@@ -144,9 +154,9 @@ defmodule ChromicPDF.Browser.SessionPool do
     {:ok, pool_state}
   end
 
-  # We do not put in the effort to clean up individual targets shortly before we terminate the
-  # external process.
-  def terminate_worker(:shutdown, _worker_state, pool_state) do
+  def terminate_worker(:shutdown, worker_state, pool_state) do
+    pool_state.terminate_worker.(worker_state.session)
+
     {:ok, pool_state}
   end
 
