@@ -5,7 +5,7 @@ defmodule ChromicPDF.InetConnectionTest do
   use ChromicPDF.Case, async: false
   import ChromicPDF.TestAPI
   import ChromicPDF.Utils, only: [find_supervisor_child: 2]
-  alias ChromicPDF.{TestDockerChrome, TestInetChrome}
+  alias ChromicPDF.{TestDockerChrome, TestInetChrome, TestServer}
 
   @chrome_spawn_wait_time 600
   @docker_spawn_wait_time 1000
@@ -46,9 +46,11 @@ defmodule ChromicPDF.InetConnectionTest do
         assert String.contains?(text, "Hello ChromicPDF!")
       end)
 
-      # https:// URLs
-      print_to_pdf({:url, "https://example.net"}, fn text ->
-        assert String.contains?(text, "Example Domain")
+      # http:// & https:// URLs
+      start_supervised!(TestServer.bandit(:http))
+
+      print_to_pdf({:url, "http://localhost:#{TestServer.port(:http)}/hello"}, fn text ->
+        assert String.contains?(text, "Hello from TestServer")
       end)
 
       # HTML content
