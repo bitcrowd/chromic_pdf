@@ -50,9 +50,12 @@ defmodule ChromicPDF.PDFGenerationTest do
       end)
     end
 
-    test "it prints PDFs from https:// URLs by default" do
-      print_to_pdf({:url, "https://example.net"}, fn text ->
-        assert String.contains?(text, "Example Domain")
+    @tag :pdftotext
+    test "it prints PDFs from http:// URLs by default" do
+      start_supervised!(TestServer.bandit(:http))
+
+      print_to_pdf({:url, "http://localhost:#{TestServer.port(:http)}/hello"}, fn text ->
+        assert String.contains?(text, "Hello from TestServer")
       end)
     end
 
@@ -171,7 +174,7 @@ defmodule ChromicPDF.PDFGenerationTest do
       """
 
       assert_raise ChromicPDF.ChromeError, expected_msg, fn ->
-        ChromicPDF.print_to_pdf({:url, "https://example.net"}, params)
+        ChromicPDF.print_to_pdf({:html, test_html()}, params)
       end
     end
 
@@ -261,15 +264,18 @@ defmodule ChromicPDF.PDFGenerationTest do
   describe "offline mode" do
     setup do
       start_supervised!({ChromicPDF, offline: true})
-      :ok
+      start_supervised!(TestServer.bandit(:http))
+
+      %{port: TestServer.port(:http)}
     end
 
     @tag :pdftotext
-    test "it does not print PDFs from https:// URLs when given the offline: true parameter" do
+    test "it does not print PDFs from http:// URLs when given the offline: true parameter",
+         %{port: port} do
       msg_re = ~r/net::ERR_INTERNET_DISCONNECTED.*You are trying/s
 
       assert_raise ChromicPDF.ChromeError, msg_re, fn ->
-        ChromicPDF.print_to_pdf({:url, "https://example.net"})
+        ChromicPDF.print_to_pdf({:url, "http://localhost:#{port}/hello"})
       end
     end
   end
